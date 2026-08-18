@@ -148,32 +148,45 @@ print("TPM:", tpm.shape, "| state:", dict(zip(ch.NOTEBOOK_NEURONS, STATE)))
 # | **RIML** | 0 | 10 | 0 | 0 |
 #
 # **AIBL's row is entirely zero** — it has no outgoing edges. So the graph
-# cannot be strongly connected, whichever orientation is used. Two separate
-# issues follow.
+# cannot be strongly connected. Two separate issues follow.
 
 # %%
-# Issue 1: the notebooks' binary CM is the TRANSPOSE of their own table.
-# Building a DataFrame from a dict puts the keys on COLUMNS, not rows:
+# Issue 1: the binary CM contains an edge the stated table does not.
+#
+# First, a check worth doing explicitly: the DataFrame built from a dict of
+# columns, read as rows=source / cols=target, reproduces the markdown table
+# exactly. There is NO transposition here.
 as_dict = {"AIBL": [0, 28, 0, 0], "AVEL": [0, 0, 35, 10],
            "AVAL": [0, 22, 0, 0], "RIML": [0, 0, 0, 0]}
 df_cm = pd.DataFrame(as_dict, index=ch.NOTEBOOK_NEURONS)
-print("DataFrame built as in the original notebook (rows=from, cols=to):")
+print("DataFrame as built in the original notebook (rows=from, cols=to):")
 print(df_cm.to_string())
-print("\n-> nonzero entries read as source->target:")
-for i in df_cm.index:
-    for j in df_cm.columns:
-        if df_cm.loc[i, j] > 0:
-            print(f"     {i} -> {j}  ({df_cm.loc[i, j]})")
-print("   ...but the markdown table says AVEL -> AIBL = 28. The matrix is transposed.")
 
-# Issue 2: neither orientation is strongly connected.
+loop_edges = [(i, j, int(df_cm.loc[i, j]))
+              for i in df_cm.index for j in df_cm.columns if df_cm.loc[i, j] > 0]
+print("\n  read as source->target:", loop_edges)
+print("  markdown table         :", [tuple(e) for e in ch.FUNCONN_EDGES])
+print("  identical              :",
+      sorted(loop_edges) == sorted(tuple(e) for e in ch.FUNCONN_EDGES))
+
+# The discrepancy is in the BINARY matrix that PyPhi actually receives.
 cm_nb = ch.CM_NOTEBOOKS
 cm_fc = ch.funconn_binary_cm()
+disagree = [(ch.NOTEBOOK_NEURONS[i], ch.NOTEBOOK_NEURONS[j],
+             int(cm_nb[i, j]), int(cm_fc[i, j]))
+            for i, j in np.argwhere(cm_nb != cm_fc)]
+print("\nbinary CM used by the notebooks vs. one derived from the table")
+print("  cells that disagree (from, to, notebooks, table):", disagree)
+print("  -> the binary CM asserts an AVEL -> RIML connection that the table")
+print("     does not contain, which is why the two rows of the Phi table below")
+print("     differ (0.37367 vs 0.15836).")
+
+# Issue 2: with or without that edge, the graph is not strongly connected.
 print("\nstrong connectivity check")
 print("  notebooks' binary CM        :", ch.is_strongly_connected(cm_nb))
-print("  funconn, correct direction  :", ch.is_strongly_connected(cm_fc))
-print("  AIBL out-degree (funconn)   :", int(cm_fc[0].sum()))
-print("  RIML in-degree  (funconn)   :", int(cm_fc[:, 3].sum()))
+print("  table-derived CM            :", ch.is_strongly_connected(cm_fc))
+print("  AIBL out-degree (both)      :", int(cm_nb[0].sum()), int(cm_fc[0].sum()))
+print("  RIML in-degree  (table)     :", int(cm_fc[:, 3].sum()))
 
 g_fc = nx.from_numpy_array(cm_fc, create_using=nx.DiGraph)
 sccs = [sorted(ch.NOTEBOOK_NEURONS[i] for i in c)
@@ -193,7 +206,7 @@ cm_sc[1, 3] = 1  # AVEL -> RIML  (minimal additions to close the cycles)
 
 variants = {
     "notebooks' CM (as published)": cm_nb,
-    "funconn, correct direction": cm_fc,
+    "CM derived from the stated table": cm_fc,
     "minimal strongly connected": cm_sc,
     "no CM (all-to-all)": None,
 }
@@ -261,7 +274,7 @@ axes3[0].text(0.5, -0.09, f"no outgoing edges: {', '.join(s1)}\nnot strongly con
               transform=axes3[0].transAxes, ha="center", va="top",
               fontsize=6.5, color=ORANGE)
 
-s2 = draw_circuit(axes3[1], cm_fc, "b  funconn table, correct direction")
+s2 = draw_circuit(axes3[1], cm_fc, "b  CM derived from the stated table")
 axes3[1].text(0.5, -0.09,
               f"AIBL still a sink; RIML has no input\ncomponents: {s2 and ''}"
               f"{'{' + ', '.join(sccs[0]) + '}'} + {'{' + ', '.join(sccs[-1]) + '}'}",
@@ -439,8 +452,11 @@ print("wrote figures/fig04_phi_structure.pdf")
 # 1. **PyPhi requires strong connectivity.** The published CM has AIBL as a
 #    sink, so the system is judged reducible and φ_s = 0 — while a nonzero Φ is
 #    still printed. Reproduced exactly (Φ = 0.3737).
-# 2. The binary CM is additionally the **transpose** of the notebooks' own
-#    stated table, and *neither* orientation is strongly connected.
+# 2. The binary CM additionally asserts an **AVEL -> RIML** edge that the
+#    notebooks' own stated connectivity table does not contain (the
+#    dict-built DataFrame itself matches the table exactly -- there is no
+#    transposition). Removing that edge does not help: AIBL is a sink either
+#    way, so neither version is strongly connected.
 # 3. The Φ-structure is a **weighted hypergraph**: distinctions as nodes,
 #    relation faces as hyperedges of degree ≥ 2. In this real structure 42% of
 #    faces have degree > 2.

@@ -104,9 +104,9 @@ FUNCONN_EDGES = [
 def funconn_binary_cm(neurons=None, edges=None):
     """Binary CM built from FUNCONN_EDGES with cm[source, target] = 1.
 
-    Provided so the direction convention is explicit and testable, in contrast
-    to building a DataFrame from a dict (which places keys on COLUMNS and
-    therefore transposes the intended matrix).
+    Provided so the direction convention is explicit and testable. Note that
+    the binary CM used in the original notebooks (CM_NOTEBOOKS) additionally
+    contains an AVEL -> RIML edge that FUNCONN_EDGES does not.
     """
     neurons = list(neurons or NOTEBOOK_NEURONS)
     edges = edges or FUNCONN_EDGES

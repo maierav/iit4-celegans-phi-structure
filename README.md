@@ -146,23 +146,25 @@ outgoing edges), so this short-circuit fires. Reproduced exactly:
 | Connectivity | Strongly connected | Φ reported | System analysis | φ_s |
 |---|---|---|---|---|
 | As published | ✗ | 0.37367 | `NullSystemIrreducibilityAnalysis` | 0.0 |
-| funconn table, correct direction | ✗ | 0.15836 | `NullSystemIrreducibilityAnalysis` | 0.0 |
+| CM derived from the stated table | ✗ | 0.15836 | `NullSystemIrreducibilityAnalysis` | 0.0 |
 | Minimal strongly connected repair | ✓ | 0.10612 | `SystemIrreducibilityAnalysis` | −0.00057 |
 | No connectivity constraint (all-to-all) | ✓ | 0.73917 | `SystemIrreducibilityAnalysis` | −0.03917 |
 
-There is a second, independent issue. The pipeline builds its matrix with
-`pd.DataFrame({'AIBL': [...], ...})`, which places dict keys on **columns**, so
-the resulting matrix is the **transpose** of the connectivity table stated in
-the same notebook. Fixing the transpose does *not* rescue the computation —
-AIBL is a sink in both orientations.
+There is a second, independent issue. The **binary** matrix handed to PyPhi
+asserts an **AVEL → RIML** connection that the notebook's own stated table does
+not contain. (The `pd.DataFrame` built from a dict of columns does *not*
+introduce a transposition — read as rows=source/cols=target it reproduces the
+table edge-for-edge; notebook 02 checks this explicitly.) That spurious edge is
+what separates the first two rows of the table above. Removing it does not
+rescue the computation: AIBL is a sink either way.
 
 ### Figure 3 — the connectivity defect
 
 ![Connectivity variants](figures/fig03_connectivity.png)
 
-As published (a), the correctly-oriented funconn table (b), and a minimal repair
-that closes the cycles (c). In (b) the graph still splits into three strongly
-connected components: `{AIBL}`, `{AVAL, AVEL}`, `{RIML}`.
+As published (a), the matrix derived from the stated connectivity table (b),
+and a minimal repair that closes the cycles (c). In (b) the graph still splits
+into three strongly connected components: `{AIBL}`, `{AVAL, AVEL}`, `{RIML}`.
 [Vector PDF](figures/fig03_connectivity.pdf)
 
 ---
