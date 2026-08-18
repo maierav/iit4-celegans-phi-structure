@@ -1,0 +1,392 @@
+{
+  "recording": "20220327_herm_2",
+  "state": [
+    1,
+    0,
+    0,
+    1
+  ],
+  "big_phi": 0.7391698518216623,
+  "nodes": [
+    {
+      "mechanism": [
+        0
+      ],
+      "cause_purview": [
+        0
+      ],
+      "effect_purview": [
+        0
+      ],
+      "phi": 0.3584669587881375
+    },
+    {
+      "mechanism": [
+        0,
+        1
+      ],
+      "cause_purview": [
+        0
+      ],
+      "effect_purview": [
+        3
+      ],
+      "phi": 0.0018825838193311437
+    },
+    {
+      "mechanism": [
+        0,
+        2
+      ],
+      "cause_purview": [
+        0
+      ],
+      "effect_purview": [
+        3
+      ],
+      "phi": 0.01105878852492922
+    }
+  ],
+  "faces": [
+    {
+      "degree": 2,
+      "purview": [
+        0
+      ],
+      "purview_labels": [
+        "AIBL"
+      ],
+      "phi": 0.0018825838193311437,
+      "relata": [
+        [
+          [
+            0,
+            1
+          ],
+          "CAUSE"
+        ],
+        [
+          [
+            0,
+            2
+          ],
+          "CAUSE"
+        ]
+      ]
+    },
+    {
+      "degree": 2,
+      "purview": [
+        3
+      ],
+      "purview_labels": [
+        "RIML"
+      ],
+      "phi": 0.0018825838193311437,
+      "relata": [
+        [
+          [
+            0,
+            1
+          ],
+          "EFFECT"
+        ],
+        [
+          [
+            0,
+            2
+          ],
+          "EFFECT"
+        ]
+      ]
+    },
+    {
+      "degree": 3,
+      "purview": [
+        0
+      ],
+      "purview_labels": [
+        "AIBL"
+      ],
+      "phi": 0.00552939426246461,
+      "relata": [
+        [
+          [
+            0
+          ],
+          "CAUSE"
+        ],
+        [
+          [
+            0
+          ],
+          "EFFECT"
+        ],
+        [
+          [
+            0,
+            2
+          ],
+          "CAUSE"
+        ]
+      ]
+    },
+    {
+      "degree": 2,
+      "purview": [
+        0
+      ],
+      "purview_labels": [
+        "AIBL"
+      ],
+      "phi": 0.00552939426246461,
+      "relata": [
+        [
+          [
+            0
+          ],
+          "CAUSE"
+        ],
+        [
+          [
+            0,
+            2
+          ],
+          "CAUSE"
+        ]
+      ]
+    },
+    {
+      "degree": 2,
+      "purview": [
+        0
+      ],
+      "purview_labels": [
+        "AIBL"
+      ],
+      "phi": 0.00552939426246461,
+      "relata": [
+        [
+          [
+            0
+          ],
+          "EFFECT"
+        ],
+        [
+          [
+            0,
+            2
+          ],
+          "CAUSE"
+        ]
+      ]
+    },
+    {
+      "degree": 2,
+      "purview": [
+        0
+      ],
+      "purview_labels": [
+        "AIBL"
+      ],
+      "phi": 0.3584669587881375,
+      "relata": [
+        [
+          [
+            0
+          ],
+          "CAUSE"
+        ],
+        [
+          [
+            0
+          ],
+          "EFFECT"
+        ]
+      ]
+    },
+    {
+      "degree": 2,
+      "purview": [
+        0
+      ],
+      "purview_labels": [
+        "AIBL"
+      ],
+      "phi": 0.0009412919096655718,
+      "relata": [
+        [
+          [
+            0
+          ],
+          "CAUSE"
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          "CAUSE"
+        ]
+      ]
+    },
+    {
+      "degree": 3,
+      "purview": [
+        0
+      ],
+      "purview_labels": [
+        "AIBL"
+      ],
+      "phi": 0.0009412919096655718,
+      "relata": [
+        [
+          [
+            0
+          ],
+          "CAUSE"
+        ],
+        [
+          [
+            0
+          ],
+          "EFFECT"
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          "CAUSE"
+        ]
+      ]
+    },
+    {
+      "degree": 2,
+      "purview": [
+        0
+      ],
+      "purview_labels": [
+        "AIBL"
+      ],
+      "phi": 0.0009412919096655718,
+      "relata": [
+        [
+          [
+            0
+          ],
+          "EFFECT"
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          "CAUSE"
+        ]
+      ]
+    },
+    {
+      "degree": 3,
+      "purview": [
+        0
+      ],
+      "purview_labels": [
+        "AIBL"
+      ],
+      "phi": 0.0009412919096655718,
+      "relata": [
+        [
+          [
+            0
+          ],
+          "CAUSE"
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          "CAUSE"
+        ],
+        [
+          [
+            0,
+            2
+          ],
+          "CAUSE"
+        ]
+      ]
+    },
+    {
+      "degree": 3,
+      "purview": [
+        0
+      ],
+      "purview_labels": [
+        "AIBL"
+      ],
+      "phi": 0.0009412919096655718,
+      "relata": [
+        [
+          [
+            0
+          ],
+          "EFFECT"
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          "CAUSE"
+        ],
+        [
+          [
+            0,
+            2
+          ],
+          "CAUSE"
+        ]
+      ]
+    },
+    {
+      "degree": 4,
+      "purview": [
+        0
+      ],
+      "purview_labels": [
+        "AIBL"
+      ],
+      "phi": 0.0009412919096655718,
+      "relata": [
+        [
+          [
+            0
+          ],
+          "CAUSE"
+        ],
+        [
+          [
+            0
+          ],
+          "EFFECT"
+        ],
+        [
+          [
+            0,
+            1
+          ],
+          "CAUSE"
+        ],
+        [
+          [
+            0,
+            2
+          ],
+          "CAUSE"
+        ]
+      ]
+    }
+  ]
+}

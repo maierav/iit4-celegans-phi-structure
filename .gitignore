@@ -1,0 +1,8 @@
+data/*.csv
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.jupyter*/
+.jup/
+__pyphi_cache__/
+pyphi.log

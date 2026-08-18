@@ -1,0 +1,81 @@
+recording,stimulus,class,n_frames,distinct_states
+20220327_herm_2,100mM NaCl,attractant,120,4
+20220327_herm_2,e-2 IAA,attractant,120,3
+20220327_herm_2,450mM NaCl,repellent,120,12
+20220327_herm_2,1uM ascr#3,repellent,120,3
+20220327_herm_2,10mM CuSO4,repellent,120,2
+20220327_herm_2,800mM Sorbitol,repellent,120,3
+20220327_herm_2,e-6 IAA,attractant,120,4
+20220327_herm_2,Fluorescein,control,120,2
+20220327_herm_2,Control,control,120,6
+20220327_herm_2,OP50,attractant,120,6
+20220327_herm_4,100mM NaCl,attractant,120,3
+20220327_herm_4,800mM Sorbitol,repellent,120,6
+20220327_herm_4,e-6 IAA,attractant,120,2
+20220327_herm_4,450mM NaCl,repellent,120,4
+20220327_herm_4,OP50,attractant,120,5
+20220327_herm_4,e-2 IAA,attractant,120,8
+20220327_herm_4,Fluorescein,control,120,8
+20220327_herm_4,1uM ascr#3,repellent,120,8
+20220327_herm_4,10mM CuSO4,repellent,120,5
+20220327_herm_4,Control,control,120,11
+20220403_herm_2,Fluorescein,control,120,5
+20220403_herm_2,e-2 IAA,attractant,120,2
+20220403_herm_2,100mM NaCl,attractant,120,8
+20220403_herm_2,800mM Sorbitol,repellent,120,5
+20220403_herm_2,OP50,attractant,120,5
+20220403_herm_2,1uM ascr#3,repellent,120,9
+20220403_herm_2,450mM NaCl,repellent,120,8
+20220403_herm_2,e-6 IAA,attractant,120,6
+20220403_herm_2,10mM CuSO4,repellent,120,13
+20220403_herm_2,Control,control,120,3
+20220403_herm_3,e-6 IAA,attractant,120,5
+20220403_herm_3,OP50,attractant,120,3
+20220403_herm_3,800mM Sorbitol,repellent,120,6
+20220403_herm_3,Fluorescein,control,120,3
+20220403_herm_3,Control,control,120,5
+20220403_herm_3,1uM ascr#3,repellent,120,8
+20220403_herm_3,e-2 IAA,attractant,120,6
+20220403_herm_3,100mM NaCl,attractant,120,3
+20220403_herm_3,450mM NaCl,repellent,120,3
+20220403_herm_3,10mM CuSO4,repellent,120,8
+20220427_herm_2,e-2 IAA,attractant,120,3
+20220427_herm_2,e-6 IAA,attractant,120,1
+20220427_herm_2,10mM CuSO4,repellent,120,9
+20220427_herm_2,450mM NaCl,repellent,120,3
+20220427_herm_2,OP50,attractant,120,4
+20220427_herm_2,Fluorescein,control,120,6
+20220427_herm_2,Control,control,120,1
+20220427_herm_2,100mM NaCl,attractant,120,5
+20220427_herm_2,800mM Sorbitol,repellent,120,6
+20220427_herm_2,1uM ascr#3,repellent,120,3
+20220427_herm_3,1uM ascr#3,repellent,120,4
+20220427_herm_3,10mM CuSO4,repellent,120,4
+20220427_herm_3,100mM NaCl,attractant,120,7
+20220427_herm_3,Control,control,120,3
+20220427_herm_3,Fluorescein,control,120,7
+20220427_herm_3,800mM Sorbitol,repellent,120,5
+20220427_herm_3,e-6 IAA,attractant,120,9
+20220427_herm_3,OP50,attractant,120,3
+20220427_herm_3,e-2 IAA,attractant,120,5
+20220427_herm_3,450mM NaCl,repellent,120,3
+20220427_herm_4,100mM NaCl,attractant,120,1
+20220427_herm_4,10mM CuSO4,repellent,120,5
+20220427_herm_4,1uM ascr#3,repellent,120,5
+20220427_herm_4,Control,control,120,13
+20220427_herm_4,Fluorescein,control,120,6
+20220427_herm_4,OP50,attractant,120,2
+20220427_herm_4,800mM Sorbitol,repellent,120,4
+20220427_herm_4,450mM NaCl,repellent,120,4
+20220427_herm_4,e-2 IAA,attractant,120,7
+20220427_herm_4,e-6 IAA,attractant,120,8
+20220427_herm_5,e-2 IAA,attractant,120,8
+20220427_herm_5,1uM ascr#3,repellent,120,3
+20220427_herm_5,800mM Sorbitol,repellent,120,4
+20220427_herm_5,450mM NaCl,repellent,120,3
+20220427_herm_5,100mM NaCl,attractant,120,10
+20220427_herm_5,Control,control,120,7
+20220427_herm_5,10mM CuSO4,repellent,120,1
+20220427_herm_5,Fluorescein,control,120,11
+20220427_herm_5,OP50,attractant,120,3
+20220427_herm_5,e-6 IAA,attractant,120,2

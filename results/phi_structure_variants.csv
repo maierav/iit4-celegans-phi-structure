@@ -1,0 +1,5 @@
+connectivity,strongly_connected,Phi,sia_type,phi_s,n_distinctions,n_faces,max_face_degree
+notebooks' CM (as published),False,0.37367,NullSystemIrreducibilityAnalysis,0.0,3,3,2
+"funconn, correct direction",False,0.15836,NullSystemIrreducibilityAnalysis,0.0,2,2,2
+minimal strongly connected,True,0.10612,SystemIrreducibilityAnalysis,-0.00057,2,1,2
+no CM (all-to-all),True,0.73917,SystemIrreducibilityAnalysis,-0.03917,3,12,4

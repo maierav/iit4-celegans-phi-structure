@@ -1,0 +1,15 @@
+# Core analysis
+numpy>=1.24
+pandas>=2.0
+scipy>=1.10
+matplotlib>=3.7
+networkx>=3.0
+
+# Data download
+gdown>=4.7
+
+# IIT 4.0 — not on a PyPhi release; pinned to the commit used throughout.
+git+https://github.com/wmayner/pyphi.git@b78d0e342d37175cbd55cf35a6d52ae035b4c50f
+
+# Notebook <-> script pairing (development only)
+jupytext>=1.15
