@@ -7,17 +7,36 @@
 repellents?
 
 **The obstacle.** A Φ-structure is not a graph. It is closer to a **weighted
-hypergraph** (or a simplicial complex): its "edges" can join three, four, or
-more elements at once. Standard graph-similarity measures cannot see that
-higher-order content, so comparing two Φ-structures is an open methodological
-problem — and it is the core problem this repository is about.
+hypergraph**: its "edges" (relations) can join three, four, or more distinctions
+at once. Standard graph-similarity measures cannot see that higher-order
+content, so *measuring the distance between two Φ-structures* is the core
+methodological problem — and the reason this repository exists.
 
-**Status.** This repo audits and rebuilds an existing analysis pipeline. It
-reproduces the original results exactly, identifies why the published Φ values
-do not mean what they appear to mean, quantifies a sampling limit that gates the
-whole project, and demonstrates concretely why the similarity measures tried so
-far fail. **The headline scientific comparison has not yet been made** — the
-notebooks explain precisely what has to change first.
+**The answer we use** is an exact, brute-force distance: try every way of
+matching the distinctions of one structure onto the other, score each matching,
+and keep the smallest score. It is defined in full in
+[The distance algorithm](#the-distance-algorithm) below and implemented in
+[`src/gold_standard.py`](src/gold_standard.py).
+
+**Status.** The distance algorithm is settled, implemented, and verified. The
+data pipeline is audited and reproducible, and three findings currently block
+the headline comparison — a per-stimulus sampling limit, a connectivity-matrix
+defect, and the failure of the two similarity measures tried before this one.
+**The attractant-vs-repellent comparison has not yet been run**; the sampling
+fix it requires is described under [Finding 1](#finding-1--the-per-stimulus-data-budget-is-the-binding-constraint).
+
+---
+
+## If you read nothing else
+
+| | |
+|---|---|
+| **Goal** | Test whether attractant Φ-structures resemble each other more than repellent ones do |
+| **Distance** | Exact minimum over all bijections between distinctions ("gold standard") |
+| **Why not simpler** | \|ΔΦ\| is a scalar and collapses distinct structures; a pairwise-only representation cannot see relations that join >2 distinctions |
+| **Cost** | *n*! where *n* = number of distinctions. Practical to *n* ≈ 9. Real worm structures have 3 → trivial |
+| **Blocker** | One stimulus epoch supplies 120 frames for a 256-parameter TPM; ~5 of 16 states are visited |
+| **Next step** | Pool epochs by stimulus class across 8 recordings, then run the exact distance |
 
 ---
 
@@ -54,18 +73,196 @@ If you are new to IIT, this is enough to read the rest.
   from each state to each other state. With 4 binary neurons there are
   2⁴ = 16 states, so the TPM is 16×16 = **256 numbers to estimate from data**.
 * **Distinction.** A subset of units (a *mechanism*) that specifies a cause and
-  an effect over some set of units (a *purview*), with integrated information
+  an effect over some set of units (its *purviews*), with integrated information
   **φ_d**. Think: "this group of neurons, in this state, makes a difference."
-* **Relation.** An overlap between the purviews of two or more distinctions,
-  with integrated information **φ_r**. A relation joining *k* distinctions is a
-  **degree-*k* face**.
+  Note a distinction has **two** purviews — one on the cause side, one on the
+  effect side.
+* **Relation.** An irreducible overlap between the purviews of a *set* of
+  distinctions, with integrated information **φ_r**. A relation over *k*
+  distinctions is a **degree-*k* relation**. A **self-relation** is the overlap
+  between a single distinction's own cause and effect purviews (*k* = 1).
 * **Φ-structure** (also *cause–effect structure*, CES). All distinctions plus
   all relations. **Φ = Σφ_d + Σφ_r.**
-* **Why it is a hypergraph.** Degree-2 faces are ordinary edges. Degree-3 and
-  higher faces join three or more distinctions *at once* and cannot be
-  decomposed into pairwise edges without loss. Standard Φ-structure plots show
-  only distinctions and degree-2 faces, but the object itself is
+* **Why it is a hypergraph.** A degree-2 relation is an ordinary edge. Degree-3
+  and higher relations bind three or more distinctions *at once* and cannot be
+  decomposed into pairwise edges without loss. Most Φ-structure plots draw only
+  distinctions and pairwise relations, but the object itself is
   higher-dimensional.
+
+### One relation per set of distinctions
+
+Worth stating explicitly, because it makes the algorithm below much simpler than
+it first appears, and because it is easy to get wrong from PyPhi's output.
+
+In PyPhi, `Relation` is a `frozenset` **of distinctions** carrying a single
+`phi` value, and relations are enumerated one per *combination* of distinctions
+(`pyphi/relations.py`, `all_relations`). So:
+
+> **A set of distinctions has at most one relation, with exactly one φ_r.**
+
+PyPhi additionally exposes **faces**, an internal enumeration over the
+cause/effect *sides* of each distinction. One relation can have several faces —
+but every face inherits its parent's φ (`RelationFace(mice, phi=self.phi)`), so
+faces carry **no independent information**. Verified empirically over 2,996
+relations across 416 states of random 2- and 3-node networks: zero cases of one
+distinction-set carrying two relations, and zero cases of faces within a
+relation differing in φ.
+
+**Consequence:** index φ_r by the set of distinctions, and sum φ_r over
+*relations*, not faces. Only that choice satisfies Φ = Σφ_d + Σφ_r. In the worm
+structure below, summing over relations gives 0.36776 and reproduces
+Φ = 0.73917 exactly; summing over faces gives 0.38447 and does not.
+
+---
+
+## The distance algorithm
+
+This is the heart of the project. It is called the **gold standard** (or
+"brute force") because it evaluates the definition directly, with no
+approximation.
+
+### The idea in one paragraph
+
+Two Φ-structures have no shared labels — there is no *a priori* reason distinction
+`a` in one corresponds to distinction `p` in the other. So we try **every
+possible pairing**. For a given pairing, the cost is just a sum of absolute
+differences: every matched distinction contributes |φ_d − φ_d′|, every matched
+relation contributes |φ_r − φ_r′|, and anything left unmatched contributes its
+full φ (i.e. it is compared against zero). The distance is the **smallest cost
+over all pairings**.
+
+### Formally
+
+A Φ-structure is a pair **S = (φ_d, φ_r)**:
+
+```
+φ_d : {distinction        -> φ_d value}
+φ_r : {set of distinctions -> φ_r value}      # a set of size 1 = self-relation
+```
+
+Let *M* be a bijection between the distinctions of S₁ and those of S₂. If the
+structures have different numbers of distinctions, the smaller side is padded
+with **null distinctions** carrying φ_d = 0 and no relations, so *M* is always a
+bijection. Write *M(S)* = { *M(a)* : *a* ∈ *S* } for the induced image of a set.
+
+$$
+D(S_1, S_2; M) \;=\; \underbrace{\sum_{a} \bigl| \varphi_d^{1}(a) - \varphi_d^{2}(M(a)) \bigr|}_{\text{distinctions}}
+\;+\; \underbrace{\sum_{S \in \varphi_r^{1}} \bigl| \varphi_r^{1}(S) - \varphi_r^{2}(M(S)) \bigr|}_{\text{relations of } S_1}
+\;+\; \underbrace{\sum_{\substack{T \in \varphi_r^{2} \\ M^{-1}(T) \notin \varphi_r^{1}}} \varphi_r^{2}(T)}_{\text{unmatched relations of } S_2}
+$$
+
+$$
+\boxed{\;D(S_1, S_2) \;=\; \min_{M} \; D(S_1, S_2; M)\;}
+$$
+
+Missing entries read as zero, so the third term is really just
+|0 − φ_r²(T)| — "unmatched structure is charged in full" is not a separate rule,
+it is the same rule applied against an absent partner.
+
+### The one property that makes this structural
+
+**The relation mapping is not free — it is induced by the distinction mapping.**
+Once *M* pairs the distinctions, relation {a, b} *must* be compared against
+relation {M(a), M(b)}, whatever φ_r happens to sit there. Relations are never
+matched to each other independently.
+
+This is what makes *D* a distance between **structures** rather than between two
+bags of numbers. Counter-example, computed with this repo's code:
+
+| structure | shape | φ_d values | φ_r values |
+|---|---|---|---|
+| X | path a—b—c | 0.3, 0.3, 0.3 | 0.10, 0.10 |
+| W | edge p—q + self-loop on p | 0.3, 0.3, 0.3 | 0.10, 0.10 |
+
+Identical multisets of φ values, genuinely different topology. Matching
+relations independently (best-to-best) returns **0.0** — "identical". The gold
+standard returns **0.2**. Conversely, structures that really are isomorphic
+(a path relabelled) correctly return **0.0**.
+
+### Worked example
+
+The Case-2 example from the project slides, with every term shown:
+
+![The algorithm on a two-distinction example](figures/fig07_algorithm.png)
+
+Str1 has 2 distinctions, a pairwise relation {a,b}, and a self-relation {b}.
+Str2 has 2 distinctions and a self-relation {p}. With 2 distinctions there are
+2! = 2 bijections:
+
+| term | M1 (a→p, b→q) | M2 (a→q, b→p) |
+|---|---|---|
+| distinctions | \|0.30−0.28\| = 0.02 | \|0.30−0.05\| = 0.25 |
+| | \|0.20−0.05\| = 0.15 | \|0.20−0.28\| = 0.08 |
+| relation {a,b} | \|0.12−0\| = 0.12 | \|0.12−0\| = 0.12 |
+| relation {b} | \|0.07−0\| = 0.07 | \|0.07−0.09\| = 0.02 |
+| unmatched in Str2 | 0.09 (self-relation {p}) | — |
+| **total** | **0.45  ← minimum** | 0.47 |
+
+**D(Str1, Str2) = 0.45.** Note M2 matches the self-relation almost perfectly
+(0.02) and still loses: the minimum is over the *total*, so the terms cannot be
+optimised separately. [Vector PDF](figures/fig07_algorithm.pdf)
+
+### Cost, and when it stops being practical
+
+The search is over bijections between **distinctions** — *n*! where
+*n* = max(N_dist₁, N_dist₂). It is **not** over 2ⁿ mechanisms, and not over
+relations: relations come along free once *M* is fixed. Measured, single-core,
+pure Python:
+
+| N_dist | bijections | time (one distance) |
+|---|---|---|
+| 6 | 720 | 0.01 s |
+| 8 | 40,320 | 2.3 s |
+| 9 | 362,880 | 32 s |
+| 10 | 3.6 M | 470 s (~8 min) |
+| 11 | 40 M | ~1.5 h |
+| 12 | 479 M | ~18 h |
+
+Practical ceiling: *n* ≈ 9 for a single distance, *n* ≈ 8 for a full pairwise
+matrix. **The real *C. elegans* structures have 3 distinctions (3! = 6), so the
+exact distance is instant** — no approximation needed for this project.
+
+For larger systems, the project's optimal-transport work brackets the exact
+value: *d*<sub>OT</sub> ≤ *d*<sub>exact</sub> ≤ Δ<sub>μ*</sub>, with both bounds
+cheap to compute. This repo implements the exact distance only.
+
+### Verified properties
+
+Empirical, not proofs — checked under both plain and degree-tagged relation
+keys:
+
+| property | result |
+|---|---|
+| identity, *D*(X, X) = 0 | exact, 50/50 |
+| symmetry, \|*D*(X,Y) − *D*(Y,X)\| | 0 violations / 200 random pairs |
+| triangle inequality | 0 violations / 200 random triples (median slack −1.57) |
+
+An earlier bug made the distance asymmetric in ~70% of random pairs — the
+distinction term iterated over only the first structure's keys, silently
+dropping the surplus distinctions of the larger one. Fixed; the test above is
+the regression guard.
+
+### Using it
+
+```python
+from src.gold_standard import gold_standard_distance, phi_of
+
+# a Φ-structure: (φ_d by distinction, φ_r by SET of distinctions)
+S1 = ({"a": 0.30, "b": 0.20},
+      {frozenset({"a", "b"}): 0.12, frozenset({"b"}): 0.07})
+S2 = ({"p": 0.28, "q": 0.05},
+      {frozenset({"p"}): 0.09})
+
+gold_standard_distance(S1, S2)                       # -> 0.44999999999999996
+gold_standard_distance(S1, S2, return_mapping=True)  # -> (0.45, {'a': 'p', 'b': 'q'})
+phi_of(S1)                                           # -> 0.69  (Σφ_d + Σφ_r)
+```
+
+(The distance is a sum of floats, so expect the usual binary-float tail; round
+for display.)
+
+Guard against a runaway search with `budget=`, or check first with
+`is_feasible(S1, S2)` / `n_permutations(S1, S2)`.
 
 ---
 
@@ -172,17 +369,31 @@ into three strongly connected components: `{AIBL}`, `{AVAL, AVEL}`, `{RIML}`.
 ## Finding 3 — the Φ-structure really is higher-order
 
 Unfolding the Φ-structure from real data (all-to-all connectivity, the only
-variant here that yields an irreducible system) gives Φ = 0.73917 from 3
-distinctions and 5 relations carrying **12 relation faces**:
+variant here that yields an irreducible system) gives Φ = 0.73917 from
+**3 distinctions and 5 relations**:
 
-| Face degree | Count | Interpretation |
+| relation (set of distinctions) | degree | φ_r |
 |---|---|---|
-| 2 | 7 | ordinary pairwise edges |
-| 3 | 4 | join three distinctions at once |
-| 4 | 1 | joins four distinctions at once |
+| {AIBL} — self-relation | 1 | 0.35847 |
+| {AIBL, AIBL·AVAL} | 2 | 0.00553 |
+| {AIBL·AVAL, AIBL·AVEL} | 2 | 0.00188 |
+| {AIBL, AIBL·AVEL} | 2 | 0.00094 |
+| **{AIBL, AIBL·AVAL, AIBL·AVEL}** | **3** | **0.00094** |
 
-**42% of the faces (5 of 12) are higher-order.** A representation that keeps
-only pairwise relations discards all of them.
+Σφ_d = 0.37141, Σφ_r = 0.36776, Φ = 0.73917 exactly.
+
+**One of the five relations (20%) is higher-order** — it binds all three
+distinctions at once and has no pairwise equivalent. A representation keyed by
+ordered *pairs* of distinctions cannot store it at all. The self-relation is
+also unrepresentable as a pairwise edge, and it is the largest single
+contribution in the whole structure (0.358, roughly half of Φ).
+
+> **Correction.** Earlier versions of this README reported "12 faces, 42%
+> higher-order". That counted PyPhi **faces**, which are an internal enumeration
+> over cause/effect sides and all inherit their parent relation's φ. The
+> structural facts are the 5 relations above. The conclusion is unchanged —
+> higher-order structure is present and a pairwise representation loses it — but
+> the correct figure is 1 of 5 relations, not 5 of 12 faces.
 
 ### Figure 4 — the hypergraph, and what a pairwise view loses
 
@@ -190,20 +401,26 @@ only pairwise relations discards all of them.
 
 Distinctions (left) connected to the relation faces they participate in
 (right); orange marks higher-order faces (a). Face-degree distribution (b). What
-survives a pairwise projection (c).
+survives a pairwise projection (c). *This figure is drawn at the face level; see
+the correction above for the relation-level counts.*
 [Vector PDF](figures/fig04_phi_structure.pdf)
 
 ---
 
-## Finding 4 — all three similarity measures tried so far fail
+## Finding 4 — why the two earlier measures were abandoned
 
-Three measures, tested against cases where the correct answer is known.
+Before the gold standard, two measures were tried. Both are tested here against
+cases where the correct answer is known.
 
 | # | Measure | Representation |
 |---|---|---|
 | 1 | \|ΔΦ\| | a single scalar |
-| 2 | brute-force bijection | distinctions + **pairwise** relations |
-| 3 | degree-graded assignment (this repo) | distinctions + **faces of any degree** |
+| 2 | pairwise bijection | distinctions + relations keyed by ordered **pairs** |
+| 3 | degree-graded assignment | distinctions + relations of any degree, matched by φ spectrum |
+
+(Measure 3 was an intermediate prototype in this repo. The **gold standard**
+described above supersedes all three; it is exact, and it separates every test
+below.)
 
 Reported distance on each test — **0.0 means the measure cannot tell the two
 structures apart**:
@@ -211,24 +428,28 @@ structures apart**:
 | Test | 1: \|ΔΦ\| | 2: pairwise | 3: degree-graded |
 |---|---|---|---|
 | Same Φ, different content | **0.0** | 0.3 | 0.4 |
-| Differ by one degree-3 face | 0.1 | **0.0** | 0.3 |
-| Degree-2 face → degree-3 face, Φ preserved | **0.0** | **0.0** | 0.5 |
+| Differ by one degree-3 relation | 0.1 | **0.0** | 0.3 |
+| Degree-2 → degree-3, Φ preserved | **0.0** | **0.0** | 0.5 |
 
-* **Measure 1 is blind whenever Φ is preserved.** Not hypothetical: the original
-  toy models produced two 5-unit structures with *exactly* equal Φ
+* **Measure 1 is blind whenever Φ is preserved.** Not hypothetical: the project's
+  own toy models produced two 5-unit structures with *exactly* equal Φ
   (2.1779535637765157) and 10 distinctions each, differing in which units
   carried them.
-* **Measure 2 is blind to higher-order structure by construction.** It stores
-  relations in a dict keyed by ordered *pairs*, so a degree-3 face has nowhere
-  to go. On the real data it silently drops 5 of 12 faces.
+* **Measure 2 is blind to higher-order structure by construction.** It keys
+  relations by ordered *pairs*, so a relation binding three distinctions has
+  nowhere to go — including the one present in the real worm structure.
+* **Measure 2 also does not scale**: it enumerated bijections with a guard at
+  8! = 40,320, and the project's own toy models have 10 and 12 distinctions.
+  The gold standard has the same factorial core but no arbitrary guard, and the
+  real structures here have only 3 distinctions.
 
 ### Figure 5 — where each measure breaks
 
 ![Measure failures](figures/fig05_measure_failures.png)
 
-Reported distance per test (a) — bars marked "blind" are exactly zero. On the
-real Φ-structure, 42% of faces are lost to a pairwise view (b), and higher-order
-faces carry real integrated information (c).
+Reported distance per test (a) — bars marked "blind" are exactly zero. Panels
+(b) and (c) are drawn at the face level; see the correction under Finding 3 for
+relation-level counts.
 [Vector PDF](figures/fig05_measure_failures.pdf)
 
 ### Figure 6 — and it does not scale
@@ -243,35 +464,35 @@ the same matching exactly for a linear cost — 64 distinctions in ~1.4 ms.
 
 ---
 
-## The prototype measure, and its open problems
+## Scaling beyond the exact distance
 
-`ces_distance_hypergraph` in [`src/ces_hypergraph.py`](src/ces_hypergraph.py)
-works in two terms:
+The gold standard is exact but factorial, so for systems larger than ~9
+distinctions it must be replaced by an estimate. The project's parallel line of
+work does this with **optimal transport**, which brackets the exact value:
 
-1. **Distinctions** matched by optimal assignment (Hungarian, O(*n*³)), with a
-   penalty for pairing distinctions of different mechanism order or purview
-   size.
-2. **Relation faces** grouped by `(degree, purview size)` and compared within
-   group as sorted φ spectra, weighted by degree.
+$$d_{\mathrm{OT}} \;\le\; d_{\mathrm{exact}} \;\le\; \Delta_{\mu^*}$$
 
-**It is a starting point for discussion, not a finished metric.** Known gaps:
+Both bounds are cheap even when the exact search is intractable, and on a
+3-unit test system the OT estimate tracked the exact distance at *r* = 0.9955.
 
-* The within-bucket comparison is permutation-invariant, so it ignores *which*
-  distinctions a face joins. Two structures whose degree-3 faces connect
-  entirely different triples score as identical.
-* The degree weighting (`w(k) = k`) and structural penalty (0.5 per unit of
-  mismatch) are free parameters with no principled justification.
-* The triangle inequality has not been checked — it may not be a metric.
-* It is not invariant to relabeling units, which matters for cross-animal
-  comparison.
+That approach folds each relation's φ_r onto its participating distinctions
+(**Φ-folds**) so the hypergraph becomes a flat vector that OT can consume. One
+caveat found here: with the φ_r/degree normalisation, a filled triangle (three
+pairwise relations plus one degree-3 relation) and an empty triangle (three
+pairwise relations only) can fold to the **identical** vector, giving distance 0
+where the gold standard gives 0.6. Dropping the normalisation, or keeping a
+per-degree vector instead of a scalar, breaks the degeneracy while remaining
+OT-compatible.
 
-### Candidate directions
+**This repository implements the exact distance only** — for the *C. elegans*
+structures (3 distinctions) no approximation is needed.
 
-* **Topological.** Treat the CES as a filtered simplicial complex (faces are
-  already simplices) and compare persistence diagrams. Handles all degrees
-  natively and is relabeling-invariant.
-* **Optimal transport.** Gromov–Wasserstein between hypergraphs using φ as
-  mass. Respects *which* distinctions each face joins.
+### Other candidate directions
+
+* **Topological.** Treat the CES as a filtered simplicial complex and compare
+  persistence diagrams. Handles all degrees natively, relabeling-invariant.
+* **Gromov–Wasserstein** directly between hypergraphs, which preserves *which*
+  distinctions each relation joins.
 * **Hypergraph kernels.** Weisfeiler–Leman-style refinement on the incidence
   structure, yielding a positive-definite similarity.
 
@@ -312,8 +533,11 @@ Beyond those above:
 
 ```
 notebooks/     01, 02, 03 as both .ipynb (Colab) and .py (paired via jupytext)
-src/           ces_hypergraph.py — all shared functions
-figures/       fig01–fig06 as vector PDF + preview PNG
+src/
+  gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
+  ces_hypergraph.py   data loading, TPM construction, PyPhi extraction,
+                      and the two superseded measures (kept for comparison)
+figures/       fig01–fig07 as vector PDF + preview PNG
 results/       TPMs, extracted hypergraphs (JSON), audit tables (CSV)
 data/          downloaded recordings (gitignored)
 ```
@@ -329,15 +553,33 @@ data/          downloaded recordings (gitignored)
   install --no-binary :all: --force-reinstall graphillion` — which drops OpenMP
   cleanly. Colab and Linux are unaffected.
 
+* **PyPhi 2.0** changes the default formalism to the 2026 refinement of IIT 4.0,
+  under which a system must also furnish itself a repertoire of alternatives —
+  so deterministic systems return φ_s = 0 and published numbers move. Use
+  `formalism="IIT_4_0_2023"` to stay comparable with the results here. 2.0 also
+  adds analytical relation queries (`degree_spectrum()`, `maximal_faces()`,
+  `distinction_importance()`) that answer structural questions in closed form
+  without enumerating relations — directly useful for this project.
+
 ## Open questions for the next round
 
 1. **Neuron set** — keep the interneuron quartet, or switch to the amphid
    sensory neurons the aim names?
 2. **Pooling level** — per stimulus class (statistically sound, no within-class
    variance) or per stimulus (10 conditions, ~360 frames each)?
-3. **Which similarity measure** to develop properly: topological, optimal
-   transport, or hypergraph kernel?
-4. **Null model** — shuffled class labels, or phase-randomized surrogate traces?
+3. **Null model** — shuffled class labels, or phase-randomized surrogate traces?
+
+*(The "which distance" question is closed: the gold standard above.)*
+
+## Where to start reading
+
+| you want to… | go to |
+|---|---|
+| understand the distance | [The distance algorithm](#the-distance-algorithm) |
+| use the distance | [`src/gold_standard.py`](src/gold_standard.py) |
+| know why the comparison hasn't run | [Finding 1](#finding-1--the-per-stimulus-data-budget-is-the-binding-constraint) |
+| reproduce every figure | `notebooks/01` → `02` → `03` |
+| see all known problems | [`results/audit_findings.csv`](results/audit_findings.csv) |
 
 ## Sources
 
