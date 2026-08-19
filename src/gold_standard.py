@@ -41,6 +41,22 @@ output: relation faces live over MICE (cause and effect purviews separately),
 so a degree-3 face can join only two distinctions, and an untagged key merges
 it with the degree-2 face on the same pair.
 
+Higher-order relations need no special handling
+-----------------------------------------------
+A relation of ANY degree is a single key in ``phi_r``, and the cost function
+never inspects a key's size: it relabels the key through the bijection and
+subtracts. Degree 2 and degree 7 are handled by the same line of code, and a
+perturbation of +0.01 to a relation of any degree moves the distance by
+exactly 0.01. So the Φ-folds construction — which flattens a hypergraph into
+one scalar per distinction so that optimal transport can consume it — is NOT
+needed here and is not used. It belongs to the OT approximation route, where
+it is a lossy but cheap surrogate; the exact distance keeps the hypergraph.
+
+Additionally verified: d(X, Y) = 0 **iff** X and Y are isomorphic (equal after
+some relabelling of distinctions). Checked against an independent brute-force
+isomorphism test over 400 random pairs — no false identities and no false
+differences.
+
 Verified properties
 -------------------
 Checked under BOTH keying schemes (plain sets and (set, degree) tags):
@@ -49,6 +65,7 @@ Checked under BOTH keying schemes (plain sets and (set, degree) tags):
     symmetry      |d(X,Y) − d(Y,X)| < 1e-12       0 violations / 200 pairs each
     triangle      d(X,Z) ≤ d(X,Y) + d(Y,Z)        0 violations / 200 triples each
                   (tagged: median slack −1.57, 2 exactly-tight triples)
+    d = 0 ⟺ iso   agrees with brute-force isomorphism  0/400 disagreements
 
 Empirical only — these are not proofs.
 

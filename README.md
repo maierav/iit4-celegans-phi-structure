@@ -159,6 +159,34 @@ Missing entries read as zero, so the third term is really just
 |0 − φ_r²(T)| — "unmatched structure is charged in full" is not a separate rule,
 it is the same rule applied against an absent partner.
 
+### Higher-order relations need no special handling
+
+Worth stating plainly, because the project's slide deck spends two slides on a
+construction (**Φ-folds**) that flattens the hypergraph — and that construction
+is **not** part of this algorithm.
+
+A relation of any degree is one key in `φ_r`. The cost function never inspects a
+key's size; it relabels the key through the bijection and subtracts. Degree 2
+and degree 7 go through the same line of code. Perturbing one relation by +0.01
+moves the distance by exactly 0.01 **at every degree**:
+
+| degree of perturbed relation | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| resulting distance | 0.01 | 0.01 | 0.01 | 0.01 | 0.01 |
+
+Φ-folds belongs to the *optimal-transport* route, not here. OT needs a flat
+vector per distinction, so the hypergraph has to be collapsed before it can be
+consumed; that collapse is lossy (see
+[Scaling beyond the exact distance](#scaling-beyond-the-exact-distance)). The
+exact distance never collapses anything, so it pays no such price.
+
+The measure is also **exactly as discriminating as isomorphism**:
+*d*(X, Y) = 0 if and only if X and Y are identical after some relabelling of
+distinctions. Checked against an independent brute-force isomorphism test over
+400 random pairs — no false identities, no false differences. Two structures
+whose degree-3 relations overlap in two distinctions versus one are correctly
+separated (0.2); two that differ only by a relabelling correctly score 0.
+
 ### The one property that makes this structural
 
 **The relation mapping is not free — it is induced by the distinction mapping.**
@@ -482,13 +510,45 @@ Both bounds are cheap even when the exact search is intractable, and on a
 3-unit test system the OT estimate tracked the exact distance at *r* = 0.9955.
 
 That approach folds each relation's φ_r onto its participating distinctions
-(**Φ-folds**) so the hypergraph becomes a flat vector that OT can consume. One
-caveat found here: with the φ_r/degree normalisation, a filled triangle (three
-pairwise relations plus one degree-3 relation) and an empty triangle (three
-pairwise relations only) can fold to the **identical** vector, giving distance 0
-where the gold standard gives 0.6. Dropping the normalisation, or keeping a
-per-degree vector instead of a scalar, breaks the degeneracy while remaining
-OT-compatible.
+(**Φ-folds**: divide φ_r by the number of distinctions the relation joins, add
+each share to those distinctions) so the hypergraph becomes a flat vector OT can
+consume. The relation set is then discarded — after folding, a structure is just
+n points (φ_d, φ′_r), which is why OT applies and why the exact distance does
+not need this step.
+
+Three caveats measured here:
+
+* **The ÷degree normalisation creates exact collisions.** A filled triangle
+  (three pairwise relations at 0.1 plus a degree-3 relation at 0.3) and an empty
+  triangle (three pairwise at 0.2) fold to the *identical* vector — distance 0,
+  where the gold standard gives 0.6. Solving symbolically, folds coincide
+  whenever each pairwise φ_r in the empty structure equals `e + t/3`; the ÷3 on
+  the triple exactly cancels the pairwise deficit. Every member of that family
+  also has identical Φ, so |ΔΦ| is blind to it too.
+* **The loss is not confined to higher-order relations.** Two structures whose
+  relations are *all* degree ≤ 2 — two disjoint edges versus two edges sharing a
+  vertex — score 0.2 exactly and 0.1 folded. Discarding the relation set loses
+  *which* distinctions are joined at every degree.
+* **The loss grows with system size.** The fold is a fixed linear map from up to
+  2ⁿ−1 relation dimensions onto n; at n = 3 it keeps 43% of the degrees of
+  freedom, at n = 8 only 3%. Anything in the kernel is invisible.
+
+### Figure 8 — what Φ-folds keeps and loses
+
+![Phi-folds: degeneracy, bound, and information loss](figures/fig08_phi_folds.png)
+
+The filled and empty triangle (a, b) fold to the same vector (c). Folding
+under-reports on higher-order *and* purely pairwise differences (d). Across 600
+random pairs it never exceeds the exact distance (e). The kernel of the fold
+grows exponentially with the number of distinctions (f).
+[Vector PDF](figures/fig08_phi_folds.pdf)
+
+Empirically the fold behaves as a genuine lower bound: over 600 random pairs it
+never exceeded the exact distance (r = 0.87, mean ratio 0.81), consistent with
+*d*<sub>OT</sub> ≤ *d*<sub>exact</sub>. Dropping the normalisation, or keeping a
+per-degree vector instead of a scalar, removes the collision above while staying
+OT-compatible; neither recovers *which* distinctions a relation joins, which is
+what Gromov–Wasserstein would be for.
 
 **This repository implements the exact distance only** — for the *C. elegans*
 structures (3 distinctions) no approximation is needed.
@@ -543,7 +603,7 @@ src/
   gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
   ces_hypergraph.py   data loading, TPM construction, PyPhi extraction,
                       and the two superseded measures (kept for comparison)
-figures/       fig01–fig07 as vector PDF + preview PNG
+figures/       fig01–fig08 as vector PDF + preview PNG
 results/       TPMs, extracted hypergraphs (JSON), audit tables (CSV)
 data/          downloaded recordings (gitignored)
 ```
