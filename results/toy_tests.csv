@@ -1,0 +1,6 @@
+test,abs_dPhi,pairwise_only,gold_standard,isomorphic
+A  delete the degree-4 relation,0.5,0.0,0.5,False
+B  move its phi to degree 2 (Phi preserved),0.0,0.5,1.0,False
+C  all-XOR[000] vs all-XOR[101],2.5,0.375,2.5,False
+D  all-XOR[000] vs all-XOR[011],0.0,0.0,0.0,True
+E  AND-OR-XOR[101] vs [111],0.22331,1.70296,3.12857,False

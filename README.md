@@ -51,6 +51,7 @@ then `Runtime > Run all`.
 | **01 — Data and TPM** | Loads the imaging data, reproduces the original binarization and transition matrix, and measures the per-stimulus data budget | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/01_data_and_tpm.ipynb) |
 | **02 — Φ-structure** | Unfolds the Φ-structure in PyPhi, diagnoses the connectivity defect that zeroes φ_s, extracts the hypergraph | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/02_phi_structure.ipynb) |
 | **03 — Similarity** | Scores the exact distance against cases with known answers, alongside the two measures tried earlier; measures how it scales | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/03_similarity.ipynb) |
+| **04 — Toy examples** | Unfolds nine real Φ-structures from 3-unit networks (relations up to degree 4) and exercises the distance on them | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/04_toy_examples.ipynb) |
 
 Locally:
 
@@ -567,6 +568,52 @@ reproduces Eq 10's value of 0.4500 exactly.
 **This repository implements the exact distance only** — for the *C. elegans*
 structures (3 distinctions) no approximation is needed.
 
+## Worked examples on real Φ-structures
+
+`notebooks/04` unfolds nine Φ-structures with PyPhi from five 3-unit networks
+(AND-OR-XOR, all-XOR, all-AND, all-OR, majority) and runs the distance on them.
+Nothing here is a hand-written dictionary of φ values.
+
+**Higher-order relations are common, not exotic.** 10 of the 25 states surveyed
+contain a relation of degree ≥ 3, and degree-4 relations appear throughout.
+Across the nine structures used: 217 relations, of which **86 are degree > 2**
+and **126 have no pairwise form** at all (degree 1 or > 2).
+
+Two controlled perturbations isolate higher-order content. `all-XOR[000]` has
+4 distinctions and 15 relations, exactly one of degree 4 (φ_r = 0.5):
+
+| test | \|ΔΦ\| | pairwise-only | gold standard |
+|---|---|---|---|
+| **A** delete the degree-4 relation | 0.5 | **0.0** | 0.5 |
+| **B** move its φ_r to a degree-2 relation (Φ preserved) | **0.0** | 0.5 | 1.0 |
+| **C** all-XOR[000] vs all-XOR[101] | 2.5 | 0.375 | 2.5 |
+| **D** all-XOR[000] vs all-XOR[011] — *isomorphic* | 0.0 | 0.0 | **0.0** |
+| **E** AND-OR-XOR[101] vs [111] | 0.223 | 1.703 | 3.129 |
+
+Test **A** is the clean demonstration: a pairwise-only representation has
+nowhere to store a degree-4 relation, so deleting it changes nothing it can see.
+Test **B** is sharper still — the same φ_r is *moved* from degree 4 to degree 2,
+so Φ is unchanged and |ΔΦ| reports 0, while the exact distance charges the loss
+at one degree and the gain at the other. Test **D** is a genuine isomorphism and
+correctly scores 0.
+
+Over the full 9 × 9 matrix (largest structure has 7 distinctions, 5040
+bijections per pair, 2.8 s total): the diagonal is zero, the matrix is
+symmetric, the triangle inequality holds on all **729** ordered triples, and
+**every** off-diagonal zero was confirmed a genuine isomorphism by an
+independent brute-force test. The bounds |ΔΦ| ≤ *D* ≤ Φ₁ + Φ₂ hold on every
+pair.
+
+### Figure 10 — the distance on real structures
+
+![Toy examples](figures/fig10_toy_examples.png)
+
+All nine structures against each other (a); the relation degrees they contain
+(b); and the three measures on the five tests (c), where bars marked "blind"
+are exactly zero. [Vector PDF](figures/fig10_toy_examples.pdf)
+
+---
+
 ### Other candidate directions
 
 * **Topological.** Treat the CES as a filtered simplicial complex and compare
@@ -612,13 +659,13 @@ Beyond those above:
 ## Repository layout
 
 ```
-notebooks/     01, 02, 03 as both .ipynb (Colab) and .py (paired via jupytext)
+notebooks/     01, 02, 03, 04 as both .ipynb (Colab) and .py (paired via jupytext)
 src/
   gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
   ces_hypergraph.py   data loading, TPM construction, PyPhi extraction,
                       and the two earlier measures, kept so notebook 03
                       can reproduce the comparison tests
-figures/       fig01–fig09 as vector PDF + preview PNG
+figures/       fig01–fig10 as vector PDF + preview PNG
 results/       TPMs, extracted hypergraphs (JSON), audit tables (CSV),
                writeup_consistency.csv (this repo vs. the manuscript)
 data/          downloaded recordings (gitignored)
@@ -660,7 +707,8 @@ data/          downloaded recordings (gitignored)
 | understand the distance | [The distance algorithm](#the-distance-algorithm) |
 | use the distance | [`src/gold_standard.py`](src/gold_standard.py) |
 | know why the comparison hasn't run | [Finding 1](#finding-1--the-per-stimulus-data-budget-is-the-binding-constraint) |
-| reproduce every figure | `notebooks/01` → `02` → `03` |
+| reproduce every figure | `notebooks/01` → `02` → `03` → `04` |
+| see the distance on real structures | [`notebooks/04`](notebooks/04_toy_examples.ipynb) |
 | see all known problems | [`results/audit_findings.csv`](results/audit_findings.csv) |
 
 ## Sources
