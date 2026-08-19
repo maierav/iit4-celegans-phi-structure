@@ -242,6 +242,7 @@ pure Python:
 
 | N_dist | bijections | time (one distance) |
 |---|---|---|
+| 3 | 6 | <0.001 s |
 | 4 | 24 | 0.0002 s |
 | 6 | 720 | 0.013 s |
 | 8 | 40,320 | 1.7 s |
@@ -663,6 +664,36 @@ All nine structures against each other (a); the relation degrees they contain
 are exactly zero. [Vector PDF](figures/fig10_toy_examples.pdf)
 
 ---
+
+### What upstream PyPhi already provides
+
+PyPhi has a `feature/ces-distance` branch, and it is worth being explicit about
+what it does and does not contain. Its HEAD is from **December 2020** — it
+predates IIT 4.0 — and it registers two CES measures in `pyphi/metrics/ces.py`:
+
+* `EMD` — earth-mover's distance in **concept space**, built from
+  `emd_concept_distance`, which expands each concept's cause and effect
+  repertoires onto a shared purview and sums the two repertoire EMDs.
+* `SUM_SMALL_PHI` — literally `sum(c.phi for c in C1) - sum(c.phi for c in C2)`,
+  the signed scalar difference.
+
+Neither is a Φ-structure distance in the sense used here. Both operate on
+**distinctions only**: relations never enter the cost, so all the higher-order
+content this repo is concerned with is invisible to them. `SUM_SMALL_PHI` is
+additionally the same scalar comparison shown to be degenerate above. The EMD
+measure is nonetheless interesting as prior art for the transport route — it is
+optimal transport over concepts with a repertoire-based ground metric, which is
+the shape a Gromov–Wasserstein estimate would take if the ground metric were
+defined over distinctions-plus-relations instead.
+
+Both measures survive into the `2.0` branch — the module was renamed
+`pyphi/metrics/` → `pyphi/measures/`, and `EMD` and `SUM_SMALL_PHI` are still
+the two registered CES measures there, with `SUM_SMALL_PHI` the configured
+default (`config.formalism.iit.ces_measure`). They are still typed over
+`Distinctions`, and the word "relation" does not appear in that module: in 2.0
+as in 2020, the built-in CES measures compare distinctions only. Comparing
+Φ-structures *including* their relations is what `src/gold_standard.py` here is
+for.
 
 ### Other candidate directions
 

@@ -258,13 +258,13 @@ def _rand_struct(nd, seed, maxdeg=3, density=0.5):
 
 # %%
 rows = []
-for n in [4, 6, 8, 9, 10, 12]:
+for n in [3, 4, 6, 8, 9, 10, 12]:
     rows.append({"n_distinctions": n, "permutations": math.factorial(n)})
 scaling = pd.DataFrame(rows)
 
 # measured runtime of the exact distance
 timings = []
-for n in [4, 6, 8, 9]:
+for n in [3, 4, 6, 8, 9]:
     A_n, B_n = _rand_struct(n, 11), _rand_struct(n, 22)
     t0 = time.perf_counter()
     gold_standard_distance(A_n, B_n)
@@ -444,17 +444,18 @@ ax.set_xlabel("number of distinctions n", labelpad=7)
 ax.set_ylabel("bijections", labelpad=7)
 ax.legend(frameon=False, loc="upper left")
 ax.set_title("a  The search is factorial in n")
-ax.annotate("real worm structures (n=3)", xy=(4, math.factorial(4)),
-            xytext=(6.0, 3.5e2), fontsize=6, color="#444",
-            arrowprops=dict(arrowstyle="->", lw=0.7, color="#888"))
-ax.set_ylim(8, 2e9)
+ax.annotate("real worm\nstructures (n=3)", xy=(3.05, math.factorial(3)),
+            xytext=(3.55, 3.0e2), fontsize=6, color="#444", ha="left", va="center",
+            arrowprops=dict(arrowstyle="->", lw=0.7, color="#888", shrinkA=1, shrinkB=2))
+ax.set_ylim(3, 2e9)
 
 ax = axes6[1]
 ax.plot(timing_df["n_distinctions"], timing_df["seconds"], "o-",
         color=ORANGE, lw=1.4, markersize=4.5)
 for _, r_ in timing_df.iterrows():
-    ax.annotate(f"{r_['seconds']:.3g}s", xy=(r_["n_distinctions"], r_["seconds"]),
-                xytext=(0, 5), textcoords="offset points", ha="center", fontsize=6)
+    _lbl = "<0.001s" if r_["seconds"] < 1e-3 else f"{r_['seconds']:.3g}s"
+    ax.annotate(_lbl, xy=(r_["n_distinctions"], r_["seconds"]),
+                xytext=(0, 6), textcoords="offset points", ha="center", fontsize=6)
 ax.set_xlabel("number of distinctions n", labelpad=7)
 ax.set_ylabel("seconds (one distance)", labelpad=7)
 ax.set_ylim(bottom=0)
