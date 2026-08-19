@@ -13,7 +13,7 @@
 # |---|---|---|---|
 # | 1 | \|ΔΦ\| | notebook 6 | a single scalar |
 # | 2 | brute-force bijection | notebooks 1, 7 | distinctions + **pairwise** relations |
-# | 3 | degree-graded assignment | this repo | distinctions + **faces of any degree** |
+# | 3 | **gold standard** | this repo | distinctions + relations at **every degree** |
 #
 # **Outputs:** `figures/fig05_measure_failures.pdf`,
 # `figures/fig06_scaling.pdf`, `results/measure_comparison.csv`
@@ -73,7 +73,7 @@ mpl.rcParams.update({
 # 5-node structures with *exactly* equal Φ (2.1779535637765157) and 10
 # distinctions each, differing only in which units carried them.
 #
-# Note that measure 2 *can* see this particular difference — the distinction
+# Note that the pairwise-only measure *can* see this particular difference — the distinction
 # count differs, which its zero-padding registers. Test 2 is the case it cannot
 # see.
 
@@ -107,16 +107,17 @@ phi_A = sum(A[0].values()) + sum(f["phi"] for f in A[1])
 phi_B = sum(B[0].values()) + sum(f["phi"] for f in B[1])
 
 print(f"Phi(A) = {phi_A:.4f}   Phi(B) = {phi_B:.4f}")
-print(f"  measure 1, |dPhi|                 = {abs(phi_A - phi_B):.4f}   <- calls them IDENTICAL")
+print(f"  |dPhi|                            = {abs(phi_A - phi_B):.4f}   <- calls them IDENTICAL")
 
 pdA, prA, _ = ch.pairwise_projection(*A)
 pdB, prB, _ = ch.pairwise_projection(*B)
 d_pair_ab, _ = ch.ces_distance_pairwise(pdA, prA, pdB, prB)
-print(f"  measure 2, bijection distance     = {d_pair_ab:.4f}")
+print(f"  pairwise-only                     = {d_pair_ab:.4f}")
 
 d_hyp, d_term, r_term = ch.ces_distance_hypergraph(A, B)
-print(f"  measure 3, degree-graded distance = {d_hyp:.4f}   "
+print(f"  earlier prototype (kept for ref)  = {d_hyp:.4f}   "
       f"(distinctions {d_term:.4f} + relations {r_term:.4f})")
+print("  the exact gold standard is scored for all three tests in Figure 5 below")
 
 # %% [markdown]
 # ## Test 2 — the pairwise representation cannot see higher-order faces
@@ -138,27 +139,26 @@ print("X and Y differ by exactly ONE degree-3 face.\n")
 print("degree distribution  X:", ch.face_degree_distribution(X[1]),
       " Y:", ch.face_degree_distribution(Y[1]))
 
-# measure 1
+# |dPhi|
 phi_X = sum(X[0].values()) + sum(f["phi"] for f in X[1])
 phi_Y = sum(Y[0].values()) + sum(f["phi"] for f in Y[1])
-print(f"\n  measure 1, |dPhi|                 = {abs(phi_X - phi_Y):.4f}")
+print(f"\n  |dPhi|                            = {abs(phi_X - phi_Y):.4f}")
 
-# measure 2: pairwise projection, then brute-force bijection
+# pairwise-only: discard non-degree-2 relations, then brute-force bijection
 pdX, prX, dropX = ch.pairwise_projection(*X)
 pdY, prY, dropY = ch.pairwise_projection(*Y)
 print(f"  pairwise projection: X keeps {len(prX)} edges (drops {dropX}), "
       f"Y keeps {len(prY)} edges (drops {dropY})")
 d_pair, _ = ch.ces_distance_pairwise(pdX, prX, pdY, prY)
-print(f"  measure 2, bijection distance     = {d_pair:.4f}   <- BLIND to the difference")
+print(f"  pairwise-only                     = {d_pair:.4f}   <- BLIND to the difference")
 
-# measure 3
 d_hyp2, d_t2, r_t2 = ch.ces_distance_hypergraph(X, Y)
-print(f"  measure 3, degree-graded distance = {d_hyp2:.4f}   <- detects it")
+print(f"  earlier prototype (kept for ref)  = {d_hyp2:.4f}   <- detects it")
 
 # %% [markdown]
-# Note that measure 1 does register a difference here only because the extra
+# Note that |dPhi| does register a difference here only because the extra
 # face adds φ_r mass. Make the comparison φ-preserving — move the same φ from a
-# pairwise face into a higher-order one — and measure 1 goes blind too.
+# pairwise relation into a higher-order one — and |dPhi| goes blind too.
 
 # %%
 Z = make_structure(
@@ -170,12 +170,12 @@ pdZ, prZ, dropZ = ch.pairwise_projection(*Z)
 
 print("X: one degree-2 face   Z: one degree-3 face   (same total phi)")
 print(f"  Phi(X) = {phi_X:.4f}   Phi(Z) = {phi_Z:.4f}")
-print(f"  measure 1, |dPhi|                 = {abs(phi_X - phi_Z):.4f}   <- blind")
+print(f"  |dPhi|                            = {abs(phi_X - phi_Z):.4f}   <- blind")
 print(f"  pairwise: X {len(prX)} edges, Z {len(prZ)} edges (Z dropped {dropZ})")
 d_pair_xz, _ = ch.ces_distance_pairwise(pdX, prX, pdZ, prZ)
-print(f"  measure 2, bijection distance     = {d_pair_xz:.4f}   <- sees only the missing edge")
+print(f"  pairwise-only                     = {d_pair_xz:.4f}   <- sees only the missing edge")
 d_hyp_xz, _, _ = ch.ces_distance_hypergraph(X, Z)
-print(f"  measure 3, degree-graded distance = {d_hyp_xz:.4f}   <- sees the degree change")
+print(f"  earlier prototype (kept for ref)  = {d_hyp_xz:.4f}   <- sees the degree change")
 
 # %% [markdown]
 # ## Test 3 — real data
@@ -199,55 +199,114 @@ if os.path.exists(hg_path):
         for f in payload["faces"]
     ]
     real = (real_nodes, real_faces)
-    deg = ch.face_degree_distribution(real_faces)
-    higher = sum(v for k, v in deg.items() if k > 2)
-    _, _, dropped_real = ch.pairwise_projection(*real)
+    # Report at the RELATION level: faces are an internal enumeration over
+    # cause/effect sides and all inherit their parent relation's phi.
+    _rels = {}
+    for f in real_faces:
+        _rels.setdefault(frozenset(m for m, _d in f["relata"]), set()).add(round(f["phi"], 12))
+    for _d, _p in _rels.items():
+        assert len(_p) == 1, f"faces disagree on phi within one relation: {_d}"
+    _rels = {d: max(p) for d, p in _rels.items()}
+    _n_pair = sum(1 for d in _rels if len(d) == 2)
+    _phi_r = sum(_rels.values())
+    _phi_lost = sum(v for d, v in _rels.items() if len(d) != 2)
     print(f"real Phi-structure ({PRIMARY}, state {payload['state']}): "
           f"Phi = {payload['big_phi']:.5f}")
-    print(f"  {len(real_nodes)} distinctions, {len(real_faces)} faces, degrees {deg}")
-    print(f"  higher-order faces: {higher} ({100 * higher / len(real_faces):.0f}%)")
-    print(f"  a pairwise representation discards {dropped_real} of them")
+    print(f"  {len(real_nodes)} distinctions, {len(_rels)} relations "
+          f"(degrees {sorted(len(d) for d in _rels)})")
+    print(f"  no pairwise form: {len(_rels) - _n_pair} of {len(_rels)} relations, "
+          f"carrying {_phi_lost:.5f} of {_phi_r:.5f} phi_r "
+          f"({100 * _phi_lost / _phi_r:.0f}%)")
 else:
     real = None
     print("run notebook 02 first to generate", hg_path)
 
+# %%
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.join(REPO_ROOT, "src"))
+from gold_standard import gold_standard_distance
+from matplotlib.ticker import MaxNLocator
+from collections import Counter
+from scipy.optimize import linear_sum_assignment
+from itertools import combinations as _combos
+
+
+def _rand_struct(nd, seed, maxdeg=3, density=0.5):
+    """Random Phi-structure for timing and validation."""
+    r = np.random.default_rng(seed)
+    labs = [f"d{i}" for i in range(nd)]
+    phi_d = {l: round(float(r.uniform(0.05, 0.5)), 3) for l in labs}
+    phi_r = {}
+    for k in range(1, min(nd, maxdeg) + 1):
+        for S in _combos(labs, k):
+            if r.random() < density:
+                phi_r[frozenset(S)] = round(float(r.uniform(0.02, 0.3)), 3)
+    return (phi_d, phi_r)
+
 # %% [markdown]
-# ## Test 4 — scaling
+# ## Test 4 — how the exact distance scales
 #
-# Measure 2 searches all bijections: O(n! · n²), with a default guard at 8! =
-# 40,320. Notebook 7's own toy models produced 10 and 12 distinctions, so the
-# guard already blocks them. Optimal assignment (Hungarian) is O(n³) and solves
-# the same matching problem exactly for a linear cost.
+# The search is over bijections between **distinctions**: n! where
+# n = max(N_dist1, N_dist2). It is not over 2^n mechanisms and not over
+# relations — relations follow once the distinction mapping is fixed.
+#
+# A natural question is whether the factorial search can be replaced by optimal
+# assignment (Hungarian, O(n^3)). It cannot: assignment is exact only for a cost
+# that is **linear** in the pairing, and the relation term is not. Relation
+# {a, b} is scored against {M(a), M(b)}, so its contribution depends on *two*
+# assignment decisions at once. The cell below measures how often that matters.
 
 # %%
 rows = []
-for n in [4, 6, 8, 10, 12, 16, 22]:
-    perms = math.factorial(n)
-    rows.append({
-        "n_distinctions": n,
-        "permutations": perms,
-        "brute_force_feasible": perms <= 40320,
-        "hungarian_ops_approx": n ** 3,
-    })
+for n in [4, 6, 8, 9, 10, 12]:
+    rows.append({"n_distinctions": n, "permutations": math.factorial(n)})
 scaling = pd.DataFrame(rows)
-print(scaling.to_string(index=False))
 
-# empirical timing of measure 3 on growing structures
+# measured runtime of the exact distance
 timings = []
-for n in [4, 8, 16, 32, 64]:
-    nodes_n = {((i,), (i,), (i,)): 0.1 + 0.01 * i for i in range(n)}
-    faces_n = [
-        {"degree": 2 + (i % 3), "purview": (i % 4,), "phi": 0.05,
-         "relata": tuple(sorted(((j,), "CAUSE") for j in range(i % 3 + 2)))}
-        for i in range(3 * n)
-    ]
+for n in [4, 6, 8, 9]:
+    A_n, B_n = _rand_struct(n, 11), _rand_struct(n, 22)
     t0 = time.perf_counter()
-    ch.ces_distance_hypergraph((nodes_n, faces_n), (nodes_n, faces_n))
-    timings.append({"n_distinctions": n,
-                    "seconds": round(time.perf_counter() - t0, 4)})
+    gold_standard_distance(A_n, B_n)
+    timings.append({"n_distinctions": n, "seconds": round(time.perf_counter() - t0, 4)})
 timing_df = pd.DataFrame(timings)
-print("\nmeasure 3 runtime:")
+print("measured runtime of the exact distance:")
 print(timing_df.to_string(index=False))
+
+# does Hungarian on the distinction term alone reproduce the exact distance?
+def _assignment_only(S1, S2):
+    """Hungarian on the DISTINCTION term, then score relations under that mapping."""
+    d1, r1 = S1
+    d2, r2 = S2
+    k1, k2 = list(d1), list(d2)
+    n = max(len(k1), len(k2))
+    p1 = k1 + [f"\0n{i}" for i in range(n - len(k1))]
+    p2 = k2 + [f"\0m{i}" for i in range(n - len(k2))]
+    C = np.array([[abs(d1.get(a, 0.0) - d2.get(b, 0.0)) for b in p2] for a in p1])
+    ri, ci = linear_sum_assignment(C)
+    M = {p1[i]: p2[ci[list(ri).index(i)]] for i in range(n)}
+    cost = sum(abs(d1.get(a, 0.0) - d2.get(b, 0.0)) for a, b in M.items())
+    for S, v in r1.items():
+        cost += abs(v - r2.get(frozenset(M[a] for a in S), 0.0))
+    inv = {v: k for k, v in M.items()}
+    for T, v in r2.items():
+        if frozenset(inv[b] for b in T) not in r1:
+            cost += v
+    return cost
+
+
+_rng = np.random.default_rng(3)
+n_worse, excess = 0, []
+for _s in range(400):
+    A_, B_ = _rand_struct(int(_rng.integers(2, 5)), _s), _rand_struct(int(_rng.integers(2, 5)), _s + 3000)
+    ex, ap = gold_standard_distance(A_, B_), _assignment_only(A_, B_)
+    if ap > ex + 1e-12:
+        n_worse += 1
+        excess.append(ap - ex)
+print(f"\nHungarian on the distinction term alone, 400 random pairs:")
+print(f"  larger than the exact distance in {n_worse} cases ({100*n_worse/400:.0f}%)")
+print(f"  mean excess when wrong: {np.mean(excess):.4f}, max {np.max(excess):.4f}")
+print("  -> assignment is NOT a valid substitute; the relation term couples the pairs")
 
 # %% [markdown]
 # ## Figure 5 — where each measure fails
@@ -255,13 +314,6 @@ print(timing_df.to_string(index=False))
 # %%
 # Rebuild the three tests at the RELATION level and score them with the exact
 # gold standard alongside the two superseded measures.
-import sys as _sys, os as _os
-_sys.path.insert(0, _os.path.join(REPO_ROOT, "src"))
-from gold_standard import gold_standard_distance
-from matplotlib.ticker import MaxNLocator
-from collections import Counter
-
-
 def _phi(S):
     return sum(S[0].values()) + sum(S[1].values())
 
@@ -379,35 +431,39 @@ fig5.savefig("figures/fig05_measure_failures.png", dpi=200, bbox_inches="tight")
 print("wrote figures/fig05_measure_failures.pdf")
 
 # %% [markdown]
-# ## Figure 6 — scaling
+# ## Figure 6 — how the exact distance scales
 
 # %%
-fig6, axes6 = plt.subplots(1, 2, figsize=(8.4, 3.2))
+fig6, axes6 = plt.subplots(1, 2, figsize=(8.8, 3.3))
 
 ax = axes6[0]
 ns = scaling["n_distinctions"].values
-ax.semilogy(ns, scaling["permutations"], "o-", color=GREY, lw=1.3,
-            markersize=4, label="bijections: n!")
-ax.semilogy(ns, scaling["hungarian_ops_approx"], "s-", color=ORANGE, lw=1.3,
-            markersize=4, label="assignment: n³")
-ax.axhline(40320, ls=":", lw=1, color="#444")
-ax.text(ns[-1], 40320 * 2.2, "default guard (8!)", ha="right", fontsize=6, color="#444")
-ax.set_xlabel("number of distinctions", labelpad=7)
-ax.set_ylabel("operations", labelpad=7)
+ax.semilogy(ns, scaling["permutations"], "o-", color=ORANGE, lw=1.4,
+            markersize=4.5, label="bijections searched: n!")
+ax.set_xlabel("number of distinctions n", labelpad=7)
+ax.set_ylabel("bijections", labelpad=7)
 ax.legend(frameon=False, loc="upper left")
-ax.set_title("a  Brute force is factorial")
+ax.set_title("a  The search is factorial in n")
+ax.annotate("real worm structures (n=3)", xy=(4, math.factorial(4)),
+            xytext=(6.0, 3.5e2), fontsize=6, color="#444",
+            arrowprops=dict(arrowstyle="->", lw=0.7, color="#888"))
+ax.set_ylim(8, 2e9)
 
 ax = axes6[1]
 ax.plot(timing_df["n_distinctions"], timing_df["seconds"], "o-",
-        color=ORANGE, lw=1.3, markersize=4)
-ax.set_xlabel("number of distinctions", labelpad=7)
-ax.set_ylabel("seconds", labelpad=7)
-ax.set_title("b  Measured runtime, degree-graded measure")
-ax.margins(0.08)
+        color=ORANGE, lw=1.4, markersize=4.5)
+for _, r_ in timing_df.iterrows():
+    ax.annotate(f"{r_['seconds']:.3g}s", xy=(r_["n_distinctions"], r_["seconds"]),
+                xytext=(0, 5), textcoords="offset points", ha="center", fontsize=6)
+ax.set_xlabel("number of distinctions n", labelpad=7)
+ax.set_ylabel("seconds (one distance)", labelpad=7)
+ax.set_ylim(bottom=0)
+ax.set_title("b  Measured runtime of the exact distance")
+ax.margins(0.10, 0.18)
 
 fig6.tight_layout()
-fig6.savefig("figures/fig06_scaling.pdf")
-fig6.savefig("figures/fig06_scaling.png", dpi=200)
+fig6.savefig("figures/fig06_scaling.pdf", bbox_inches="tight")
+fig6.savefig("figures/fig06_scaling.png", dpi=200, bbox_inches="tight")
 print("wrote figures/fig06_scaling.pdf")
 
 # %% [markdown]

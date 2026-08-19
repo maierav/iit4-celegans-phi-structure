@@ -25,7 +25,9 @@ IIT layer
 Comparison layer
     pairwise_projection     the lossy nb1/nb7 representation (pairwise only)
     ces_distance_pairwise   brute-force bijection distance (nb1/nb7 algorithm)
-    ces_distance_hypergraph degree-graded, assignment-based distance
+    ces_distance_hypergraph an earlier assignment-based prototype, kept so
+                            notebook 03 can reproduce the comparison tests.
+                            The distance in use is src/gold_standard.py.
 
 Stimulus labels follow the worm.world chemosensory panel.
 """

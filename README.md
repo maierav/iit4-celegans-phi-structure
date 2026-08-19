@@ -18,12 +18,13 @@ and keep the smallest score. It is defined in full in
 [The distance algorithm](#the-distance-algorithm) below and implemented in
 [`src/gold_standard.py`](src/gold_standard.py).
 
-**Status.** The distance algorithm is settled, implemented, and verified. The
-data pipeline is audited and reproducible, and three findings currently block
-the headline comparison — a per-stimulus sampling limit, a connectivity-matrix
-defect, and the failure of the two similarity measures tried before this one.
-**The attractant-vs-repellent comparison has not yet been run**; the sampling
-fix it requires is described under [Finding 1](#finding-1--the-per-stimulus-data-budget-is-the-binding-constraint).
+**Status.** The distance algorithm is settled, implemented, and verified against
+the project's formal write-up. The data pipeline is audited and reproducible.
+**The attractant-vs-repellent comparison has not yet been run** — it is blocked
+by a per-stimulus sampling limit
+([Finding 1](#finding-1--the-per-stimulus-data-budget-is-the-binding-constraint)),
+which also describes the fix, and by a connectivity-matrix defect
+([Finding 2](#finding-2--the-published-φ-values-do-not-mean-what-they-appear-to-mean)).
 
 ---
 
@@ -48,8 +49,8 @@ then `Runtime > Run all`.
 | Notebook | What it establishes | Colab |
 |---|---|---|
 | **01 — Data and TPM** | Loads the imaging data, reproduces the original binarization and transition matrix, and measures the per-stimulus data budget | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/01_data_and_tpm.ipynb) |
-| **02 — Φ-structure** | Unfolds the Φ-structure in PyPhi, diagnoses the connectivity bug that zeroed the original result, extracts the hypergraph | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/02_phi_structure.ipynb) |
-| **03 — Similarity** | Tests three similarity measures against cases with known answers; shows where each breaks | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/03_similarity.ipynb) |
+| **02 — Φ-structure** | Unfolds the Φ-structure in PyPhi, diagnoses the connectivity defect that zeroes φ_s, extracts the hypergraph | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/02_phi_structure.ipynb) |
+| **03 — Similarity** | Scores the exact distance against cases with known answers, alongside the two measures tried earlier; measures how it scales | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/03_similarity.ipynb) |
 
 Locally:
 
@@ -239,16 +240,24 @@ pure Python:
 
 | N_dist | bijections | time (one distance) |
 |---|---|---|
-| 6 | 720 | 0.01 s |
-| 8 | 40,320 | 2.3 s |
-| 9 | 362,880 | 32 s |
-| 10 | 3.6 M | 470 s (~8 min) |
-| 11 | 40 M | ~1.5 h |
+| 4 | 24 | 0.0002 s |
+| 6 | 720 | 0.013 s |
+| 8 | 40,320 | 1.7 s |
+| 9 | 362,880 | 22 s |
+| 10 | 3.6 M | ~8 min |
 | 12 | 479 M | ~18 h |
 
-Practical ceiling: *n* ≈ 9 for a single distance, *n* ≈ 8 for a full pairwise
-matrix. **The real *C. elegans* structures have 3 distinctions (3! = 6), so the
-exact distance is instant** — no approximation needed for this project.
+Measured single-core in pure Python by `notebooks/03`; the last two rows are
+extrapolated. Practical ceiling: *n* ≈ 9 for a single distance, *n* ≈ 8 for a
+full pairwise matrix. **The real *C. elegans* structures have 3 distinctions
+(3! = 6), so the exact distance is instant** — no approximation needed here.
+
+The factorial search cannot be replaced by optimal assignment. Assignment is
+exact only for a cost that is **linear** in the pairing, and the relation term
+is not: relation {a, b} is scored against {M(a), M(b)}, so its contribution
+depends on two assignment decisions at once. Measured over 400 random pairs,
+Hungarian on the distinction term alone overshoots the exact distance in **50%**
+of cases (mean excess 0.27, max 1.11).
 
 For larger systems, the project's optimal-transport work brackets the exact
 value: *d*<sub>OT</sub> ≤ *d*<sub>exact</sub> ≤ Δ<sub>μ*</sub>, with both bounds
@@ -265,10 +274,9 @@ keys:
 | symmetry, \|*D*(X,Y) − *D*(Y,X)\| | 0 violations / 200 random pairs |
 | triangle inequality | 0 violations / 200 random triples (median slack −1.57) |
 
-An earlier bug made the distance asymmetric in ~70% of random pairs — the
-distinction term iterated over only the first structure's keys, silently
-dropping the surplus distinctions of the larger one. Fixed; the test above is
-the regression guard.
+The stronger property *D*(X, Y) = 0 **iff** X and Y are isomorphic is verified
+under [Higher-order relations need no special handling](#higher-order-relations-need-no-special-handling)
+above.
 
 ### Using it
 
@@ -351,9 +359,10 @@ mostly an artifact of which states happened not to occur. This is why the
 attractant-vs-repellent comparison cannot yet be run honestly.
 
 **The fix.** Pool epochs of the same stimulus *class* across all recordings:
-8 recordings × 3 repeats × 4 stimuli ≈ 96 epochs per class, ~3840 frames, which
-is ~15 frames per TPM parameter instead of 0.5. This trades per-animal
-resolution for a TPM that can be trusted.
+8 recordings × 4 stimuli = **32 epochs per class** (96 individual presentations,
+since each epoch pools 3 repeats), **3840 frames** — about **15 frames per TPM
+parameter** instead of 0.5. This trades per-animal resolution for a TPM that can
+be trusted. Notebook 01 prints the pooled budget per class.
 
 ---
 
@@ -410,23 +419,12 @@ variant here that yields an irreducible system) gives Φ = 0.73917 from
 
 Σφ_d = 0.37141, Σφ_r = 0.36776, Φ = 0.73917 exactly.
 
-**One of the five relations (20%) is higher-order** — it binds all three
-distinctions at once and has no pairwise equivalent. A representation keyed by
-ordered *pairs* of distinctions cannot store it at all. The self-relation is
-also unrepresentable as a pairwise edge, and it is the largest single
-contribution in the whole structure (0.358, roughly half of Φ).
-
-Counting the relations a pairwise keying **cannot** represent: the degree-3
-relation *and* the self-relation, so **2 of 5**. Because the self-relation is by
-far the largest, those two carry **0.359 of the 0.368 total φ_r — 98% of the
-relational mass**.
-
-> **Correction.** Earlier versions of this README reported "12 faces, 42%
-> higher-order". That counted PyPhi **faces**, which are an internal enumeration
-> over cause/effect sides and all inherit their parent relation's φ. The
-> structural facts are the 5 relations above. The conclusion is unchanged —
-> higher-order structure is present and a pairwise representation loses it — but
-> the correct figures are 2 of 5 relations and 98% of φ_r, not 5 of 12 faces.
+Two of the five relations have **no pairwise equivalent**: the degree-3 relation
+(it binds all three distinctions at once) and the self-relation (it has only one
+distinction to sit on). A representation keyed by ordered *pairs* of
+distinctions can store neither. Because the self-relation is by far the largest
+single contribution in the structure — 0.358, roughly half of Φ — those two
+carry **0.359 of the 0.368 total φ_r, or 98% of the relational mass**.
 
 ### Figure 4 — the hypergraph, and what a pairwise view loses
 
@@ -471,10 +469,9 @@ Recomputed at the relation level by `notebooks/03`; the numbers live in
   construction.** Keying relations by ordered *pairs* leaves nowhere to put a
   relation binding three distinctions — nor a self-relation. On the real worm
   structure that discards 2 of 5 relations and 98% of the φ_r mass.
-* **The original pairwise implementation also did not scale**: it enumerated
-  bijections behind a guard at 8! = 40,320, and the project's own toy models
-  have 10 and 12 distinctions. The gold standard has the same factorial core
-  but no arbitrary guard, and the real structures here have 3 distinctions.
+* **Both were tried before the gold standard and are kept only for comparison.**
+  `src/ces_hypergraph.py` retains them so `notebooks/03` can reproduce the tests
+  above; nothing in the analysis path uses them.
 
 ### Figure 5 — where each measure breaks
 
@@ -484,16 +481,13 @@ Reported distance per test (a) — bars marked "blind" are exactly zero. The rea
 worm structure counted in relations (b), and the φ_r mass by relation degree
 (c): the self-relation alone carries 97% of it.
 [Vector PDF](figures/fig05_measure_failures.pdf)
-[Vector PDF](figures/fig05_measure_failures.pdf)
 
-### Figure 6 — and it does not scale
+### Figure 6 — how the exact distance scales
 
 ![Scaling](figures/fig06_scaling.png)
 
-Measure 2 searches all bijections: O(*n*!·*n*²), guarded at 8! = 40,320. The
-original toy models produced 10 and 12 distinctions, so **the guard already
-blocks the project's own examples**. Optimal assignment is O(*n*³) and solves
-the same matching exactly for a linear cost — 64 distinctions in ~1.4 ms.
+Bijections searched as a function of the distinction count (a) and the measured
+runtime of one exact distance (b). The real worm structures sit at *n* = 3.
 [Vector PDF](figures/fig06_scaling.pdf)
 
 ---
@@ -506,8 +500,7 @@ work does this with **optimal transport**, which brackets the exact value:
 
 $$d_{\mathrm{OT}} \;\le\; d_{\mathrm{exact}} \;\le\; \Delta_{\mu^*}$$
 
-Both bounds are cheap even when the exact search is intractable, and on a
-3-unit test system the OT estimate tracked the exact distance at *r* = 0.9955.
+Both bounds are cheap even when the exact search is intractable.
 
 That approach folds each relation's φ_r onto its participating distinctions
 (**Φ-folds**: divide φ_r by the number of distinctions the relation joins, add
@@ -623,7 +616,8 @@ notebooks/     01, 02, 03 as both .ipynb (Colab) and .py (paired via jupytext)
 src/
   gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
   ces_hypergraph.py   data loading, TPM construction, PyPhi extraction,
-                      and the two superseded measures (kept for comparison)
+                      and the two earlier measures, kept so notebook 03
+                      can reproduce the comparison tests
 figures/       fig01–fig09 as vector PDF + preview PNG
 results/       TPMs, extracted hypergraphs (JSON), audit tables (CSV),
                writeup_consistency.csv (this repo vs. the manuscript)
