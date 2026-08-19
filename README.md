@@ -388,21 +388,26 @@ ordered *pairs* of distinctions cannot store it at all. The self-relation is
 also unrepresentable as a pairwise edge, and it is the largest single
 contribution in the whole structure (0.358, roughly half of Φ).
 
+Counting the relations a pairwise keying **cannot** represent: the degree-3
+relation *and* the self-relation, so **2 of 5**. Because the self-relation is by
+far the largest, those two carry **0.359 of the 0.368 total φ_r — 98% of the
+relational mass**.
+
 > **Correction.** Earlier versions of this README reported "12 faces, 42%
 > higher-order". That counted PyPhi **faces**, which are an internal enumeration
 > over cause/effect sides and all inherit their parent relation's φ. The
 > structural facts are the 5 relations above. The conclusion is unchanged —
 > higher-order structure is present and a pairwise representation loses it — but
-> the correct figure is 1 of 5 relations, not 5 of 12 faces.
+> the correct figures are 2 of 5 relations and 98% of φ_r, not 5 of 12 faces.
 
 ### Figure 4 — the hypergraph, and what a pairwise view loses
 
 ![Phi-structure as a hypergraph](figures/fig04_phi_structure.png)
 
-Distinctions (left) connected to the relation faces they participate in
-(right); orange marks higher-order faces (a). Face-degree distribution (b). What
-survives a pairwise projection (c). *This figure is drawn at the face level; see
-the correction above for the relation-level counts.*
+The Φ-structure drawn at the **relation** level (a): node area ∝ φ_d, blue lines
+are pairwise relations, the orange loop is the self-relation on AIBL and the
+orange fill is the degree-3 relation. Relations by degree (b). What a pairwise
+keying can and cannot hold (c).
 [Vector PDF](figures/fig04_phi_structure.pdf)
 
 ---
@@ -412,44 +417,45 @@ the correction above for the relation-level counts.*
 Before the gold standard, two measures were tried. Both are tested here against
 cases where the correct answer is known.
 
-| # | Measure | Representation |
-|---|---|---|
-| 1 | \|ΔΦ\| | a single scalar |
-| 2 | pairwise bijection | distinctions + relations keyed by ordered **pairs** |
-| 3 | degree-graded assignment | distinctions + relations of any degree, matched by φ spectrum |
-
-(Measure 3 was an intermediate prototype in this repo. The **gold standard**
-described above supersedes all three; it is exact, and it separates every test
-below.)
+| Measure | Representation |
+|---|---|
+| \|ΔΦ\| | a single scalar |
+| pairwise-only | discard every relation that is not degree 2, then match exactly |
+| **gold standard** | every relation, at every degree (the algorithm above) |
 
 Reported distance on each test — **0.0 means the measure cannot tell the two
 structures apart**:
 
-| Test | 1: \|ΔΦ\| | 2: pairwise | 3: degree-graded |
+| Test | \|ΔΦ\| | pairwise-only | gold standard |
 |---|---|---|---|
-| Same Φ, different content | **0.0** | 0.3 | 0.4 |
-| Differ by one degree-3 relation | 0.1 | **0.0** | 0.3 |
-| Degree-2 → degree-3, Φ preserved | **0.0** | **0.0** | 0.5 |
+| Same Φ, different content | **0.0** | 0.4 | 0.4 |
+| One extra degree-3 relation | 0.1 | **0.0** | 0.1 |
+| Degree-2 → degree-3, Φ preserved | **0.0** | 0.1 | 0.2 |
+
+Recomputed at the relation level by `notebooks/03`; the numbers live in
+[`results/measure_comparison.csv`](results/measure_comparison.csv).
 
 * **Measure 1 is blind whenever Φ is preserved.** Not hypothetical: the project's
   own toy models produced two 5-unit structures with *exactly* equal Φ
   (2.1779535637765157) and 10 distinctions each, differing in which units
   carried them.
-* **Measure 2 is blind to higher-order structure by construction.** It keys
-  relations by ordered *pairs*, so a relation binding three distinctions has
-  nowhere to go — including the one present in the real worm structure.
-* **Measure 2 also does not scale**: it enumerated bijections with a guard at
-  8! = 40,320, and the project's own toy models have 10 and 12 distinctions.
-  The gold standard has the same factorial core but no arbitrary guard, and the
-  real structures here have only 3 distinctions.
+* **A pairwise-only representation is blind to higher-order structure by
+  construction.** Keying relations by ordered *pairs* leaves nowhere to put a
+  relation binding three distinctions — nor a self-relation. On the real worm
+  structure that discards 2 of 5 relations and 98% of the φ_r mass.
+* **The original pairwise implementation also did not scale**: it enumerated
+  bijections behind a guard at 8! = 40,320, and the project's own toy models
+  have 10 and 12 distinctions. The gold standard has the same factorial core
+  but no arbitrary guard, and the real structures here have 3 distinctions.
 
 ### Figure 5 — where each measure breaks
 
 ![Measure failures](figures/fig05_measure_failures.png)
 
-Reported distance per test (a) — bars marked "blind" are exactly zero. Panels
-(b) and (c) are drawn at the face level; see the correction under Finding 3 for
-relation-level counts.
+Reported distance per test (a) — bars marked "blind" are exactly zero. The real
+worm structure counted in relations (b), and the φ_r mass by relation degree
+(c): the self-relation alone carries 97% of it.
+[Vector PDF](figures/fig05_measure_failures.pdf)
 [Vector PDF](figures/fig05_measure_failures.pdf)
 
 ### Figure 6 — and it does not scale

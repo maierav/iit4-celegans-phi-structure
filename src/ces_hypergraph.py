@@ -294,13 +294,22 @@ def pairwise_projection(nodes, faces):
     phi_d = {str(k): float(v) for k, v in nodes.items()}
     phi_r = {}
     dropped = 0
+    collided = 0
     for f in faces:
         mechs = [str(m) for m, _ in f["relata"]]
         if len(mechs) == 2:
-            phi_r[(mechs[0], mechs[1])] = f["phi"]
+            key = (mechs[0], mechs[1])
+            if key in phi_r:
+                # Two degree-2 faces on the same MECHANISM pair (they differ only
+                # in which cause/effect sides they join) land on one dict key.
+                # This is itself part of what the pairwise representation loses.
+                collided += 1
+            phi_r[key] = f["phi"]
         else:
             dropped += 1
-    return phi_d, phi_r, dropped
+    # `dropped` counts faces with no pairwise slot; `collided` counts degree-2
+    # faces silently overwritten. kept + dropped + collided == len(faces).
+    return phi_d, phi_r, dropped + collided
 
 
 def ces_distance_pairwise(phi_d1, phi_r1, phi_d2, phi_r2, max_permutations=40320):

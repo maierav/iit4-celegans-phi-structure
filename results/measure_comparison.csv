@@ -1,4 +1,4 @@
-test,measure_1_absdPhi,measure_2_pairwise,measure_3_hypergraph
-"same Phi, different content",0.0,0.3,0.4
-differ by one degree-3 face,0.1,0.0,0.3
-degree-2 face vs degree-3 face (phi preserved),0.0,0.0,0.5
+test,measure_1_absdPhi,measure_2_pairwise_only,measure_3_gold_standard
+"same Φ, different content",0.0,0.4,0.4
+one extra degree-3 relation,0.1,0.0,0.1
+"degree 2 → 3, Φ preserved",0.0,0.1,0.2

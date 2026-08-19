@@ -83,9 +83,11 @@ pyphi.config.PARALLEL = False  # Ray does not play well with Colab
 import json
 
 import numpy as np
+from collections import Counter
 import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import networkx as nx
 
 import ces_hypergraph as ch
@@ -275,9 +277,11 @@ axes3[0].text(0.5, -0.09, f"no outgoing edges: {', '.join(s1)}\nnot strongly con
               fontsize=6.5, color=ORANGE)
 
 s2 = draw_circuit(axes3[1], cm_fc, "b  CM derived from the stated table")
+# Name ALL strongly connected components, not just the singletons.
+scc_text = " + ".join("{" + ", ".join(c) + "}" for c in sccs)
 axes3[1].text(0.5, -0.09,
-              f"AIBL still a sink; RIML has no input\ncomponents: {s2 and ''}"
-              f"{'{' + ', '.join(sccs[0]) + '}'} + {'{' + ', '.join(sccs[-1]) + '}'}",
+              f"AIBL still a sink; RIML has no input\n"
+              f"{len(sccs)} components: {scc_text}",
               transform=axes3[1].transAxes, ha="center", va="top",
               fontsize=6.5, color=ORANGE)
 
@@ -375,75 +379,114 @@ with open(f"results/ces_hypergraph_{PRIMARY}.json", "w") as fh:
 print(f"\nwrote results/ces_hypergraph_{PRIMARY}.json")
 
 # %% [markdown]
-# ## Figure 4 — the Φ-structure, and what a pairwise view loses
+# ## Figure 4 — the Φ-structure at the level of RELATIONS
+#
+# Drawn at the **relation** level, not the face level. A `Relation` in PyPhi is a
+# frozenset of distinctions with a single φ_r; its faces are an internal
+# enumeration over cause/effect sides and all inherit the parent's φ, so they
+# carry no independent information. The structural facts are the relations.
 
 # %%
-fig4 = plt.figure(figsize=(11, 3.6))
-gs4 = fig4.add_gridspec(1, 3, width_ratios=[1.25, 1, 1], wspace=0.3)
+# Collapse faces to their parent relations: identity = the set of distinctions.
+relations = {}
+for f in faces:
+    dset = frozenset(mech for mech, _dir in f["relata"])
+    phis = relations.setdefault(dset, set())
+    phis.add(round(float(f["phi"]), 12))
+for dset, phis in relations.items():
+    assert len(phis) == 1, f"faces of one relation disagree on phi: {dset} {phis}"
+relations = {dset: max(phis) for dset, phis in relations.items()}
 
-# (a) bipartite hypergraph: distinctions vs faces
+SHORT = {k[0]: f"D{i+1}" for i, k in enumerate(nodes)}
+MECH_LABEL = {SHORT[k[0]]: units(k[0]) for k in nodes}
+PHI_D = {SHORT[k[0]]: v for k, v in nodes.items()}
+REL = [(frozenset(SHORT[m] for m in dset), v) for dset, v in relations.items()]
+REL.sort(key=lambda kv: -kv[1])
+
+n_rel = len(REL)
+n_pair = sum(1 for S, _ in REL if len(S) == 2)
+phi_total = sum(v for _, v in REL)
+phi_nonpair = sum(v for S, v in REL if len(S) != 2)
+
+print(f"{n_rel} relations: "
+      f"{sum(1 for S,_ in REL if len(S)==1)} self, {n_pair} pairwise, "
+      f"{sum(1 for S,_ in REL if len(S)>2)} higher-order")
+print(f"sum phi_r = {phi_total:.5f}; not representable as a pairwise edge: "
+      f"{phi_nonpair:.5f} ({100*phi_nonpair/phi_total:.0f}%)")
+
+fig4 = plt.figure(figsize=(10.4, 3.9))
+gs4 = fig4.add_gridspec(1, 3, width_ratios=[1.25, 1.0, 1.05], wspace=0.34)
+LIGHT = "#9bb8d4"
+
+# (a) the hypergraph itself
 ax = fig4.add_subplot(gs4[0])
-dist_keys = list(nodes)
-n_d, n_f = len(dist_keys), len(faces)
-y_d = np.linspace(0.9, 0.1, n_d)
-y_f = np.linspace(0.95, 0.05, n_f)
-d_index = {k: i for i, k in enumerate(dist_keys)}
-mech_to_dist = {}
-for k in dist_keys:
-    mech_to_dist.setdefault(k[0], []).append(k)
+ring = {d: (np.cos(a), np.sin(a) * 0.85 + 0.12)
+        for d, a in zip(sorted(PHI_D), [np.pi/2, np.pi*7/6, np.pi*11/6])}
+for S, v in REL:                                    # filled simplices first
+    if len(S) >= 3:
+        Q = np.array([ring[d] for d in sorted(S)])
+        ax.fill(Q[:, 0], Q[:, 1], color=ORANGE, alpha=0.20, zorder=1, lw=0)
+for S, v in REL:
+    if len(S) == 2:
+        u, w = [ring[d] for d in sorted(S)]
+        ax.plot([u[0], w[0]], [u[1], w[1]], color=BLUE, lw=1.4, zorder=2)
+    elif len(S) == 1:
+        x, y = ring[next(iter(S))]
+        th = np.linspace(-0.26 * np.pi, 1.26 * np.pi, 140)
+        ax.plot(x + 0.20 * np.cos(th), y + 0.29 + 0.20 * np.sin(th),
+                color=ORANGE, lw=3.4, zorder=3, solid_capstyle="round")
+for d, (x, y) in ring.items():
+    ax.scatter([x], [y], s=330 + 1500 * PHI_D[d], color="#17527d",
+               edgecolors="white", linewidths=1.2, zorder=4)
+    ax.text(x, y, d, ha="center", va="center", fontsize=6.5, color="white", zorder=5)
+    # place φ_d below the node, except for the looped node where the loop sits above
+    ax.text(x, y - 0.34, f"{MECH_LABEL[d]}\nφ$_d$={PHI_D[d]:.3f}", ha="center", va="top",
+            fontsize=5.6, color="#444", zorder=5)
+self_phi = max([v for S, v in REL if len(S) == 1], default=0.0)
+ho_phi = max([v for S, v in REL if len(S) > 2], default=0.0)
+ax.text(0.62, 1.30, f"self-relation\nφ$_r$ = {self_phi:.3f}", ha="center", va="bottom",
+        fontsize=6.5, color=ORANGE)
+ax.text(0.0, -1.22, f"degree-3 relation\nφ$_r$ = {ho_phi:.5f}", ha="center", va="top",
+        fontsize=6.5, color=ORANGE)
+ax.set_xlim(-1.7, 1.7); ax.set_ylim(-1.85, 1.98); ax.set_axis_off()
+ax.set_title(f"a  {len(PHI_D)} distinctions, {n_rel} relations\n"
+             "(node area ∝ φ$_d$; orange = no pairwise equivalent)")
 
-for fi, f in enumerate(faces):
-    col = ORANGE if f["degree"] > 2 else "#9bb8d4"
-    lw = 1.5 if f["degree"] > 2 else 0.7
-    for mech, _dir in f["relata"]:
-        for dk in mech_to_dist.get(mech, []):
-            ax.plot([0.12, 0.88], [y_d[d_index[dk]], y_f[fi]],
-                    color=col, lw=lw, alpha=0.75, zorder=1)
-ax.scatter(np.full(n_d, 0.12), y_d,
-           s=[220 * nodes[k] / max(nodes.values()) + 30 for k in dist_keys],
-           color=BLUE, zorder=3, edgecolors="white", linewidths=0.7)
-for k, y in zip(dist_keys, y_d):
-    ax.text(0.075, y, units(k[0]), ha="right", va="center", fontsize=6)
-ax.scatter(np.full(n_f, 0.88), y_f,
-           s=[26 if f["degree"] == 2 else 52 for f in faces],
-           marker="s",
-           color=[ORANGE if f["degree"] > 2 else "#9bb8d4" for f in faces],
-           zorder=3, edgecolors="white", linewidths=0.6)
-for f, y in zip(faces, y_f):
-    ax.text(0.925, y, f"deg {f['degree']}", ha="left", va="center", fontsize=5.5,
-            color=ORANGE if f["degree"] > 2 else "#555")
-ax.set_xlim(-0.06, 1.12)
-ax.set_ylim(-0.02, 1.02)
-ax.set_axis_off()
-ax.text(0.12, 1.0, "distinctions", ha="center", fontsize=6.5, color=BLUE)
-ax.text(0.88, 1.0, "relation faces", ha="center", fontsize=6.5, color="#555")
-ax.set_title("a  Φ-structure as a hypergraph\n(orange = higher-order, degree > 2)")
-
-# (b) face degree histogram
+# (b) relation degree
 ax = fig4.add_subplot(gs4[1])
-degs = sorted(deg_dist)
-cols = [("#9bb8d4" if k == 2 else ORANGE) for k in degs]
-ax.bar([str(k) for k in degs], [deg_dist[k] for k in degs], color=cols, width=0.62)
-for k, v in zip(degs, [deg_dist[k] for k in degs]):
-    ax.text(str(k), v + 0.15, str(v), ha="center", fontsize=6.5)
-ax.set_xlabel("face degree (number of distinctions joined)", labelpad=7)
-ax.set_ylabel("number of faces", labelpad=7)
-ax.set_ylim(0, max(deg_dist.values()) * 1.22)
-ax.set_title(f"b  {100 * higher / len(faces):.0f}% of faces are higher-order")
+by_k = Counter(len(S) for S, _ in REL)
+ks = sorted(by_k)
+ax.bar(range(len(ks)), [by_k[k] for k in ks],
+       color=[LIGHT if k == 2 else ORANGE for k in ks], width=0.6)
+for i, k in enumerate(ks):
+    ax.text(i, by_k[k] + 0.06, str(by_k[k]), ha="center", fontsize=7)
+ax.set_xticks(range(len(ks)))
+ax.set_xticklabels([f"{k}\n{'self' if k==1 else ('pairwise' if k==2 else 'higher-order')}"
+                    for k in ks])
+ax.set_xlabel("relation degree k (distinctions bound)", labelpad=5)
+ax.set_ylabel("number of relations", labelpad=7)
+ax.set_ylim(0, max(by_k.values()) * 1.34)
+ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+ax.set_title(f"b  {n_rel - n_pair} of {n_rel} relations have\nno pairwise equivalent")
 
-# (c) what survives the pairwise projection
+# (c) what a pairwise keying can hold
 ax = fig4.add_subplot(gs4[2])
-kept = len(phi_r)
-ax.bar(["kept\n(degree 2)", "discarded\n(degree > 2)"], [kept, dropped],
-       color=["#9bb8d4", ORANGE], width=0.55)
-for i, v in enumerate([kept, dropped]):
-    ax.text(i, v + 0.12, str(v), ha="center", fontsize=6.5)
-ax.set_ylabel("relation faces", labelpad=7)
-ax.set_ylim(0, max(kept, dropped) * 1.28)
-ax.set_title("c  Pairwise representation\n(notebooks 1 and 7)")
+ax.bar([0, 1], [n_pair, n_rel - n_pair], color=[LIGHT, ORANGE], width=0.55)
+ax.set_xticks([0, 1])
+ax.set_xticklabels(["kept\n(degree 2)", "unrepresentable\n(k=1 or k>2)"])
+for i, v in enumerate([n_pair, n_rel - n_pair]):
+    ax.text(i, v + 0.06, str(v), ha="center", fontsize=7)
+ax.set_ylabel("relations", labelpad=7)
+ax.set_ylim(0, max(n_pair, n_rel - n_pair) * 1.48)
+ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+ax.text(0.5, 0.93,
+        f"φ$_r$ lost = {phi_nonpair:.3f} of {phi_total:.3f}"
+        f"  ({100*phi_nonpair/phi_total:.0f}%)",
+        transform=ax.transAxes, ha="center", va="top", fontsize=6.5, color="#7a2f00")
+ax.set_title("c  A pairwise representation drops\nmost of the φ$_r$ mass")
 
-fig4.savefig("figures/fig04_phi_structure.pdf")
-fig4.savefig("figures/fig04_phi_structure.png", dpi=200)
+fig4.savefig("figures/fig04_phi_structure.pdf", bbox_inches="tight")
+fig4.savefig("figures/fig04_phi_structure.png", dpi=200, bbox_inches="tight")
 print("wrote figures/fig04_phi_structure.pdf")
 
 # %% [markdown]

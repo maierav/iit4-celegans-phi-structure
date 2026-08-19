@@ -250,93 +250,132 @@ print("\nmeasure 3 runtime:")
 print(timing_df.to_string(index=False))
 
 # %% [markdown]
-# ## Summary table
-
-# %%
-summary = pd.DataFrame([
-    {"test": "same Phi, different content",
-     "measure_1_absdPhi": abs(phi_A - phi_B),
-     "measure_2_pairwise": d_pair_ab,
-     "measure_3_hypergraph": d_hyp},
-    {"test": "differ by one degree-3 face",
-     "measure_1_absdPhi": abs(phi_X - phi_Y),
-     "measure_2_pairwise": d_pair,
-     "measure_3_hypergraph": d_hyp2},
-    {"test": "degree-2 face vs degree-3 face (phi preserved)",
-     "measure_1_absdPhi": abs(phi_X - phi_Z),
-     "measure_2_pairwise": d_pair_xz,
-     "measure_3_hypergraph": d_hyp_xz},
-]).round(5)
-summary.to_csv("results/measure_comparison.csv", index=False)
-print(summary.to_string(index=False))
-print("\n0.0 means the measure cannot distinguish the two structures.")
-
-# %% [markdown]
 # ## Figure 5 — where each measure fails
 
 # %%
-fig5, axes5 = plt.subplots(1, 3, figsize=(11, 3.5))
+# Rebuild the three tests at the RELATION level and score them with the exact
+# gold standard alongside the two superseded measures.
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.join(REPO_ROOT, "src"))
+from gold_standard import gold_standard_distance
+from matplotlib.ticker import MaxNLocator
+from collections import Counter
 
-# (a) the three test cases
+
+def _phi(S):
+    return sum(S[0].values()) + sum(S[1].values())
+
+
+def _pairwise_only(S1, S2):
+    """Measure 2: discard everything that is not a degree-2 relation, then run
+    the same exact bijection search on what is left."""
+    keep = lambda S: (S[0], {k: v for k, v in S[1].items() if len(k) == 2})
+    return gold_standard_distance(keep(S1), keep(S2))
+
+
+# T1 same Phi, different content | T2 one extra degree-3 relation
+# T3 a degree-2 relation replaced by a degree-3 one, Phi preserved
+_A = ({"a": 0.30, "b": 0.20}, {frozenset({"a", "b"}): 0.10})
+_B = ({"a": 0.15, "b": 0.15, "c": 0.20}, {frozenset({"a", "b"}): 0.10})
+_base = {"a": 0.30, "b": 0.30, "c": 0.10}
+_X = (_base, {frozenset({"a", "b"}): 0.10})
+_Y = (_base, {frozenset({"a", "b"}): 0.10, frozenset({"a", "b", "c"}): 0.10})
+_Z = (_base, {frozenset({"a", "b", "c"}): 0.10})
+
+TESTS = [("same Φ,\ndifferent content", _A, _B),
+         ("one extra\ndegree-3 relation", _X, _Y),
+         ("degree 2 → 3,\nΦ preserved", _X, _Z)]
+
+m1, m2, m3, table = [], [], [], []
+for _name, _S1, _S2 in TESTS:
+    a_, b_, c_ = (abs(_phi(_S1) - _phi(_S2)),
+                  _pairwise_only(_S1, _S2),
+                  gold_standard_distance(_S1, _S2))
+    m1.append(a_); m2.append(b_); m3.append(c_)
+    table.append({"test": _name.replace("\n", " "), "measure_1_absdPhi": round(a_, 5),
+                  "measure_2_pairwise_only": round(b_, 5),
+                  "measure_3_gold_standard": round(c_, 5)})
+pd.DataFrame(table).to_csv("results/measure_comparison.csv", index=False)
+print(pd.DataFrame(table).to_string(index=False))
+
+# Relation-level facts about the real structure (recomputed, not hardcoded).
+REL_REAL, PHI_R_BY_K = None, None
+if real is not None:
+    _rels = {}
+    for f in real_faces:
+        dset = frozenset(mech for mech, _dir in f["relata"])
+        _rels.setdefault(dset, set()).add(round(float(f["phi"]), 12))
+    for _d, _p in _rels.items():
+        assert len(_p) == 1, f"faces disagree on phi within a relation: {_d}"
+    REL_REAL = {d: max(p) for d, p in _rels.items()}
+    PHI_R_BY_K = Counter()
+    for d, v in REL_REAL.items():
+        PHI_R_BY_K[len(d)] += v
+
+fig5, axes5 = plt.subplots(1, 3, figsize=(10.6, 3.5))
+LIGHT = "#9bb8d4"
+
+# (a) three tests x three measures
 ax = axes5[0]
-tests = ["same Φ,\ndifferent content", "one extra\ndegree-3 face",
-         "degree 2 → 3,\nΦ preserved"]
 x = np.arange(3)
-w = 0.27
-m1 = [abs(phi_A - phi_B), abs(phi_X - phi_Y), abs(phi_X - phi_Z)]
-m2 = [d_pair_ab, d_pair, d_pair_xz]
-m3 = [d_hyp, d_hyp2, d_hyp_xz]
-ax.bar(x - w, m1, w, color=GREY, label="1  |ΔΦ|")
-ax.bar(x, m2, w, color="#9bb8d4", label="2  pairwise bijection")
-ax.bar(x + w, m3, w, color=ORANGE, label="3  degree-graded")
+w = 0.26
+ax.bar(x - w, m1, w, color=GREY, label="|ΔΦ| (scalar)")
+ax.bar(x, m2, w, color=LIGHT, label="pairwise-only")
+ax.bar(x + w, m3, w, color=ORANGE, label="gold standard")
 for xi, v in zip(x - w, m1):
     if v < 1e-9:
-        ax.text(xi, 0.008, "blind", ha="center", fontsize=5.5,
-                color=GREY, rotation=90)
+        ax.text(xi, 0.006, "blind", ha="center", fontsize=5.5, color=GREY, rotation=90)
 for xi, v in zip(x, m2):
     if v < 1e-9:
-        ax.text(xi, 0.008, "blind", ha="center", fontsize=5.5,
-                color="#5a7fa4", rotation=90)
+        ax.text(xi, 0.006, "blind", ha="center", fontsize=5.5, color="#5a7fa4", rotation=90)
 ax.set_xticks(x)
-ax.set_xticklabels(tests, fontsize=6)
+ax.set_xticklabels([t[0] for t in TESTS], fontsize=6)
 ax.set_ylabel("reported distance", labelpad=7)
-ax.legend(frameon=False, loc="upper left")
-ax.set_title("a  Only measure 3 is non-zero\non every test  (higher = more sensitive)")
+ax.set_ylim(0, max(m3) * 1.42)
+ax.legend(frameon=False, loc="upper right", fontsize=6)
+ax.set_title("a  Only the gold standard is\nnon-zero on all three tests")
 
-# (b) real structure: what a pairwise view keeps
+# (b) real structure, counted in RELATIONS
 ax = axes5[1]
-if real is not None:
-    kept = len(real_faces) - dropped_real
-    bars = ax.bar(["kept\n(degree 2)", "discarded\n(degree > 2)"],
-                  [kept, dropped_real], color=["#9bb8d4", ORANGE], width=0.55)
-    for b, v in zip(bars, [kept, dropped_real]):
-        ax.text(b.get_x() + b.get_width() / 2, v + 0.12, str(v),
-                ha="center", fontsize=7)
-    ax.set_ylabel("relation faces", labelpad=7)
-    ax.set_ylim(0, max(kept, dropped_real) * 1.3)
-    ax.set_title(f"b  Real Φ-structure: {100 * dropped_real / len(real_faces):.0f}%"
-                 "\nof faces lost to a pairwise view")
+if REL_REAL is not None:
+    n_rel = len(REL_REAL)
+    n_pair = sum(1 for d in REL_REAL if len(d) == 2)
+    ax.bar([0, 1], [n_pair, n_rel - n_pair], color=[LIGHT, ORANGE], width=0.55)
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(["representable\n(degree 2)", "unrepresentable\n(k=1 or k>2)"])
+    for i, v in enumerate([n_pair, n_rel - n_pair]):
+        ax.text(i, v + 0.05, str(v), ha="center", fontsize=7)
+    ax.set_ylabel("relations in the real Φ-structure", labelpad=7)
+    ax.set_ylim(0, max(n_pair, n_rel - n_pair) * 1.5)
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.set_title(f"b  Real worm structure:\n{n_rel - n_pair} of {n_rel} relations "
+                 "have no pairwise form")
 else:
     ax.set_axis_off()
 
-# (c) phi_r mass by degree in the real structure
+# (c) phi_r mass by relation degree
 ax = axes5[2]
-if real is not None:
-    by_deg = {}
-    for f in real_faces:
-        by_deg[f["degree"]] = by_deg.get(f["degree"], 0.0) + f["phi"]
-    ks = sorted(by_deg)
-    ax.bar([str(k) for k in ks], [by_deg[k] for k in ks],
-           color=["#9bb8d4" if k == 2 else ORANGE for k in ks], width=0.6)
-    ax.set_xlabel("face degree", labelpad=7)
-    ax.set_ylabel("summed φ_r", labelpad=7)
-    ax.set_title("c  Higher-order faces carry\nreal integrated information")
+if PHI_R_BY_K is not None:
+    ks = sorted(PHI_R_BY_K)
+    ax.bar(range(len(ks)), [PHI_R_BY_K[k] for k in ks],
+           color=[LIGHT if k == 2 else ORANGE for k in ks], width=0.6)
+    for i, k in enumerate(ks):
+        ax.text(i, PHI_R_BY_K[k] + 0.006, f"{PHI_R_BY_K[k]:.3f}",
+                ha="center", fontsize=6.5)
+    ax.set_xticks(range(len(ks)))
+    ax.set_xticklabels([f"{k}\n{'self' if k == 1 else ('pairwise' if k == 2 else 'higher-order')}"
+                        for k in ks])
+    ax.set_xlabel("relation degree k", labelpad=7)
+    ax.set_ylabel("summed φ$_r$", labelpad=7)
+    ax.set_ylim(0, max(PHI_R_BY_K.values()) * 1.22)
+    _share = 100 * PHI_R_BY_K[1] / sum(PHI_R_BY_K.values())
+    ax.set_title(f"c  The self-relation alone carries\n{_share:.0f}% of the φ$_r$ mass")
 else:
     ax.set_axis_off()
 
 fig5.tight_layout()
-fig5.savefig("figures/fig05_measure_failures.pdf")
-fig5.savefig("figures/fig05_measure_failures.png", dpi=200)
+fig5.savefig("figures/fig05_measure_failures.pdf", bbox_inches="tight")
+fig5.savefig("figures/fig05_measure_failures.png", dpi=200, bbox_inches="tight")
 print("wrote figures/fig05_measure_failures.pdf")
 
 # %% [markdown]
