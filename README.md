@@ -19,12 +19,14 @@ and keep the smallest score. It is defined in full in
 [`src/gold_standard.py`](src/gold_standard.py).
 
 **Status.** The distance algorithm is settled, implemented, and verified against
-the project's formal write-up. The data pipeline is audited and reproducible.
-**The attractant-vs-repellent comparison has not yet been run** — it is blocked
-by a per-stimulus sampling limit
-([Finding 1](#finding-1--the-per-stimulus-data-budget-is-the-binding-constraint)),
-which also describes the fix, and by a connectivity-matrix defect
-([Finding 2](#finding-2--the-published-φ-values-do-not-mean-what-they-appear-to-mean)).
+the project's formal write-up. The pipeline is audited and reproducible, and
+**the attractant-vs-repellent comparison has now been run**
+([`notebooks/06`](notebooks/06_celegans_pooled.ipynb)): both blockers were
+resolved by dropping the connectivity matrix and pooling epochs across animals.
+**The hypothesis is not supported** — attractant Φ-structures are not more
+similar to each other than repellent ones, the sign of the effect is not stable
+across neuron sets, and the design is underpowered for the contrast. Details
+under [The result](#the-result).
 
 ---
 
@@ -37,7 +39,8 @@ which also describes the fix, and by a connectivity-matrix defect
 | **Why not simpler** | \|ΔΦ\| is a scalar and collapses distinct structures; a pairwise-only representation cannot see relations that join >2 distinctions |
 | **Cost** | *n*! where *n* = number of distinctions. Practical to *n* ≈ 9. Real worm structures have 3 → trivial |
 | **Blocker** | One stimulus epoch supplies 120 frames for a 256-parameter TPM; ~5 of 16 states are visited |
-| **Next step** | Pool epochs by stimulus class across 8 recordings, then run the exact distance |
+| **Result** | Not supported. Interneurons p = 0.38 (wrong direction), sensory p = 0.72; sign flips between neuron sets |
+| **Why** | 4 stimuli per class = 6 within-class pairs; the permutation null is as wide as the effect |
 
 ---
 
@@ -53,6 +56,7 @@ then `Runtime > Run all`.
 | **03 — Similarity** | Scores the exact distance against cases with known answers, alongside the two measures tried earlier; measures how it scales | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/03_similarity.ipynb) |
 | **04 — Toy examples** | Unfolds nine real Φ-structures from 3-unit networks (relations up to degree 4) and exercises the distance on them | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/04_toy_examples.ipynb) |
 | **05 — PyPhi 2.0 example** | One comparison end to end on **PyPhi 2.0**: two structures built from update rules, all 24 mappings drawn, the cost broken down term by term | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/05_pyphi2_example.ipynb) |
+| **06 — The *C. elegans* comparison** | **The headline analysis.** Pooled per-stimulus TPMs, no connectivity matrix, ten Φ-structures, permutation test on the attractant-vs-repellent contrast | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/06_celegans_pooled.ipynb) |
 
 Locally:
 
@@ -570,6 +574,90 @@ reproduces Eq 10's value of 0.4500 exactly.
 **This repository implements the exact distance only** — for the *C. elegans*
 structures (3 distinctions) no approximation is needed.
 
+## The result
+
+Run in [`notebooks/06`](notebooks/06_celegans_pooled.ipynb). Two changes made
+the analysis possible, both of them deliberate trade-offs.
+
+**No connectivity matrix.** PyPhi is given the TPM alone and assumes full
+connectivity. This sidesteps the sink-node defect that previously forced
+`NullSystemIrreducibilityAnalysis` and φ_s = 0. Φ is now well defined for every
+stimulus. The cost is that the structures no longer encode anatomical
+constraint — that is a modelling choice to revisit, not a bug.
+
+**Epochs pooled across animals.** Each stimulus gets one TPM built from all 8
+recordings × 3 repeats = **24 epochs, 960 frames**.
+
+### Why pooling was necessary — and what it assumes
+
+A 4-unit system has a 16 × 16 TPM: **256 parameters**. One stimulus epoch in one
+animal supplies 3 repeats × ~40 samples = **120 frames**, or 0.47 frames per
+parameter, and visits a mean of **5.0 of 16 states** — with *controls* scoring
+higher (6.1) than attractants (4.7), the signature of noise rather than biology.
+Any per-stimulus Φ-structure built that way is mostly an artefact of states
+never observed.
+
+Pooling raises this to 3.75 frames per parameter and **11–16 of 16 states
+visited** (mean 13.4).
+
+What it assumes is that the 8 animals are interchangeable replicates of one
+system. They are isogenic hermaphrodites imaged under one protocol, which is the
+strongest available version of that assumption — but it is still an assumption.
+It discards genuine between-animal variation, cannot be checked from within the
+pooled data, and **removes the within-class variance estimate that repeated
+animals would have provided**: the only replication left is across the 4 stimuli
+in each class. This is a stopgap that makes the question computable, not a
+solution.
+
+### On the distance used here
+
+All ten pooled structures have **14–15 distinctions**. The exact search is 15! =
+1.3 × 10¹² bijections — far past the n ≈ 9 ceiling.
+
+It is not needed. Every structure is built over the **same four neurons**, so a
+distinction labelled `AIBL·AVEL` denotes the same mechanism in all ten. The
+correspondence is given by the data rather than searched for, and the identity
+mapping is exactly the term the exact distance would evaluate. What is given up
+is the guarantee that no *other* mapping scores lower — a guarantee that only
+matters when comparing structures on different substrates.
+
+Φ spans 92 to 734 across stimuli, so distances are also reported after scaling
+each structure to unit Φ, which compares **shape** independent of magnitude.
+Raw distance correlates with |ΔΦ| at r = 0.745; shape distance at r = 0.550.
+
+### The answer
+
+![Pooled C. elegans results](figures/fig14_pooled_celegans.png)
+
+**The hypothesis is not supported.**
+
+| neuron set | within-attractant | within-repellent | difference | p |
+|---|---|---|---|---|
+| interneurons (AIBL/AVEL/AVAL/RIML) | 1.335 | 1.167 | **+0.168** | 0.38 |
+| sensory (ASEL/ASER/AWAL/AWCL) | 1.497 | 1.579 | **−0.083** | 0.72 |
+
+The hypothesis predicts a *negative* difference. In the interneurons the effect
+runs the wrong way and is not significant; in the sensory neurons it runs the
+predicted way but is further still from significance. **The sign is not stable
+between neuron sets**, and it is not stable within one either — dropping any
+single stimulus moves the interneuron contrast between +0.02 and +0.29.
+
+Φ itself does not separate the classes: it varies eight-fold across stimuli,
+with OP50 (attractant, Φ = 734) and Control (Φ = 494) at the top.
+
+**This is a null result, not evidence of absence.** Four stimuli per class give
+six within-class pairs, and the permutation null has a standard deviation
+comparable to the observed effect — only a very large effect could have reached
+significance. The design is underpowered for this contrast.
+
+### What would raise the power
+
+1. **More stimuli per class.** The binding constraint is 4 stimuli, not 8 animals. Six to eight per class would roughly double the within-class pairs.
+2. **Per-animal structures.** Pooling was forced by state coverage. Longer recordings, or a binarization that visits more states per epoch, would allow one structure per animal per stimulus — restoring a real within-class variance estimate and a far larger permutation space.
+3. **A deliberately chosen state.** Every pooled TPM is evaluated at its most-occupied state, which is all-off for all ten stimuli. A state reflecting the *response* rather than the baseline may separate classes better.
+
+---
+
 ## Worked examples on real Φ-structures
 
 `notebooks/04` unfolds nine Φ-structures with PyPhi from five 3-unit networks
@@ -740,13 +828,13 @@ Beyond those above:
 ## Repository layout
 
 ```
-notebooks/     01–05 as both .ipynb (Colab) and .py (paired via jupytext)
+notebooks/     01–06 as both .ipynb (Colab) and .py (paired via jupytext)
 src/
   gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
   ces_hypergraph.py   data loading, TPM construction, PyPhi extraction,
                       and the two earlier measures, kept so notebook 03
                       can reproduce the comparison tests
-figures/       fig01–fig13 as vector PDF + preview PNG
+figures/       fig01–fig14 as vector PDF + preview PNG
 results/       TPMs, extracted hypergraphs (JSON), audit tables (CSV),
                writeup_consistency.csv (this repo vs. the manuscript)
 data/          downloaded recordings (gitignored)
@@ -788,9 +876,10 @@ data/          downloaded recordings (gitignored)
 | understand the distance | [The distance algorithm](#the-distance-algorithm) |
 | use the distance | [`src/gold_standard.py`](src/gold_standard.py) |
 | know why the comparison hasn't run | [Finding 1](#finding-1--the-per-stimulus-data-budget-is-the-binding-constraint) |
-| reproduce every figure | `notebooks/01` → `02` → `03` → `04` → `05` |
+| reproduce every figure | `notebooks/01` → `02` → … → `06` |
 | see the distance on real structures | [`notebooks/04`](notebooks/04_toy_examples.ipynb) |
 | see one comparison end to end | [`notebooks/05`](notebooks/05_pyphi2_example.ipynb) |
+| **see the actual result** | [`notebooks/06`](notebooks/06_celegans_pooled.ipynb), or [The result](#the-result) |
 | see all known problems | [`results/audit_findings.csv`](results/audit_findings.csv) |
 
 ## Sources

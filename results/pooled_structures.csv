@@ -1,0 +1,11 @@
+stimulus,class,epochs_pooled,frames,states_visited,inter_Phi,inter_n_dist,inter_n_rel,sens_Phi,sens_n_dist,sens_n_rel
+100mM NaCl,attractant,24,960,13,393.5648,15,6126,116.4193,15,3999
+e-2 IAA,attractant,24,960,11,91.6719,14,4223,190.3773,14,8255
+e-6 IAA,attractant,24,960,12,292.2237,15,8831,175.6816,15,5047
+OP50,attractant,24,960,11,733.9415,15,12239,16.1587,12,671
+450mM NaCl,repellent,24,960,14,395.486,15,8958,17.4011,12,387
+1uM ascr#3,repellent,24,960,14,115.3412,14,2702,159.3602,15,5471
+10mM CuSO4,repellent,24,960,15,283.5364,15,4989,284.7578,15,16639
+800mM Sorbitol,repellent,24,960,13,303.3377,15,5311,58.6136,15,2230
+Control,control,24,960,15,494.049,15,16895,30.1881,15,1169
+Fluorescein,control,24,960,16,130.4266,14,4860,52.2678,15,2029

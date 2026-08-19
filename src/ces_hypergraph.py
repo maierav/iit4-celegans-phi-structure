@@ -37,6 +37,8 @@ from __future__ import annotations
 import ast
 import itertools
 import math
+import os
+import subprocess
 from collections import defaultdict
 
 import numpy as np
@@ -135,6 +137,35 @@ def is_strongly_connected(cm):
 # ----------------------------------------------------------------------------
 # Data layer
 # ----------------------------------------------------------------------------
+
+def recording_path(key, outdir="data"):
+    """Local path for one recording CSV."""
+    return os.path.join(outdir, f"{key}.csv")
+
+
+def ensure_recording(key, outdir="data"):
+    """Download one recording CSV if it is not already present locally.
+
+    Two paths are tried. `curl` against the Drive download endpoint follows the
+    303 to `drive.usercontent.google.com` and works in restricted-network
+    environments; `gdown` is the fallback and is what usually runs in Colab.
+    """
+    path = recording_path(key, outdir)
+    if os.path.exists(path) and os.path.getsize(path) > 1_000_000:
+        return path
+    os.makedirs(outdir, exist_ok=True)
+    url = f"https://drive.google.com/uc?export=download&id={HERM_DRIVE_IDS[key]}"
+    try:
+        subprocess.run(["curl", "-sSL", "-o", path, url], check=True, timeout=300)
+        if os.path.getsize(path) > 1_000_000:
+            return path
+    except Exception:
+        pass
+    import gdown
+
+    gdown.download(url, path, quiet=True)
+    return path
+
 
 def load_recording(path):
     """Load one chemosensory-data CSV.
