@@ -501,7 +501,9 @@ print("wrote figures/fig04_phi_structure.pdf")
 #    transposition). Removing that edge does not help: AIBL is a sink either
 #    way, so neither version is strongly connected.
 # 3. The Φ-structure is a **weighted hypergraph**: distinctions as nodes,
-#    relation faces as hyperedges of degree ≥ 2. In this real structure 42% of
-#    faces have degree > 2.
+#    relations as hyperedges. Counted as RELATIONS (not faces -- faces inherit
+#    their parent relation's phi and carry no independent information), this
+#    structure has 5 relations, of which 2 have no pairwise form: the degree-3
+#    relation and the self-relation on AIBL. Those two carry 98% of the phi_r.
 # 4. A pairwise representation discards all of them. That is the gap notebook 03
 #    addresses.
