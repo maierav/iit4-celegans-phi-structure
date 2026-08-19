@@ -1,0 +1,10 @@
+item,writeup,ours,status,note
+Distance definition (min over bijections of summed |Δφ|),"Eq 38, Sec 2.2.5",gold_standard_distance,CONSISTENT,Reproduces Examples 1-4 term-for-term; Example 2 numeric check matches exactly (0.4500).
+Null-padding of the smaller structure,"Example 3, Eq 22",_cost over padded key set,CONSISTENT,Unmatched distinctions and relations contribute their full phi. Same rule.
+Relation mapping induced by the distinction mapping,Eq 37 mu(r),_relabel,CONSISTENT,Relations follow the bijection; not matched independently.
+Higher-order relations need no special handling in the exact distance,Example 4 (degree k>=3 handled by the same rule),degree-agnostic _cost,CONSISTENT,Confirms our Nov finding; write-up devotes a whole example to it.
+Eq 38 relation sum ranges over R1 only,Eq 38,union of R1 and preimage of R2,WRITE-UP TYPO,"Read literally, Eq 38 is ASYMMETRIC (285/300 random pairs) and contradicts the write-up's own Example 1 and Eq 10, both of which charge R2-only relations. Our union form matches the examples. Suggest amending Eq 38 to sum over R1 union mu^-1(R2)."
+Phi-folding is degree-SEPARATED (alpha=1/k per degree k),Eq 40-43,was tested as a single scalar,WE WERE WRONG,"The slide deck showed a scalar fold, which is degenerate (filled vs empty triangle -> 0). The write-up folds per degree, which separates that pair correctly (0.6000). Our earlier 'degeneracy' critique applies to the SLIDE version only, not to this write-up."
+OT gives a lower bound on the exact distance,Sec 2.3.3 / Discussion,800 random pairs,CONSISTENT,"0 cases above the exact distance; 74.8% EXACT agreement, r=0.991, mean ratio 0.973."
+Theorem: |dPhi| <= Dist <= Phi1 + Phi2,Eq 48,800 random pairs,CONSISTENT,"0 violations of either bound. Upper bound never attained, as the write-up predicts."
+Complexity stated as (2^n)! ; infeasible at n~10,"Abstract, Sec 2.3.1",m! where m = actual distinctions,CONSISTENT BUT LOOSE,"m <= 2^n-1 is the bound; the factorial runs over m, the realised distinction count. Real worm structure: n=4 units but m=3 distinctions -> 3!=6, instant. Measured: m=10 takes 470 s, m=12 ~18 h."

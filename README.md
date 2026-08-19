@@ -516,39 +516,60 @@ consume. The relation set is then discarded — after folding, a structure is ju
 n points (φ_d, φ′_r), which is why OT applies and why the exact distance does
 not need this step.
 
-Three caveats measured here:
+**Two versions of Φ-folds exist, and the difference matters.**
 
-* **The ÷degree normalisation creates exact collisions.** A filled triangle
-  (three pairwise relations at 0.1 plus a degree-3 relation at 0.3) and an empty
-  triangle (three pairwise at 0.2) fold to the *identical* vector — distance 0,
-  where the gold standard gives 0.6. Solving symbolically, folds coincide
-  whenever each pairwise φ_r in the empty structure equals `e + t/3`; the ÷3 on
-  the triple exactly cancels the pairwise deficit. Every member of that family
-  also has identical Φ, so |ΔΦ| is blind to it too.
-* **The loss is not confined to higher-order relations.** Two structures whose
-  relations are *all* degree ≤ 2 — two disjoint edges versus two edges sharing a
-  vertex — score 0.2 exactly and 0.1 folded. Discarding the relation set loses
-  *which* distinctions are joined at every degree.
-* **The loss grows with system size.** The fold is a fixed linear map from up to
-  2ⁿ−1 relation dimensions onto n; at n = 3 it keeps 43% of the degrees of
-  freedom, at n = 8 only 3%. Anything in the kernel is invisible.
+* The **slide-deck version** folds each φ_r into a *single* scalar per
+  distinction. This is degenerate: a filled triangle (three pairwise relations
+  at 0.1 plus a degree-3 relation at 0.3) and an empty triangle (three pairwise
+  at 0.2) fold to the *identical* vector — distance 0 where the exact distance
+  gives 0.6. Solving symbolically, folds coincide whenever each pairwise φ_r in
+  the empty structure equals `e + t/3`; the ÷3 on the triple cancels the
+  pairwise deficit exactly. Every member of that family also has identical Φ,
+  so |ΔΦ| is blind to it too.
+* The **manuscript version (Eq 40–43)** folds **separately for each relation
+  degree k**, giving a vector of per-degree contributions rather than one
+  scalar. This resolves the degeneracy: the same filled/empty pair scores
+  **0.6000**, matching the exact distance.
 
-### Figure 8 — what Φ-folds keeps and loses
+Only the manuscript version should be used. Two further properties measured
+over 800 random pairs, both consistent with the manuscript:
+
+* It is a genuine **lower bound** — never above the exact distance — and it is
+  remarkably tight: **74.8% of pairs agree exactly**, r = 0.991, mean ratio
+  0.973.
+* Residual loss comes from discarding *which* distinctions a relation joins.
+  Two structures whose relations are all degree ≤ 2 — two disjoint edges versus
+  two edges sharing a vertex — are separated by the exact distance but can be
+  under-reported by any fold. Recovering that would need Gromov–Wasserstein.
+
+### Figure 8 — the scalar fold, and why it fails
 
 ![Phi-folds: degeneracy, bound, and information loss](figures/fig08_phi_folds.png)
 
-The filled and empty triangle (a, b) fold to the same vector (c). Folding
-under-reports on higher-order *and* purely pairwise differences (d). Across 600
-random pairs it never exceeds the exact distance (e). The kernel of the fold
-grows exponentially with the number of distinctions (f).
+Diagnostics for the **scalar** (slide-deck) fold. The filled and empty triangle
+(a, b) collapse to the same vector (c); folding under-reports on higher-order
+*and* purely pairwise differences (d); it never exceeds the exact distance (e);
+and its kernel grows exponentially with the number of distinctions (f).
 [Vector PDF](figures/fig08_phi_folds.pdf)
 
-Empirically the fold behaves as a genuine lower bound: over 600 random pairs it
-never exceeded the exact distance (r = 0.87, mean ratio 0.81), consistent with
-*d*<sub>OT</sub> ≤ *d*<sub>exact</sub>. Dropping the normalisation, or keeping a
-per-degree vector instead of a scalar, removes the collision above while staying
-OT-compatible; neither recovers *which* distinctions a relation joins, which is
-what Gromov–Wasserstein would be for.
+### Figure 9 — the manuscript's per-degree fold fixes it
+
+![Write-up consistency check](figures/fig09_writeup_check.png)
+
+Per-degree folding scores the filled/empty pair correctly (a). Across 800 random
+pairs the manuscript's OT is exact on 75% and never exceeds the exact distance
+(b). Panel (c) documents an equation-level typo — see below.
+[Vector PDF](figures/fig09_writeup_check.pdf)
+
+### One equation to amend
+
+Eq 38 writes the relation term as a sum over *r* ∈ R₁ only. Read literally that
+makes the distance **asymmetric** — 285 of 300 random pairs — because relations
+present in R₂ with no preimage in R₁ are never charged. It also contradicts the
+manuscript's own worked examples: Example 1 charges |φ_r − φ′_r| when one side
+has no relation, and Eq 10 explicitly includes φ_r⁽²⁾(p). The examples use the
+**union** R₁ ∪ μ⁻¹(R₂), which is what `src/gold_standard.py` implements and what
+reproduces Eq 10's value of 0.4500 exactly.
 
 **This repository implements the exact distance only** — for the *C. elegans*
 structures (3 distinctions) no approximation is needed.
@@ -603,8 +624,9 @@ src/
   gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
   ces_hypergraph.py   data loading, TPM construction, PyPhi extraction,
                       and the two superseded measures (kept for comparison)
-figures/       fig01–fig08 as vector PDF + preview PNG
-results/       TPMs, extracted hypergraphs (JSON), audit tables (CSV)
+figures/       fig01–fig09 as vector PDF + preview PNG
+results/       TPMs, extracted hypergraphs (JSON), audit tables (CSV),
+               writeup_consistency.csv (this repo vs. the manuscript)
 data/          downloaded recordings (gitignored)
 ```
 
