@@ -52,6 +52,7 @@ then `Runtime > Run all`.
 | **02 — Φ-structure** | Unfolds the Φ-structure in PyPhi, diagnoses the connectivity defect that zeroes φ_s, extracts the hypergraph | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/02_phi_structure.ipynb) |
 | **03 — Similarity** | Scores the exact distance against cases with known answers, alongside the two measures tried earlier; measures how it scales | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/03_similarity.ipynb) |
 | **04 — Toy examples** | Unfolds nine real Φ-structures from 3-unit networks (relations up to degree 4) and exercises the distance on them | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/04_toy_examples.ipynb) |
+| **05 — PyPhi 2.0 example** | One comparison end to end on **PyPhi 2.0**: two structures built from update rules, all 24 mappings drawn, the cost broken down term by term | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/05_pyphi2_example.ipynb) |
 
 Locally:
 
@@ -604,6 +605,55 @@ symmetric, the triangle inequality holds on all **729** ordered triples, and
 independent brute-force test. The bounds |ΔΦ| ≤ *D* ≤ Φ₁ + Φ₂ hold on every
 pair.
 
+### A single comparison, end to end on PyPhi 2.0
+
+`notebooks/05` does one comparison completely from scratch: two update rules in,
+one distance out, with every intermediate step drawn.
+
+**On PyPhi 2.0.** It is not on PyPI — the latest release there is 1.2.0 — so the
+notebook installs from the `2.0` branch. It needs Python ≥ 3.13, drops the
+`graphillion` dependency, and replaces `Network`/`Subsystem`/`phi_structure()`
+with `Substrate` → `System` → `.ces()`. Its installed default formalism is
+`IIT_4_0_2023`, matching the rest of this repo, and it **reproduces the pinned
+branch's numbers exactly**. (The 2026 refinement, selectable via
+`pyphi.iit4_2026`, adds an intrinsic-information requirement under which
+deterministic systems give φ_s = 0 — relevant when comparing against published
+values.)
+
+| | rule | state | Φ | distinctions | relations |
+|---|---|---|---|---|---|
+| Structure 1 | A=OR(B,C), B=AND(A,C), C=XOR(A,B) | 101 | 4.792 | 4 | 15 (degrees 1–4) |
+| Structure 2 | each unit = XOR of the other two | 011 | 7.000 | 4 | 11 (degrees 2–4) |
+
+![Two structures](figures/fig11_two_structures.png)
+
+Node area is φ_d, edge and loop width are φ_r, and orange shading marks a
+relation of degree ≥ 3. [Vector PDF](figures/fig11_two_structures.pdf)
+
+**The search.** Both have 4 distinctions, so all 4! = 24 bijections are scored
+and the smallest is the distance. The costs genuinely differ — the minimisation
+is doing work, not picking among ties.
+
+![Mapping search](figures/fig12_mapping_search.png)
+
+*D* = **3.8141**, achieved by `A→AB, C→AC, AC→BC, ABC→ABC`. Note this is not the
+mapping that best matches φ_d values pairwise: relations are carried along by
+the distinction mapping, so a locally worse pairing can win by placing the
+relations better. [Vector PDF](figures/fig12_mapping_search.pdf)
+
+**Where the distance comes from.** Every term under the winning mapping:
+
+![Cost breakdown](figures/fig13_cost_breakdown.png)
+
+Of the total 3.8141: **0.783** from distinctions and **3.032** from relations,
+which splits by degree as 0.803 (self), 1.212 (pairwise), 0.780 (degree 3), and
+0.237 (degree 4). **27% of the distance comes from relations of degree > 2** —
+content no pairwise representation could hold. Meanwhile |ΔΦ| = 2.208 would
+understate the difference by 42%, because it cannot see how the same total Φ is
+distributed across degrees. [Vector PDF](figures/fig13_cost_breakdown.pdf)
+
+---
+
 ### Figure 10 — the distance on real structures
 
 ![Toy examples](figures/fig10_toy_examples.png)
@@ -659,13 +709,13 @@ Beyond those above:
 ## Repository layout
 
 ```
-notebooks/     01, 02, 03, 04 as both .ipynb (Colab) and .py (paired via jupytext)
+notebooks/     01–05 as both .ipynb (Colab) and .py (paired via jupytext)
 src/
   gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
   ces_hypergraph.py   data loading, TPM construction, PyPhi extraction,
                       and the two earlier measures, kept so notebook 03
                       can reproduce the comparison tests
-figures/       fig01–fig10 as vector PDF + preview PNG
+figures/       fig01–fig13 as vector PDF + preview PNG
 results/       TPMs, extracted hypergraphs (JSON), audit tables (CSV),
                writeup_consistency.csv (this repo vs. the manuscript)
 data/          downloaded recordings (gitignored)
@@ -707,8 +757,9 @@ data/          downloaded recordings (gitignored)
 | understand the distance | [The distance algorithm](#the-distance-algorithm) |
 | use the distance | [`src/gold_standard.py`](src/gold_standard.py) |
 | know why the comparison hasn't run | [Finding 1](#finding-1--the-per-stimulus-data-budget-is-the-binding-constraint) |
-| reproduce every figure | `notebooks/01` → `02` → `03` → `04` |
+| reproduce every figure | `notebooks/01` → `02` → `03` → `04` → `05` |
 | see the distance on real structures | [`notebooks/04`](notebooks/04_toy_examples.ipynb) |
+| see one comparison end to end | [`notebooks/05`](notebooks/05_pyphi2_example.ipynb) |
 | see all known problems | [`results/audit_findings.csv`](results/audit_findings.csv) |
 
 ## Sources
