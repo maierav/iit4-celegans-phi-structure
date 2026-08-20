@@ -1,0 +1,21 @@
+substrate,dropped,contrast
+inter,100mM NaCl,0.0369
+inter,e-2 IAA,-0.0957
+inter,e-6 IAA,-0.0627
+inter,OP50,0.1057
+inter,450mM NaCl,-0.0711
+inter,1uM ascr#3,0.0738
+inter,10mM CuSO4,-0.0536
+inter,800mM Sorbitol,0.0352
+inter,Control,-0.0039
+inter,Fluorescein,-0.0039
+sens,100mM NaCl,0.3945
+sens,e-2 IAA,0.3192
+sens,e-6 IAA,0.3169
+sens,OP50,0.291
+sens,450mM NaCl,0.2974
+sens,1uM ascr#3,0.2975
+sens,10mM CuSO4,0.4364
+sens,800mM Sorbitol,0.2903
+sens,Control,0.3304
+sens,Fluorescein,0.3304

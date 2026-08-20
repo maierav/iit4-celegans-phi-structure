@@ -1,0 +1,6 @@
+n_distinctions,bijections,seconds,machine_platform,machine_processor,machine_python,machine_numpy,machine_physical_cores,machine_ram,machine_note
+3,6,0.0,macOS-26.6.2-arm64-arm-64bit,arm,3.12.13,2.5.2,12,64 GiB,"single-core, pure Python; no parallelism, no JIT"
+4,24,0.0001,macOS-26.6.2-arm64-arm-64bit,arm,3.12.13,2.5.2,12,64 GiB,"single-core, pure Python; no parallelism, no JIT"
+6,720,0.0128,macOS-26.6.2-arm64-arm-64bit,arm,3.12.13,2.5.2,12,64 GiB,"single-core, pure Python; no parallelism, no JIT"
+8,40320,1.7312,macOS-26.6.2-arm64-arm-64bit,arm,3.12.13,2.5.2,12,64 GiB,"single-core, pure Python; no parallelism, no JIT"
+9,362880,20.2884,macOS-26.6.2-arm64-arm-64bit,arm,3.12.13,2.5.2,12,64 GiB,"single-core, pure Python; no parallelism, no JIT"

@@ -1,11 +1,21 @@
-stimulus,class,epochs_pooled,frames,states_visited,inter_Phi,inter_n_dist,inter_n_rel,sens_Phi,sens_n_dist,sens_n_rel
-100mM NaCl,attractant,24,960,13,393.5648,15,6126,116.4193,15,3999
-e-2 IAA,attractant,24,960,11,91.6719,14,4223,190.3773,14,8255
-e-6 IAA,attractant,24,960,12,292.2237,15,8831,175.6816,15,5047
-OP50,attractant,24,960,11,733.9415,15,12239,16.1587,12,671
-450mM NaCl,repellent,24,960,14,395.486,15,8958,17.4011,12,387
-1uM ascr#3,repellent,24,960,14,115.3412,14,2702,159.3602,15,5471
-10mM CuSO4,repellent,24,960,15,283.5364,15,4989,284.7578,15,16639
-800mM Sorbitol,repellent,24,960,13,303.3377,15,5311,58.6136,15,2230
-Control,control,24,960,15,494.049,15,16895,30.1881,15,1169
-Fluorescein,control,24,960,16,130.4266,14,4860,52.2678,15,2029
+substrate,stimulus,class,Phi,n_dist,n_rel,noise_floor_mean,noise_floor_sd
+inter,100mM NaCl,attractant,233.309,15,4163,1.3401,0.1095
+inter,e-2 IAA,attractant,211.129,15,16639,1.0554,0.3294
+inter,e-6 IAA,attractant,280.606,15,9343,1.2495,0.1574
+inter,OP50,attractant,352.665,15,5983,1.1181,0.163
+inter,450mM NaCl,repellent,156.827,15,2871,1.2619,0.1379
+inter,1uM ascr#3,repellent,78.332,13,1375,1.3664,0.1378
+inter,10mM CuSO4,repellent,162.943,15,3295,1.1933,0.1886
+inter,800mM Sorbitol,repellent,383.362,15,6270,0.928,0.1348
+inter,Control,control,246.075,15,5086,1.132,0.1322
+inter,Fluorescein,control,134.936,15,7422,0.8942,0.1451
+sens,100mM NaCl,attractant,117.134,15,3183,1.4736,0.2902
+sens,e-2 IAA,attractant,510.429,15,16511,1.0348,0.3561
+sens,e-6 IAA,attractant,255.761,15,8503,1.1317,0.4968
+sens,OP50,attractant,27.933,14,1935,1.2404,0.1235
+sens,450mM NaCl,repellent,46.46,15,1559,1.4442,0.1514
+sens,1uM ascr#3,repellent,88.471,15,2531,1.2242,0.2272
+sens,10mM CuSO4,repellent,89.41,14,4287,1.5592,0.2595
+sens,800mM Sorbitol,repellent,33.783,15,1169,1.3894,0.2045
+sens,Control,control,30.245,15,1174,1.4161,0.2785
+sens,Fluorescein,control,38.171,15,1593,1.4874,0.3173

@@ -16,9 +16,11 @@ distinctions of one structure onto the other, score each matching, keep the
 smallest. Defined in full under [The distance algorithm](#the-distance-algorithm),
 implemented in [`src/gold_standard.py`](src/gold_standard.py).
 
-**The answer.** *Not supported.* Attractant Φ-structures are not more similar to
-each other than repellent ones; the sign of the effect is not stable across
-neuron sets, and the design is underpowered for the contrast. See
+**The answer.** *Not supported* — and the reason is more informative than the
+hypothesis test. **There is no signal above the noise floor at all:** two
+Φ-structures built for the *same* stimulus from different animals differ as much
+as two built for different stimuli. No pair of stimuli separates, so the class
+contrast could not have been detected even if real. See
 [The result](#the-result).
 
 ---
@@ -31,9 +33,9 @@ neuron sets, and the design is underpowered for the contrast. See
 | **Distance** | Exact minimum over all bijections between distinctions ("gold standard") |
 | **Why not simpler** | \|ΔΦ\| is a scalar and collapses distinct structures; a pairwise-only representation cannot see relations binding >2 distinctions |
 | **Cost** | *n*! where *n* = number of distinctions. Practical to *n* ≈ 9 |
-| **Result** | Not supported. Interneurons p = 0.38 (wrong direction), sensory p = 0.72; the sign flips between neuron sets |
-| **Why** | 4 stimuli per class = 6 within-class pairs; the permutation null is as wide as the effect |
-| **Robustness** | Binarization verified bit-for-bit against the reference notebook; conclusion unchanged under τ chosen by argmax φ_s |
+| **Result** | Not supported — and more fundamentally, **no signal above the noise floor** (signal-to-noise 1.06 and 0.96) |
+| **Why** | Two structures for the *same* stimulus, from different animals, differ as much as two different stimuli |
+| **Robustness** | Binarization verified bit-for-bit against the reference notebook; the null holds under both substrates and both choices of τ |
 | **Next** | More stimuli per class, or per-animal structures — both raise the within-class pair count |
 
 ---
@@ -172,36 +174,57 @@ pairs — no false identities, no false differences.
 
 ### Worked example
 
-![The algorithm on a two-distinction example](figures/fig07_algorithm.png)
+![The algorithm on a three-distinction example with a degree-3 relation](figures/fig07_algorithm.png)
 
-Str1 has 2 distinctions, a pairwise relation {a,b}, and a self-relation {b}.
-Str2 has 2 distinctions and a self-relation {p}. With 2 distinctions there are
-2! = 2 bijections:
+**Str1** has 3 distinctions and 3 relations — one self-relation {b}, one
+pairwise {a,b}, and one **degree-3 relation {a,b,c}** that binds all three at
+once. **Str2** has 3 distinctions and 2 relations, both of degree ≤ 2. With 3
+distinctions there are 3! = 6 bijections; all are scored and the smallest wins.
 
-| term | M1 (a→p, b→q) | M2 (a→q, b→p) |
-|---|---|---|
-| distinctions | \|0.30−0.28\| = 0.02 | \|0.30−0.05\| = 0.25 |
-| | \|0.20−0.05\| = 0.15 | \|0.20−0.28\| = 0.08 |
-| relation {a,b} | \|0.12−0\| = 0.12 | \|0.12−0\| = 0.12 |
-| relation {b} | \|0.07−0\| = 0.07 | \|0.07−0.09\| = 0.02 |
-| unmatched in Str2 | 0.09 (self-relation {p}) | — |
-| **total** | **0.45  ← minimum** | 0.47 |
+Under the winning mapping `a→p, b→r, c→q`:
 
-**D(Str1, Str2) = 0.45.** Note M2 matches the self-relation almost perfectly
-(0.02) and still loses: the minimum is over the *total*, so the terms cannot be
-optimised separately. [Vector PDF](figures/fig07_algorithm.pdf)
+| term | value |
+|---|---|
+| φ_d a→p, b→r, c→q | 0.02 + 0.02 + 0.10 |
+| φ_r {b}→{r} — self-relation, no partner | 0.07 |
+| φ_r {a,b}→{p,r} | 0.02 |
+| **φ_r {a,b,c}→{p,q,r} — degree-3, no partner in Str2** | **0.09** |
+| unmatched {p} in Str2 | 0.09 |
+| **total** | **0.410  ← minimum** |
+
+The next-best mapping scores 0.430 and the worst 0.870, so the minimisation is
+doing real work rather than choosing among ties. The degree-3 relation
+contributes 0.09 directly — a pairwise-only representation has nowhere to store
+it, nor the two self-relations, and reports **0.16** for this pair against the
+correct 0.41. Note also that |ΔΦ| = 0.23 is a strict
+lower bound here: the two structures differ in ways total Φ cannot see.
+[Vector PDF](figures/fig07_algorithm.pdf)
 
 ### Verified properties
 
-Empirical, not proofs:
+Every row below is produced by
+[`src/verify_properties.py`](src/verify_properties.py). Run it and the table
+regenerates:
 
-| property | result |
-|---|---|
-| identity, *D*(X, X) = 0 | exact, 50/50 |
-| symmetry, \|*D*(X,Y) − *D*(Y,X)\| | 0 violations / 200 random pairs |
-| triangle inequality | 0 violations / 200 random triples |
-| *D* = 0 ⟺ isomorphic | 0 false identities, 0 false differences / 400 random pairs |
-| bounds \|ΔΦ\| ≤ *D* ≤ Φ₁+Φ₂ | holds on every pair tested |
+```bash
+PYTHONPATH=src python src/verify_properties.py     # writes results/verified_properties.csv
+```
+
+These are empirical checks on random structures, not proofs.
+
+| property | n tested | violations |
+|---|---|---|
+| identity, *D*(X, X) = 0 | 50 | 0 |
+| symmetry, \|*D*(X,Y) − *D*(Y,X)\| | 200 | 0 (max 6.7 × 10⁻¹⁶) |
+| triangle inequality | 200 triples | 0 |
+| *D* = 0 ⟺ isomorphic | 400 | 0 false identities, 0 false differences |
+| bounds \|ΔΦ\| ≤ *D* ≤ Φ₁+Φ₂ | 200 | 0 |
+| degree-agnostic (+0.01 moves *D* by 0.01) | degrees 1–5 | 0 |
+| relation mapping is induced, not free | 1 | 0 |
+
+The isomorphism check uses an **independent** brute-force test — it searches
+relabellings for literal equality, never calling the distance — so agreement
+between the two is meaningful rather than circular.
 
 ### Cost, and when it stops being practical
 
@@ -209,26 +232,34 @@ The search is over bijections between **distinctions** — *n*! where
 *n* = max(N_dist₁, N_dist₂). It is **not** over 2ⁿ mechanisms, and not over
 relations: relations come along free once *M* is fixed.
 
-| N_dist | bijections | time (one distance) |
-|---|---|---|
-| 3 | 6 | <0.001 s |
-| 4 | 24 | 0.0002 s |
-| 6 | 720 | 0.013 s |
-| 8 | 40,320 | 1.7 s |
-| 9 | 362,880 | 22 s |
-| 10 | 3.6 M | ~8 min |
-| 12 | 479 M | ~18 h |
+Measured by [`src/verify_properties.py`](src/verify_properties.py), which writes
+`results/measured_cost.csv` with the machine spec attached to every row:
 
-Measured single-core in pure Python by `notebooks/03`; the last two rows are
-extrapolated. Practical ceiling: *n* ≈ 9 for a single distance, *n* ≈ 8 for a
-full pairwise matrix.
+| N_dist | bijections | seconds (one distance) |
+|---|---|---|
+| 3 | 6 | <0.0001 |
+| 4 | 24 | 0.0001 |
+| 6 | 720 | 0.013 |
+| 8 | 40,320 | 1.73 |
+| 9 | 362,880 | 20.3 |
+
+**Measured on:** macOS 26.6.2, Apple Silicon (arm64), 12 physical cores,
+64 GiB RAM, Python 3.12.13, NumPy 2.5.2 — **single-core, pure Python, no
+parallelism and no JIT**. The implementation makes no attempt at speed; a
+compiled or parallel version would shift these numbers, but not the factorial
+growth.
+
+Extrapolating the measured 20.3 s at *n* = 9 by the factorial: *n* = 10 is
+roughly 3 minutes, *n* = 12 roughly 7 hours. Practical ceiling: **n ≈ 9** for a
+single distance, **n ≈ 8** for a full pairwise matrix.
 
 The factorial search **cannot** be replaced by optimal assignment. Assignment is
 exact only for a cost that is **linear** in the pairing, and the relation term
 is not: relation {a, b} is scored against {M(a), M(b)}, so its contribution
 depends on two assignment decisions at once. Measured over 400 random pairs,
-Hungarian on the distinction term alone overshoots the exact distance in **50%**
-of cases (mean excess 0.27, max 1.11).
+Hungarian on the distinction term alone overshoots the exact distance in **85%**
+of cases (mean excess 0.392, max 1.466) — also produced by
+`src/verify_properties.py`.
 
 ![Scaling](figures/fig06_scaling.png)
 
@@ -250,43 +281,6 @@ gold_standard_distance(S1, S2)                       # -> 0.44999999999999996
 gold_standard_distance(S1, S2, return_mapping=True)  # -> (0.45, {'a': 'p', 'b': 'q'})
 phi_of(S1)                                           # -> 0.69  (Σφ_d + Σφ_r)
 ```
-
----
-
-## Why not a simpler measure
-
-Two simpler candidates, tested against cases where the correct answer is known.
-**0.0 means the measure cannot tell the two structures apart.**
-
-| Test | \|ΔΦ\| | pairwise-only | gold standard |
-|---|---|---|---|
-| Same Φ, different content | **0.0** | 0.4 | 0.4 |
-| One extra degree-3 relation | 0.1 | **0.0** | 0.1 |
-| Degree-2 → degree-3, Φ preserved | **0.0** | 0.1 | 0.2 |
-
-* **\|ΔΦ\| is blind whenever Φ is preserved.** Not hypothetical: two 5-unit toy
-  structures with *exactly* equal Φ (2.1779535637765157) and 10 distinctions
-  each differ only in which units carry them.
-* **A pairwise-only representation is blind to higher-order structure by
-  construction.** Keying relations by ordered *pairs* leaves nowhere to put a
-  relation binding three distinctions — nor a self-relation.
-
-Both are retained in `src/ces_hypergraph.py` purely so `notebooks/03` can
-reproduce these tests; nothing in the analysis path uses them.
-
-![Measure failures](figures/fig05_measure_failures.png)
-
-Reported distance per test (a) — bars marked "blind" are exactly zero. A real
-worm Φ-structure counted in relations (b), and its φ_r mass by degree (c): in
-that structure 2 of 5 relations have no pairwise form, and they carry 98% of the
-relational mass. [Vector PDF](figures/fig05_measure_failures.pdf)
-
-![Phi-structure as a hypergraph](figures/fig04_phi_structure.png)
-
-That structure drawn at the relation level (a): node area ∝ φ_d, blue lines are
-pairwise relations, the orange loop is a self-relation and the orange fill a
-degree-3 relation. Relations by degree (b), and what a pairwise keying can hold
-(c). [Vector PDF](figures/fig04_phi_structure.pdf)
 
 ---
 
@@ -322,26 +316,35 @@ kept for exact agreement with the reference.
 The binarization on a stimulus response (a). Panels b–e concern τ, below.
 [Vector PDF](figures/fig15_binarization_and_tau.pdf)
 
-### On the transition lag τ
+### Temporal grain: τ = one sampling interval
 
-Transitions are counted at a lag of **τ = 3 s**. The *Applying IIT to Your Data*
-deck argues τ should not be fixed by convention but chosen as
-**argmax φ_s** — the lag at which the system is most irreducible. That is right
-in principle, and it was implemented and tested here. It is **not identifiable
-at this data volume**:
+Transitions are counted between **consecutive frames** — τ = 1 sample =
+0.375 s, the native acquisition rate. Three reasons:
 
-* φ_s roughly doubles at τ* versus 3 s (mean 0.214 vs 0.100), and no stimulus
-  peaks at 3 s — which looks like a reason to adopt it.
-* But τ* **moves with the epoch window**. Widening epochs from 15 s to 30 s
-  shifts τ* by a mean of 11.2 s, and **0 of 10 stimuli** give the same answer
-  under both. Six roughly *double* their τ* (ratio 1.86–2.15) — exactly what a
-  quantity tracking the window would do — and the other four collapse to
-  τ* = 1 s. The optimum is following the epoch length, not the dynamics.
+1. **Data.** Coarse-graining time discards samples we cannot spare. At τ = 1 a
+   40-frame epoch yields 39 transitions; at τ = 8 (3 s) it yields 32, a 22%
+   loss across the dataset.
+2. **Plausibility.** The only consciousness we can reason about from the inside
+   is our own, and the integration window relevant to an experience — say the
+   positive valence of an attractant — is very unlikely to be on the order of
+   seconds.
+3. **Scope.** The published argument for selecting τ by `argmax φ_s` was made
+   for single-animal, single-session TPMs. It does not transfer
+   straightforwardly to a TPM concatenated across animals and sessions, which
+   is what is built here.
 
-Locating argmax φ_s needs a curve with a genuine interior maximum, and 960
-pooled frames per stimulus does not provide one. **The reported analysis keeps
-τ = 3 s**, and the conclusion does not depend on it: under τ* the class contrast
-changes sign and remains far from significance (p = 0.62 vs 0.38).
+[`notebooks/07`](notebooks/07_binarization_and_tau.ipynb) implements the
+argmax-φ_s selection anyway and shows it is **not identifiable at this data
+volume**: widening epochs from 15 s to 30 s shifts τ* by a mean of 11.2 s with
+0 of 10 stimuli agreeing, so τ* is tracking the window rather than the
+dynamics. **Selecting τ properly is left for future runs** with more samples per
+epoch.
+
+**Caveat, stated plainly.** The temporal grain here is somewhat arbitrary — as
+is the choice of binarization. Analysis of experimental data always rests on
+auxiliary assumptions, and sometimes those assumptions are known to be imperfect
+rather than merely unverified. Both are recorded here so a reader can judge what
+rests on them.
 
 ### Two further decisions
 
@@ -349,105 +352,192 @@ Both deliberate trade-offs.
 
 ### No connectivity matrix
 
-PyPhi is given the TPM alone and assumes full connectivity. The functional
-connectivity matrix previously used made the system not strongly connected — one
-neuron was a sink under either edge orientation — which short-circuits PyPhi to
-`NullSystemIrreducibilityAnalysis` and forces φ_s = 0. Omitting `cm` removes
-that failure and Φ is well defined for every stimulus. The cost is that the
-structures no longer encode anatomical constraint; that is a modelling choice to
-revisit, not a bug.
+PyPhi is given the TPM alone, so it assumes full connectivity. The functional
+matrix previously used made the system not strongly connected — one neuron was a
+sink under either edge orientation — which short-circuits PyPhi to
+`NullSystemIrreducibilityAnalysis` and forces φ_s = 0.
 
-![The connectivity defect](figures/fig03_connectivity.png)
+A saturated graph is a null assumption, not a neutral one: it lets every
+mechanism have every other in its purview. Filling in known connectivity is
+worth revisiting, but it is not a small change, because it first requires
+answering **which connectivity**:
 
-The published binary matrix (a) and one derived from the stated table (b) are
-both not strongly connected — AIBL is a sink either way. A minimal repair (c)
-would make Φ well defined, but omitting the matrix entirely is the simpler
-choice taken here. [Vector PDF](figures/fig03_connectivity.pdf)
+* **Anatomical** — the synaptic wiring diagram. Static and well characterised in
+  *C. elegans*, but a synapse is not a constraint on cause-effect power in the
+  sense PyPhi needs.
+* **Functional** — correlational, and defined *pairwise*. PyPhi's `cm` is also
+  pairwise, so this fits mechanically, but correlation is not causation and a
+  functional matrix estimated from the same traces used to build the TPM is not
+  independent of it.
+* **Effective** — closest to what IIT wants, and also **only ever estimated
+  pairwise** in practice. A cause-effect structure has higher-order constraint
+  that no pairwise effective-connectivity estimate can express, so this is a
+  representational mismatch rather than a data-availability problem.
+
+And whichever is chosen, functional and effective connectivity **change
+dynamically** — plausibly with the stimulus itself. A single static `cm` shared
+across all ten stimuli would then be wrong in a way that varies by condition,
+which is arguably worse than the saturated assumption because the error is
+correlated with the contrast of interest.
+
+Left as-is for now, and flagged rather than resolved.
 
 ### Epochs pooled across animals
 
-Each stimulus gets one TPM built from all 8 recordings × 3 repeats = **24
-epochs, 960 frames**.
+An epoch is a **15 s window from each stimulus onset** — matching the stimulus
+presentation duration used in the reference notebook. Onsets are 60 s apart, so
+epochs never overlap and never span two stimuli; the 45 s between them is
+discarded.
 
-**Why this was necessary.** A 4-unit system has a 16 × 16 TPM: **256
-parameters**. One stimulus epoch in one animal supplies 3 repeats × ~40 samples
-= **120 frames**, or 0.47 frames per parameter, and visits a mean of **5.0 of 16
-states** — with *controls* scoring higher (6.1) than attractants (4.7), the
-signature of noise rather than biology. Any per-stimulus Φ-structure built that
-way is mostly an artefact of states never observed. Pooling raises this to 3.75
-frames per parameter and **11–16 of 16 states visited** (mean 13.4).
+![How the epochs were chosen](figures/fig16_epochs.png)
 
-![The sampling problem](figures/fig02_epoch_budget.png)
+A full recording with all 30 analysed epochs shaded (a); three consecutive
+epochs at native resolution, showing that each is a clean post-onset window
+inside its inter-onset interval (b); and what pooling buys (c).
+[Vector PDF](figures/fig16_epochs.pdf)
 
-States visited per single epoch, by class (a); how much of the state space one
-epoch leaves empty (b); and the mean per class (c), where controls score above
-attractants. [Vector PDF](figures/fig02_epoch_budget.pdf) ·
-[raw traces and a full-recording TPM](figures/fig01_traces_and_tpm.pdf)
+A 4-unit system has a 16 × 16 TPM — **256 parameters**. One epoch in one animal
+gives 40 frames, 0.16 per parameter. Pooling the same stimulus across all 8
+animals gives **24 epochs, 960 frames**, 3.75 per parameter.
 
-**What it assumes.** That the 8 animals are interchangeable replicates of one
+What pooling assumes is that the 8 animals are interchangeable replicates of one
 system. They are isogenic hermaphrodites imaged under one protocol, which is the
 strongest available version of that assumption — but it is still an assumption.
-It discards genuine between-animal variation, cannot be checked from within the
-pooled data, and **removes the within-class variance estimate that repeated
-animals would have provided**: the only replication left is across the 4 stimuli
-in each class. A stopgap that makes the question computable, not a solution.
+It discards between-animal variation and **removes the within-class variance
+estimate** that repeated animals would have supplied. The split-half noise floor
+below recovers part of what pooling hides.
 
-### On the distance used here
+### What is being compared: four neurons, two substrates
 
-All ten pooled structures have **14–15 distinctions**. The exact search is
-15! = 1.3 × 10¹² bijections — far past the *n* ≈ 9 ceiling.
+Every Φ-structure here is over a **4-unit substrate**, so it has at most
+2⁴−1 = 15 distinctions. Two substrates are analysed **separately** and are never
+compared to each other:
 
-It is not needed. Every structure is built over the **same four neurons**, so a
-distinction labelled `AIBL·AVEL` denotes the same mechanism in all ten. The
-correspondence is given by the data rather than searched for, and the identity
-mapping is exactly the term the exact distance would evaluate. What is given up
-is the guarantee that no *other* mapping scores lower — a guarantee that matters
-only when comparing structures on different substrates.
+| substrate | neurons | why |
+|---|---|---|
+| interneurons | AIBL, AVEL, AVAL, RIML | the tentative *main complex* in awake animals (Kitazono et al. 2023); the set the project's earlier notebooks used |
+| sensory | ASEL, ASER, AWAL, AWCL | amphid chemosensory neurons — ASEL/ASER for salt, AWAL/AWCL for attractant odour — the set the project's aim names |
 
-Φ spans 92 to 734 across stimuli, so distances are also reported after scaling
-each structure to unit Φ, which compares **shape** independent of magnitude. Raw
-distance correlates with |ΔΦ| at r = 0.745; shape distance at r = 0.550.
+These are **two independent tests of the same hypothesis on the same
+recordings**, not a decomposition of one analysis. If the effect were real it
+should appear, with the same sign, in a substrate carrying the relevant
+information. Running both is a robustness check, and their disagreement is
+itself a result.
 
-### The answer
+This is **not** an attempt to explain a Φ-structure effect in terms of raw
+neural activity. That inference would be treacherous — the map from traces to
+Φ-structure runs through binarization, a TPM and the full IIT unfolding, and is
+nowhere near linear. No such claim is made.
+
+### What the distinction labels mean
+
+Distinctions are keyed by the **mechanism** they are over: `AIBL·AVEL` is the
+distinction whose mechanism is the pair {AIBL, AVEL}. This is not a reduction, a
+deduplication, or a relabelling trick — labels do not affect a Φ-structure and
+nothing here changes one.
+
+With 4 neurons there are exactly **15 possible mechanisms**, the 15 non-empty
+subsets. Each structure has 13–15 distinctions drawn from that same fixed set,
+with no duplicates. So pairing `AIBL·AVEL ↔ AIBL·AVEL` across two structures is
+**one specific bijection out of the 15! available** — the one that maps each
+mechanism to itself.
+
+![Real Φ-structures and what the labels are](figures/fig17_structures_and_labels.png)
+
+Two real pooled Φ-structures in 3D (a, b): node size is φ_d, positions are
+grouped by mechanism order, lines are pairwise relations and orange shading
+marks relations of degree ≥ 3. Panel (c) is the label question made concrete —
+the 15 distinction labels are exactly the 15 non-empty subsets of the four
+neurons. Panels (d–f) are the noise-floor result, below.
+[Vector PDF](figures/fig17_structures_and_labels.pdf)
+
+### The distance used, and its honest status
+
+The exact distance minimises over all bijections; 15! = 1.3 × 10¹² is far past
+the *n* ≈ 9 ceiling. The identity bijection is used instead, justified by the
+shared substrate.
+
+**This is not free.** Scoring 2000 random relabellings of one real pair: the
+identity mapping scores 1.12 and beats **99.4%** of them (random mean 1.49), but
+it is **not the minimum** — some relabellings score as low as 0.79. So every
+distance reported here is an **upper bound** on the exact distance, not the
+exact distance. It is a principled and strongly-performing choice of
+correspondence, and it is stated as a bound rather than presented as exact.
+
+Φ varies several-fold across stimuli without tracking class, so distances are
+reported after scaling each structure to unit Φ — comparing **shape**
+independent of magnitude.
+
+### The noise floor — the result that matters most
+
+Before asking whether *classes* differ, ask whether **anything** does. Split the
+8 animals into two halves, build a structure for the **same** stimulus from
+each, and measure the distance. That is pure sampling noise.
+
+| substrate | between-stimulus | within-stimulus (noise floor) | ratio |
+|---|---|---|---|
+| interneurons | 1.220 | 1.154 | **1.06** |
+| sensory | 1.280 | 1.340 | **0.96** |
+
+**There is no signal above the noise.** Comparing different stimuli gives
+distances no larger than comparing the same stimulus against itself across
+animals. This governs everything else: it is not that attractants and repellents
+fail to separate — **no pair of stimuli separates** beyond what resampling the
+animals produces.
+
+### The class test
+
+Reported for completeness; given the noise floor a null was expected.
+
+| substrate | within-attractant | within-repellent | difference | p |
+|---|---|---|---|---|
+| interneurons | 1.258 | 1.262 | **−0.004** | 0.99 |
+| sensory | 1.515 | 1.185 | **+0.330** | 0.25 |
+
+The hypothesis predicts a *negative* difference. The interneuron contrast is
+essentially zero; the sensory contrast has the wrong sign for the hypothesis and
+is not significant. The two substrates disagree, and dropping any single
+stimulus moves the interneuron contrast between −0.10 and +0.11.
+
+Φ does not separate the classes either — it varies several-fold with controls
+interleaved among the extremes.
 
 ![Pooled C. elegans results](figures/fig14_pooled_celegans.png)
 
-**The hypothesis is not supported.**
+Φ per stimulus (a); the permutation nulls (b, c); **the noise-floor comparison
+(d)** — the panel that carries the result; jackknife instability (e); and every
+stimulus lying on the identity line when its mean between-stimulus distance is
+plotted against its own noise floor (f).
+[Vector PDF](figures/fig14_pooled_celegans.pdf)
 
-| neuron set | within-attractant | within-repellent | difference | p |
-|---|---|---|---|---|
-| interneurons (AIBL/AVEL/AVAL/RIML) | 1.335 | 1.167 | **+0.168** | 0.38 |
-| sensory (ASEL/ASER/AWAL/AWCL) | 1.497 | 1.579 | **−0.083** | 0.72 |
+### Where to go next — build intuition before adding power
 
-The hypothesis predicts a *negative* difference. In the interneurons the effect
-runs the wrong way and is not significant; in the sensory neurons it runs the
-predicted way but is further still from significance. **The sign is not stable
-between neuron sets**, and it is not stable within one either — dropping any
-single stimulus moves the interneuron contrast between +0.02 and +0.29.
+The distance is a new measure and its behaviour on real data is not yet
+understood. Adding statistical power to a measure whose noise properties are
+unknown would be premature. In rough order:
 
-Φ itself does not separate the classes: it varies eight-fold across stimuli,
-with OP50 (attractant, Φ = 734) and Control (Φ = 494) at the top.
+1. **Characterise the noise floor properly.** It is currently one number per
+   stimulus from 10 animal splits. How does it scale with the number of animals
+   pooled, with epoch length, with τ, with the smoothing constant? A measure
+   whose noise floor is understood can be corrected for; one whose is not,
+   cannot.
+2. **Within-animal, within-stimulus variance.** Each animal sees each stimulus 3
+   times. Those repeats give a variance estimate that pooling destroys. It needs
+   per-repeat structures, which current sampling cannot support — but it is the
+   right quantity, and it decomposes the noise into within-animal and
+   between-animal parts.
+3. **A positive control.** Find *any* manipulation this distance detects
+   reliably in these data — sleep versus wake, early versus late in a session,
+   one animal versus another. Without a positive control, a null on the stimulus
+   contrast says nothing about the hypothesis, only about the measure.
+4. **More stimuli per class.** Only after the above. The binding constraint on
+   the class test is 4 stimuli per class = 6 within-class pairs, but more pairs
+   of an uninformative measure buys nothing.
+5. **Then the modelling choices**: a connectivity constraint once "which
+   connectivity" is settled, a τ chosen from data once there are enough samples
+   to locate it, and a state chosen to reflect the response rather than the
+   baseline.
 
-Both neuron sets were run because they answer different questions. AIB/AVE/AVA/
-RIM are interneurons and premotor/ring interneurons — the locomotor command
-circuit. ASEL/ASER (salt) and AWAL/AWCL (attractant odour) are the amphid
-chemosensory neurons the project's aim names. Both are present at full
-identification confidence in all 8 recordings.
-
-**This is a null result, not evidence of absence.** Four stimuli per class give
-six within-class pairs, and the permutation null has a standard deviation
-comparable to the observed effect — only a very large effect could have reached
-significance. The design is underpowered for this contrast.
-
-### What would raise the power
-
-1. **More stimuli per class.** The binding constraint is 4 stimuli, not 8 animals. Six to eight per class would roughly double the within-class pairs.
-2. **Per-animal structures.** Pooling was forced by state coverage. Longer recordings, or a binarization visiting more states per epoch, would allow one structure per animal per stimulus — restoring a real within-class variance estimate and a far larger permutation space.
-3. **A deliberately chosen state.** Every pooled TPM is evaluated at its most-occupied state, which is all-off for all ten stimuli. A state reflecting the *response* rather than the baseline may separate classes better. Cheapest to try first.
-4. **Restore a connectivity constraint.** A strongly connected matrix — anatomical rather than functional — would let the structures encode circuit topology again.
-5. **Enough samples to locate τ.** With a φ_s curve that has a genuine interior maximum, τ could be set by the data as the deck prescribes rather than by convention.
-
----
 
 ## Validation on structures PyPhi actually produces
 
@@ -626,7 +716,7 @@ notebooks/     01–07 as both .ipynb (Colab) and .py (paired via jupytext)
 src/
   gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
   ces_hypergraph.py   data loading, TPM construction, PyPhi extraction
-figures/       fig01–fig15 as vector PDF + preview PNG
+figures/       fig01–fig17 as vector PDF + preview PNG
 results/       TPMs, extracted hypergraphs (JSON), distance matrices and
                permutation tests (CSV)
 data/          downloaded recordings (gitignored)

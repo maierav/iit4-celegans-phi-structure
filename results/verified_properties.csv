@@ -1,0 +1,9 @@
+property,n_tested,violations,detail,pass
+"identity: D(X,X) = 0",50,0,4-distinction random structures,True
+"symmetry: |D(X,Y) - D(Y,X)|",200,0,max asymmetry 6.66e-16 over 200 random pairs,True
+triangle inequality,200,0,200 random triples of 4-distinction structures,True
+D = 0 <=> isomorphic,400,0,"0 false identities, 0 false differences",True
+bounds |dPhi| <= D <= Phi1+Phi2,200,0,200 random pairs,True
+degree-agnostic: +0.01 moves D by 0.01,5,0,deg 1: 0.01; deg 2: 0.01; deg 3: 0.01; deg 4: 0.01; deg 5: 0.01,True
+"relation mapping is induced, not free",1,0,independent matching 0.000 (calls them identical); gold standard 0.200,True
+assignment cannot replace the factorial search,400,0,"Hungarian overshoots the exact distance in 339 of 400 pairs (85%); mean excess 0.3923, max 1.4660",True
