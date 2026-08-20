@@ -112,7 +112,7 @@ print(f"epoch {EPOCH_N} samples (15 s) | lag τ = {TAU_N} sample ({TAU_N/FS:.3f}
 # one. Three reasons for this choice:
 #
 # 1. **Data.** Coarse-graining time discards samples we cannot spare. At τ = 1
-#    a 40-frame epoch yields 39 transitions; at τ = 8 (3 s) it yields 32, a 22%
+#    a 40-frame epoch yields 39 transitions; at τ = 8 (3 s) it yields 32, an 18%
 #    loss across the whole dataset.
 # 2. **Plausibility.** The only consciousness we can reason about from the
 #    inside is our own, and the integration window relevant to an experience —

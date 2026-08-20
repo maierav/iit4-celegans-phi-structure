@@ -322,7 +322,7 @@ Transitions are counted between **consecutive frames** — τ = 1 sample =
 0.375 s, the native acquisition rate. Three reasons:
 
 1. **Data.** Coarse-graining time discards samples we cannot spare. At τ = 1 a
-   40-frame epoch yields 39 transitions; at τ = 8 (3 s) it yields 32, a 22%
+   40-frame epoch yields 39 transitions; at τ = 8 (3 s) it yields 32, an 18%
    loss across the dataset.
 2. **Plausibility.** The only consciousness we can reason about from the inside
    is our own, and the integration window relevant to an experience — say the
@@ -458,7 +458,7 @@ the *n* ≈ 9 ceiling. The identity bijection is used instead, justified by the
 shared substrate.
 
 **This is not free.** Scoring 2000 random relabellings of one real pair: the
-identity mapping scores 1.12 and beats **99.4%** of them (random mean 1.49), but
+identity mapping scores 1.12 and beats **99.5%** of them (random mean 1.49), but
 it is **not the minimum** — some relabellings score as low as 0.79. So every
 distance reported here is an **upper bound** on the exact distance, not the
 exact distance. It is a principled and strongly-performing choice of
