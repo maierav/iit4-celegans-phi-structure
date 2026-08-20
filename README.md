@@ -33,6 +33,7 @@ neuron sets, and the design is underpowered for the contrast. See
 | **Cost** | *n*! where *n* = number of distinctions. Practical to *n* ≈ 9 |
 | **Result** | Not supported. Interneurons p = 0.38 (wrong direction), sensory p = 0.72; the sign flips between neuron sets |
 | **Why** | 4 stimuli per class = 6 within-class pairs; the permutation null is as wide as the effect |
+| **Robustness** | Binarization verified bit-for-bit against the reference notebook; conclusion unchanged under τ chosen by argmax φ_s |
 | **Next** | More stimuli per class, or per-animal structures — both raise the within-class pair count |
 
 ---
@@ -50,6 +51,7 @@ then `Runtime > Run all`.
 | **04 — Toy examples** | Nine real Φ-structures from 3-unit networks, relations up to degree 4 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/04_toy_examples.ipynb) |
 | **05 — PyPhi 2.0 example** | One comparison end to end: two structures from update rules, all 24 mappings drawn, cost broken down term by term | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/05_pyphi2_example.ipynb) |
 | **06 — The *C. elegans* comparison** | **The headline analysis.** Pooled per-stimulus TPMs, ten Φ-structures, permutation test | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/06_celegans_pooled.ipynb) |
+| **07 — Binarization and τ** | Verifies binarization against the reference notebook bit-for-bit; tests whether τ can be chosen by argmax φ_s | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/07_binarization_and_tau.ipynb) |
 
 Locally:
 
@@ -299,7 +301,51 @@ Ten stimuli × 3 repeats per animal: four attractants (100 mM NaCl, e-2 IAA,
 e-6 IAA, OP50), four repellents (450 mM NaCl, 1 µM ascr#3, 10 mM CuSO₄, 800 mM
 sorbitol), two controls (buffer, fluorescein).
 
-Two decisions made the analysis possible, both deliberate trade-offs.
+### Preprocessing follows the reference implementation
+
+Traces are binarized with a **mid-range threshold in an 800-sample window
+centred on each sample** (300 s at 2.667 Hz), then the four binary traces are
+packed into one integer state series with neuron *i* on bit *i*. This is
+verified **bit-for-bit identical** to the reference notebook that defines the
+project's state of the art — same sampling rate, same window, same threshold,
+same output on all 8 recordings × 4 neurons *and* on the combined state series
+([`notebooks/07`](notebooks/07_binarization_and_tau.ipynb)).
+
+Two inherited properties worth stating plainly: the window is **centred**, so
+the binarization uses future samples and is non-causal; and the **mid-range**
+threshold is set by the two most extreme values in the window, making it
+sensitive to transients rather than to the bulk of the distribution. Both are
+kept for exact agreement with the reference.
+
+![Binarization and the choice of τ](figures/fig15_binarization_and_tau.png)
+
+The binarization on a stimulus response (a). Panels b–e concern τ, below.
+[Vector PDF](figures/fig15_binarization_and_tau.pdf)
+
+### On the transition lag τ
+
+Transitions are counted at a lag of **τ = 3 s**. The *Applying IIT to Your Data*
+deck argues τ should not be fixed by convention but chosen as
+**argmax φ_s** — the lag at which the system is most irreducible. That is right
+in principle, and it was implemented and tested here. It is **not identifiable
+at this data volume**:
+
+* φ_s roughly doubles at τ* versus 3 s (mean 0.214 vs 0.100), and no stimulus
+  peaks at 3 s — which looks like a reason to adopt it.
+* But τ* **moves with the epoch window**. Widening epochs from 15 s to 30 s
+  shifts τ* by a mean of 11.2 s, and **0 of 10 stimuli** give the same answer
+  under both. Six roughly *double* their τ* (ratio 1.86–2.15) — exactly what a
+  quantity tracking the window would do — and the other four collapse to
+  τ* = 1 s. The optimum is following the epoch length, not the dynamics.
+
+Locating argmax φ_s needs a curve with a genuine interior maximum, and 960
+pooled frames per stimulus does not provide one. **The reported analysis keeps
+τ = 3 s**, and the conclusion does not depend on it: under τ* the class contrast
+changes sign and remains far from significance (p = 0.62 vs 0.38).
+
+### Two further decisions
+
+Both deliberate trade-offs.
 
 ### No connectivity matrix
 
@@ -399,6 +445,7 @@ significance. The design is underpowered for this contrast.
 2. **Per-animal structures.** Pooling was forced by state coverage. Longer recordings, or a binarization visiting more states per epoch, would allow one structure per animal per stimulus — restoring a real within-class variance estimate and a far larger permutation space.
 3. **A deliberately chosen state.** Every pooled TPM is evaluated at its most-occupied state, which is all-off for all ten stimuli. A state reflecting the *response* rather than the baseline may separate classes better. Cheapest to try first.
 4. **Restore a connectivity constraint.** A strongly connected matrix — anatomical rather than functional — would let the structures encode circuit topology again.
+5. **Enough samples to locate τ.** With a φ_s curve that has a genuine interior maximum, τ could be set by the data as the deck prescribes rather than by convention.
 
 ---
 
@@ -575,11 +622,11 @@ over distinctions *and* relations.
 ## Repository layout
 
 ```
-notebooks/     01–06 as both .ipynb (Colab) and .py (paired via jupytext)
+notebooks/     01–07 as both .ipynb (Colab) and .py (paired via jupytext)
 src/
   gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
   ces_hypergraph.py   data loading, TPM construction, PyPhi extraction
-figures/       fig01–fig14 as vector PDF + preview PNG
+figures/       fig01–fig15 as vector PDF + preview PNG
 results/       TPMs, extracted hypergraphs (JSON), distance matrices and
                permutation tests (CSV)
 data/          downloaded recordings (gitignored)
@@ -609,11 +656,13 @@ data/          downloaded recordings (gitignored)
 | use the distance | [`src/gold_standard.py`](src/gold_standard.py) |
 | see one comparison drawn step by step | [`notebooks/05`](notebooks/05_pyphi2_example.ipynb) |
 | see the distance validated on real structures | [`notebooks/04`](notebooks/04_toy_examples.ipynb) |
-| reproduce every figure | `notebooks/01` → `02` → … → `06` |
+| reproduce every figure | `notebooks/01` → `02` → … → `07` |
 
 ## Sources
 
 * IIT 4.0: Albantakis et al. (2023), *PLOS Comput Biol* 19(10): e1011465
 * PyPhi: Mayner et al. (2018), *PLOS Comput Biol* 14(7): e1006343
 * Data: [chemosensory-data.worm.world](https://chemosensory-data.worm.world/index.html)
+* Preprocessing conventions and the argmax-φ_s prescription for τ: *Applying IIT
+  to Your Data* (Maier & Ikeda), and the reference Colab notebook it accompanies
 * Functional connectivity: [funconn.princeton.edu](https://funconn.princeton.edu/)

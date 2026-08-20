@@ -1,0 +1,11 @@
+stimulus,tau_star_15s_epoch,tau_star_30s_epoch,shift
+100mM NaCl,14,28,14
+e-2 IAA,14,28,14
+e-6 IAA,14,29,15
+OP50,10,20,10
+450mM NaCl,14,26,12
+1uM ascr#3,13,1,-12
+10mM CuSO4,2,1,-1
+800mM Sorbitol,13,28,15
+Control,8,1,-7
+Fluorescein,13,1,-12

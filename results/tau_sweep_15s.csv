@@ -1,0 +1,11 @@
+stimulus,class,tau_star,phi_s_max,phi_s_at_3s
+100mM NaCl,attractant,14,0.11602,0.07138
+e-2 IAA,attractant,14,0.06923,0.03017
+e-6 IAA,attractant,14,0.20815,0.0749
+OP50,attractant,10,0.18829,0.14179
+450mM NaCl,repellent,14,0.24169,0.12974
+1uM ascr#3,repellent,13,0.23906,0.06761
+10mM CuSO4,repellent,2,0.13457,0.11752
+800mM Sorbitol,repellent,13,0.61963,0.14357
+Control,control,8,0.13139,0.11744
+Fluorescein,control,13,0.19202,0.10569
