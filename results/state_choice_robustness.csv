@@ -1,0 +1,5 @@
+rule,diff,within_attractant,within_repellent,p_two_sided,states_used
+argmax-occupancy (0000),-0.00395,1.25825,1.2622,0.9854,0000
+all-ON (1111),-0.13944,1.09186,1.23129,0.70166,1111
+2nd most occupied,-0.13944,1.09186,1.23129,0.70166,1111
+max phi_s over states,-0.15948,1.10271,1.2622,0.41072,0000|1111

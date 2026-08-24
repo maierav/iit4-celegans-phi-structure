@@ -409,6 +409,280 @@ print("\n=> the identity bijection is a principled, strongly-performing choice,"
 print("   but not provably the argmin. Reported distances are UPPER BOUNDS.")
 
 # %% [markdown]
+# ## The TPMs, and how the state was chosen
+#
+# This section answers two questions directly: **what do the TPMs look like**,
+# and **how is one state picked out of 16** to unfold the Φ-structure at.
+#
+# ### The TPM
+#
+# For each stimulus, every transition observed inside any of its 24 epochs is
+# tallied into a 16 × 16 count matrix `C[a, b]` = times state *a* was followed
+# τ frames later by state *b*. Rows are then normalised to probabilities with
+# **Laplace smoothing**, α = 0.5:
+#
+# ```
+# P[a, b] = (C[a, b] + α) / Σ_b (C[a, b] + α)
+# ```
+#
+# Smoothing is not cosmetic here. With 960 frames and 256 parameters, several
+# rows have **zero** observed transitions — those states were never visited in
+# any epoch of that stimulus. Without smoothing those rows are undefined and
+# PyPhi cannot proceed; with it, they become the uniform prior. Marked with
+# dotted lines in the figure below, they are rows where the TPM carries **no
+# data at all**: 0–5 of 16 rows per stimulus.
+#
+# ### Picking the state
+#
+# A Φ-structure is defined for a system **in a particular state** — IIT 4.0 is
+# state-dependent, and there is no such thing as "the Φ-structure of this TPM".
+# So one of the 16 states must be chosen for each stimulus.
+#
+# The rule used is **argmax occupancy**: the state the system spent the most
+# epoch frames in. For all ten stimuli that is **0000**, all four neurons below
+# threshold, occupying 42–71% of frames.
+#
+# **This is the weakest link in the pipeline, and it deserves to be stated
+# plainly.** Two things are wrong with it:
+#
+# 1. **0000 is the baseline, not the response.** The most-occupied state during
+#    a stimulus epoch is the quiescent one, so the structure being characterised
+#    is closer to "what this circuit is like at rest under this chemical" than
+#    "what the response to this chemical is like".
+# 2. **The choice matters enormously.** Φ at the 16 states of a single TPM spans
+#    more than two orders of magnitude. Different states of the same TPM are
+#    genuinely different structures.
+#
+# The cell below quantifies both, and then re-runs the class contrast under four
+# different selection rules to check the conclusion does not hinge on the
+# choice.
+
+# %%
+def occupancy_and_counts(tag, stimulus, tau=TAU_N, epoch=EPOCH_N):
+    C = np.zeros((16, 16))
+    occ = np.zeros(16)
+    for states, onsets in DATA[tag]:
+        for t0 in onsets.get(stimulus, []):
+            segment = states[t0:t0 + epoch]
+            for s_ in segment:
+                occ[s_] += 1
+            for a, b in zip(segment[:-tau], segment[tau:]):
+                C[a, b] += 1
+    return C, occ
+
+
+CNT = {s: occupancy_and_counts("inter", s) for s in STIMULI}
+
+occupancy = pd.DataFrame([{
+    "stimulus": s, "class": ch.STIMULUS_CLASS[s],
+    "argmax_state": format(int(np.argmax(CNT[s][1])), "04b"),
+    "argmax_frac": round(CNT[s][1].max() / CNT[s][1].sum(), 3),
+    "second_state": format(int(np.argsort(-CNT[s][1])[1]), "04b"),
+    "second_frac": round(np.sort(CNT[s][1])[-2] / CNT[s][1].sum(), 3),
+    "states_visited": int((CNT[s][1] > 0).sum()),
+    "unvisited_tpm_rows": int((CNT[s][0].sum(1) == 0).sum()),
+} for s in STIMULI])
+occupancy.to_csv("results/state_occupancy.csv", index=False)
+print(occupancy.to_string(index=False))
+print(f"\nargmax state is 0000 for "
+      f"{(occupancy.argmax_state == '0000').sum()} of {len(STIMULI)} stimuli")
+print(f"unvisited (prior-only) TPM rows per stimulus: "
+      f"{occupancy.unvisited_tpm_rows.min()}–{occupancy.unvisited_tpm_rows.max()}")
+
+# %% [markdown]
+# ### How much does the state choice matter? Φ at all 16 states of one TPM
+
+# %%
+def tpm_from(C, alpha=0.5):
+    return (C + alpha) / (C + alpha).sum(1, keepdims=True)
+
+
+def structure_at(C, state_index, neurons=INTER):
+    network = pyphi.Network(convert.state_by_state2state_by_node(tpm_from(C)),
+                            node_labels=neurons)
+    state = tuple((state_index >> i) & 1 for i in range(len(neurons)))
+    return pyphi.new_big_phi.phi_structure(pyphi.Subsystem(network, state))
+
+
+C_ref, occ_ref = CNT["100mM NaCl"]
+by_state = []
+for si in range(16):
+    ps = structure_at(C_ref, si)
+    by_state.append(dict(state=format(si, "04b"),
+                         occupancy=round(occ_ref[si] / occ_ref.sum(), 4),
+                         Phi=round(float(ps.big_phi), 2),
+                         n_dist=len(ps.distinctions),
+                         n_rel=len(list(ps.relations))))
+phi_by_state = pd.DataFrame(by_state)
+phi_by_state.to_csv("results/phi_by_state_100mM_NaCl.csv", index=False)
+print(phi_by_state.to_string(index=False))
+print(f"\nΦ spans {phi_by_state.Phi.min():.1f}–{phi_by_state.Phi.max():.1f} across the "
+      f"16 states of ONE TPM — a {phi_by_state.Phi.max()/phi_by_state.Phi.min():.0f}× spread")
+
+# %% [markdown]
+# ### Does the conclusion depend on the rule?
+#
+# Four rules, each applied to all ten stimuli, each giving a full distance
+# matrix and permutation test.
+
+# %%
+def class_contrast(D, labels_):
+    iu = np.triu_indices(len(labels_), 1)
+    a = [D[i, j] for i, j in zip(*iu) if labels_[i] == labels_[j] == "attractant"]
+    r = [D[i, j] for i, j in zip(*iu) if labels_[i] == labels_[j] == "repellent"]
+    return np.mean(a) - np.mean(r), np.mean(a), np.mean(r)
+
+
+def contrast_under_rule(pick):
+    shapes = {}
+    used = {}
+    for s in STIMULI:
+        C, occ = CNT[s]
+        si = pick(C, occ)
+        used[s] = format(si, "04b")
+        shapes[s] = unit_phi(canonical(structure_at(C, si), INTER))
+    m = len(STIMULI)
+    M = np.zeros((m, m))
+    for i in range(m):
+        for j in range(i + 1, m):
+            M[i, j] = M[j, i] = distance(shapes[STIMULI[i]], shapes[STIMULI[j]])
+    obs, mean_a, mean_r = class_contrast(M, CLASSES)
+    rng_ = np.random.default_rng(0)
+    null = np.array([class_contrast(M, rng_.permutation(CLASSES))[0] for _ in range(5000)])
+    return dict(diff=obs, within_attractant=mean_a, within_repellent=mean_r,
+                p_two_sided=(np.sum(np.abs(null) >= abs(obs)) + 1) / 5001,
+                states_used="|".join(sorted(set(used.values()))))
+
+
+def max_phi_s_state(C, occ):
+    network = pyphi.Network(convert.state_by_state2state_by_node(tpm_from(C)),
+                            node_labels=INTER)
+    best = (-np.inf, 0)
+    for si in range(16):
+        if occ[si] == 0:
+            continue
+        state = tuple((si >> i) & 1 for i in range(4))
+        try:
+            v = float(pyphi.new_big_phi.sia(pyphi.Subsystem(network, state)).phi)
+        except Exception:
+            continue
+        if v > best[0]:
+            best = (v, si)
+    return best[1]
+
+
+RULES = {
+    "argmax-occupancy (0000)": lambda C, occ: int(np.argmax(occ)),
+    "all-ON (1111)": lambda C, occ: 15,
+    "2nd most occupied": lambda C, occ: int(np.argsort(-occ)[1]),
+    "max phi_s over states": max_phi_s_state,
+}
+robustness = pd.DataFrame([dict(rule=name, **contrast_under_rule(fn))
+                           for name, fn in RULES.items()]).round(5)
+robustness.to_csv("results/state_choice_robustness.csv", index=False)
+print(robustness.to_string(index=False))
+print("\nAll four rules give a null. The hypothesis predicts a NEGATIVE difference")
+print("and all four produce one, but none approaches significance. The conclusion")
+print("does not hinge on the state choice -- though the Φ VALUES depend on it hugely.")
+
+# %% [markdown]
+# ## Figure 18 — the TPMs, and the state-choice problem
+
+# %%
+ROB = robustness.set_index("rule").to_dict("index")
+
+LBL=[format(i,"04b") for i in range(16)]
+
+fig = plt.figure(figsize=(11.4, 8.6))
+g = fig.add_gridspec(4, 6, hspace=0.72, wspace=0.55, height_ratios=[1,1,0.16,1.35])
+
+# rows 0-1: the ten TPMs
+for k,s in enumerate(STIMULI):
+    ax = fig.add_subplot(g[k//5, (k%5)+(1 if k%5>=0 else 0)] if False else g[k//5, k%5])
+    C,occ = CNT[s]
+    P = tpm_from(C)
+    im = ax.imshow(P, cmap="magma_r", vmin=0, vmax=0.5, interpolation="nearest")
+    unv = np.where(C.sum(1)==0)[0]
+    for u in unv:
+        ax.add_patch(mpl.patches.Rectangle((-0.5,u-0.5),16,1,fill=False,
+                                            ec="#00a0a0",lw=0.7,ls=":"))
+    ax.set_xticks([0,15]); ax.set_xticklabels(["0000","1111"], fontsize=5)
+    ax.set_yticks([0,15]); ax.set_yticklabels(["0000","1111"], fontsize=5)
+    ax.tick_params(length=1.6, pad=1)
+    ax.set_title(f"{s}\n{ch.STIMULUS_CLASS[s]} · {int(C.sum())} transitions",
+                 fontsize=6.2, color=COL[ch.STIMULUS_CLASS[s]], loc="center", pad=3)
+    if k==0:
+        ax.set_ylabel("state at t", fontsize=6, labelpad=2)
+        ax.set_xlabel("state at t+τ", fontsize=6, labelpad=2)
+cax = fig.add_subplot(g[2, 1:4])
+cb = fig.colorbar(im, cax=cax, orientation="horizontal")
+cb.set_label("transition probability (Laplace-smoothed, α = 0.5)", fontsize=6.5, labelpad=3)
+cb.ax.tick_params(labelsize=6)
+cax.text(1.02, 0.5, "dotted rows = state never visited\n(entirely prior)", transform=cax.transAxes,
+         fontsize=5.8, va="center", ha="left", color="#00a0a0")
+
+# row 3: the state-choice problem
+ax = fig.add_subplot(g[3,0:3])
+x = np.arange(16)
+ax.bar(x, phi_by_state.occupancy, 0.72, color=LIGHT, label="occupancy")
+ax2 = ax.twinx()
+ax2.plot(x, phi_by_state.Phi, "o-", ms=3, lw=1.0, color=ORANGE, label="Φ at that state")
+ax2.set_yscale("log")
+ax2.set_ylabel("Φ  (log)", color=ORANGE, labelpad=1, fontsize=7)
+ax2.tick_params(axis="y", colors=ORANGE, labelsize=6, pad=1)
+ax.set_xticks(x); ax.set_xticklabels(LBL, rotation=90, fontsize=5)
+ax.set_ylabel("fraction of epoch frames", labelpad=4)
+ax.set_xlabel("state", labelpad=4)
+ax.axvline(0, color="#333", lw=0.8, ls=":")
+ax.text(0.55, 0.73, "chosen:\nargmax occupancy", fontsize=6, color="#333", va="top")
+h=[mpl.patches.Patch(color=LIGHT,label="occupancy"),
+   mpl.lines.Line2D([],[],marker="o",color=ORANGE,label="Φ at that state")]
+ax.legend(handles=h, frameon=False, loc="upper center", fontsize=6, ncol=2,
+          borderaxespad=0.1)
+ax.set_ylim(0, 0.98)
+ax.set_title(f"a  100 mM NaCl: one TPM, 16 possible states.\n"
+             f"   Φ spans {phi_by_state.Phi.min():.1f}–{phi_by_state.Phi.max():.1f} — a {phi_by_state.Phi.max()/phi_by_state.Phi.min():.0f}× spread",
+             loc="left")
+
+# occupancy of 0000 vs 1111 across stimuli
+ax = fig.add_subplot(g[3,3])
+w=0.38; xs=np.arange(len(STIMULI))
+ax.bar(xs-w/2, occupancy.argmax_frac, w, color=GREY, label="0000 (chosen)")
+ax.bar(xs+w/2, occupancy.second_frac, w, color=ORANGE, label="1111")
+ax.set_xticks(xs); ax.set_xticklabels([s[:11] for s in STIMULI], rotation=90, fontsize=5.5)
+ax.set_ylabel("fraction of frames", labelpad=6)
+ax.legend(frameon=False, loc="upper right", fontsize=5.8)
+ax.set_ylim(0, 0.92)
+ax.set_title("b  0000 dominates\n   every epoch", loc="left")
+
+# the four selection rules
+ax = fig.add_subplot(g[3,4:6])
+rules = list(ROB)
+y = np.arange(len(rules))
+diffs = [ROB[r]["diff"] for r in rules]
+ax.barh(y, diffs, 0.55, color=[ORANGE if abs(d)>0.1 else GREY for d in diffs])
+for yi,r in zip(y, rules):
+    ax.text(ROB[r]["diff"] - 0.008, yi, f"p = {ROB[r]['p_two_sided']:.2f}", va="center",
+            fontsize=6.2, ha="right", color="#333")
+ax.axvline(0, color="#333", lw=0.9)
+ax.set_yticks([]); ax.invert_yaxis()
+for yi, r in zip(y, rules):
+    ax.text(0.012, yi, r, va="center", ha="left", fontsize=6.2, color="#333")
+ax.set_xlim(-0.30, 0.22)
+ax.set_xlabel("mean within-attractant − within-repellent", labelpad=4)
+ax.set_title("c  Four state-selection rules.\n   All null; hypothesis predicts negative", loc="left")
+
+fig.savefig("figures/fig18_tpms_and_state_choice.pdf", bbox_inches="tight")
+fig.savefig("figures/fig18_tpms_and_state_choice.png", dpi=200, bbox_inches="tight")
+r_=fig.canvas.get_renderer()
+tx=[(t,t.get_window_extent(r_)) for t in fig.findobj(mpl.text.Text) if t.get_text().strip() and t.get_visible()]
+tls={a_:set(a_.get_xticklabels()+a_.get_yticklabels()) for a_ in fig.axes}
+print("overlaps:",[(a.get_text()[:16],b.get_text()[:16]) for i,(a,ba) in enumerate(tx) for b,bb in tx[i+1:]
+                   if ba.overlaps(bb) and not any(a in s2 and b in s2 for s2 in tls.values())][:8])
+
+print("wrote figures/fig18_tpms_and_state_choice.pdf")
+
+# %% [markdown]
 # ## Magnitude versus shape
 #
 # Φ varies widely across stimuli without tracking class, so distances are
@@ -486,13 +760,6 @@ print("   Ratios near 1 mean the measure cannot currently separate stimuli at al
 # informative.
 
 # %%
-def class_contrast(D, labels_):
-    iu = np.triu_indices(len(labels_), 1)
-    a = [D[i, j] for i, j in zip(*iu) if labels_[i] == labels_[j] == "attractant"]
-    r = [D[i, j] for i, j in zip(*iu) if labels_[i] == labels_[j] == "repellent"]
-    return np.mean(a) - np.mean(r), np.mean(a), np.mean(r)
-
-
 rng = np.random.default_rng(0)
 PERM = {}
 for tag in SUBSTRATE:

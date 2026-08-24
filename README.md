@@ -407,6 +407,69 @@ It discards between-animal variation and **removes the within-class variance
 estimate** that repeated animals would have supplied. The split-half noise floor
 below recovers part of what pooling hides.
 
+### The TPM, and how one state is chosen
+
+Both steps are worth spelling out, because the second is the weakest link in
+the whole pipeline.
+
+**Building the TPM.** For each stimulus, every transition observed inside any of
+its 24 epochs is tallied into a 16 × 16 count matrix — `C[a,b]` = number of
+times state *a* was followed τ frames later by state *b*. Rows are normalised to
+probabilities with **Laplace smoothing**, α = 0.5:
+
+```
+P[a,b] = (C[a,b] + α) / Σ_b (C[a,b] + α)
+```
+
+The smoothing is load-bearing, not cosmetic. With 960 frames against 256
+parameters, some rows have **zero** observed transitions — states never visited
+in any epoch of that stimulus. Unsmoothed, those rows are undefined and PyPhi
+cannot proceed; smoothed, they become the uniform prior. Between **0 and 5 of
+16 rows per stimulus** are prior-only, carrying no data at all.
+
+**Choosing the state.** A Φ-structure is defined for a system **in a particular
+state** — IIT 4.0 is state-dependent, and there is no such thing as "the
+Φ-structure of this TPM". One of the 16 states has to be picked per stimulus.
+
+The rule used is **argmax occupancy**: the state the system spent the most epoch
+frames in. For all ten stimuli that is **0000** — all four neurons below
+threshold — occupying 42–71% of frames.
+
+**Two things are wrong with this, and neither is hidden:**
+
+1. **0000 is the baseline, not the response.** The most-occupied state during a
+   stimulus epoch is the quiescent one, so what gets characterised is closer to
+   "this circuit at rest under this chemical" than "the response to this
+   chemical".
+2. **The choice matters enormously.** Across the 16 states of the *same* TPM,
+   Φ spans **0.8 to 233.3 — a 278× range** — with distinction counts from 1 to
+   15. Different states of one TPM are genuinely different structures.
+
+![The ten TPMs and the state-choice problem](figures/fig18_tpms_and_state_choice.png)
+
+All ten pooled TPMs (rows 1–2), with dotted lines marking prior-only rows.
+Below: Φ against occupancy across all 16 states of one TPM (a), how far 0000
+dominates every epoch (b), and the class contrast under four different
+state-selection rules (c).
+[Vector PDF](figures/fig18_tpms_and_state_choice.pdf)
+
+**Does the conclusion depend on the rule?** No. Four rules, each re-run through
+the full pipeline:
+
+| rule | state(s) used | difference | p |
+|---|---|---|---|
+| argmax occupancy | 0000 | −0.004 | 0.99 |
+| all-ON | 1111 | −0.139 | 0.70 |
+| 2nd most occupied | 1111 | −0.139 | 0.70 |
+| max φ_s over visited states | 0000, 1111 | −0.159 | 0.41 |
+
+The hypothesis predicts a *negative* difference, and all four rules produce one
+— but none comes close to significance, and the largest (−0.159 at p = 0.41)
+still sits well inside its permutation null. So the **null is robust to the state choice**
+even though the Φ *values* are extremely sensitive to it. Choosing a state that
+reflects the response rather than the baseline remains a real open item — see
+[where to go next](#where-to-go-next--build-intuition-before-adding-power).
+
 ### What is being compared: four neurons, two substrates
 
 Every Φ-structure here is over a **4-unit substrate**, so it has at most
@@ -533,10 +596,16 @@ unknown would be premature. In rough order:
 4. **More stimuli per class.** Only after the above. The binding constraint on
    the class test is 4 stimuli per class = 6 within-class pairs, but more pairs
    of an uninformative measure buys nothing.
-5. **Then the modelling choices**: a connectivity constraint once "which
-   connectivity" is settled, a τ chosen from data once there are enough samples
-   to locate it, and a state chosen to reflect the response rather than the
-   baseline.
+5. **A state that reflects the response.** Every structure here is evaluated at
+   the most-occupied state, which is the all-off baseline for all ten stimuli.
+   Φ varies 278-fold across states of one TPM, so this is a large lever. The
+   null survives three alternative rules, none of which is *response*-based
+   either — a principled choice (e.g. the state most enriched during the epoch
+   relative to pre-stimulus baseline) needs enough samples to estimate that
+   enrichment.
+6. **Then the remaining modelling choices**: a connectivity constraint once
+   "which connectivity" is settled, and a τ chosen from data once there are
+   enough samples to locate it.
 
 
 ## Validation on structures PyPhi actually produces
@@ -716,7 +785,7 @@ notebooks/     01–07 as both .ipynb (Colab) and .py (paired via jupytext)
 src/
   gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
   ces_hypergraph.py   data loading, TPM construction, PyPhi extraction
-figures/       fig01–fig17 as vector PDF + preview PNG
+figures/       fig01–fig18 as vector PDF + preview PNG
 results/       TPMs, extracted hypergraphs (JSON), distance matrices and
                permutation tests (CSV)
 data/          downloaded recordings (gitignored)
@@ -742,6 +811,7 @@ data/          downloaded recordings (gitignored)
 | you want to… | go to |
 |---|---|
 | see the result | [The result](#the-result) or [`notebooks/06`](notebooks/06_celegans_pooled.ipynb) |
+| see the TPMs and how a state is chosen | [The TPM, and how one state is chosen](#the-tpm-and-how-one-state-is-chosen) |
 | understand the distance | [The distance algorithm](#the-distance-algorithm) |
 | use the distance | [`src/gold_standard.py`](src/gold_standard.py) |
 | see one comparison drawn step by step | [`notebooks/05`](notebooks/05_pyphi2_example.ipynb) |

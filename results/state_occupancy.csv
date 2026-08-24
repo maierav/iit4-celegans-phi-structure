@@ -1,0 +1,11 @@
+stimulus,class,argmax_state,argmax_frac,second_state,second_frac,states_visited,unvisited_tpm_rows
+100mM NaCl,attractant,0000,0.68,1111,0.074,14,2
+e-2 IAA,attractant,0000,0.419,1111,0.169,11,5
+e-6 IAA,attractant,0000,0.555,1111,0.125,12,4
+OP50,attractant,0000,0.715,1111,0.139,11,5
+450mM NaCl,repellent,0000,0.654,1111,0.091,14,2
+1uM ascr#3,repellent,0000,0.514,1111,0.122,14,2
+10mM CuSO4,repellent,0000,0.418,1111,0.186,15,1
+800mM Sorbitol,repellent,0000,0.529,1111,0.231,13,3
+Control,control,0000,0.627,1111,0.124,15,1
+Fluorescein,control,0000,0.594,1111,0.078,16,0
