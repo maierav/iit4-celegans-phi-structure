@@ -1,2 +1,2 @@
-pipeline,n_states,obs_per_param,invented_mass_pct,unvisited_rows,max_distinctions,bijections,identity_diff,identity_p,exact_diff,exact_p,exact_secs
-3n_global,8,622.2,0.08,0,4,24,-0.0372,0.633,-0.0096,0.7329,0.0
+pipeline,n_states,obs_per_param,invented_mass_pct,unvisited_rows,max_distinctions,bijections,identity_diff,identity_p,exact_diff,exact_p,exact_ms,distinct_state_pairs
+3n_global,8,622.2,0.08,0,4,24,-0.0372,0.633,-0.0096,0.7329,0.96,9

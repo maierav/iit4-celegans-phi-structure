@@ -412,7 +412,11 @@ elapsed3 = time.perf_counter() - t0
 obs_id3, p_id3 = permutation_p(M_id3)
 obs_ex3, p_ex3 = permutation_p(M_ex3)
 print(f"3n global: identity {obs_id3:+.4f} p={p_id3:.3f}  |  "
-      f"EXACT {obs_ex3:+.4f} p={p_ex3:.3f}   [{elapsed3:.1f}s]")
+      f"EXACT {obs_ex3:+.4f} p={p_ex3:.3f}")
+print(f"   {len(_exact3)} distinct state pairs minimised for the full {n}x{n} matrix "
+      f"(45 stimulus pairs collapse via the cache)")
+print(f"   exact minimisation total: {elapsed3*1000:.1f} ms "
+      f"({elapsed3/max(len(_exact3),1)*1000:.2f} ms per pair)")
 
 noise3_pipeline = {s: [] for s in STIMULI}
 for h in HALVES:
@@ -436,7 +440,8 @@ pd.DataFrame([dict(pipeline="3n_global", n_states=8,
                    bijections=math.factorial(max(nd3.values())),
                    identity_diff=round(obs_id3, 4), identity_p=round(p_id3, 4),
                    exact_diff=round(obs_ex3, 4), exact_p=round(p_ex3, 4),
-                   exact_secs=round(elapsed3, 1))]).to_csv("results/global_3n.csv", index=False)
+                   exact_ms=round(elapsed3 * 1000, 2),
+                   distinct_state_pairs=len(_exact3))]).to_csv("results/global_3n.csv", index=False)
 
 pipelines = pd.DataFrame([
     dict(pipeline="per-stimulus TPM, 4n", between=1.2198, within=1.1539, ratio=1.057,
@@ -588,7 +593,7 @@ print("wrote figures/fig22_control_and_snr.pdf")
 #    the worm.
 # 4. **The 3-neuron global TPM is the best-conditioned configuration in the
 #    repo** — 620 observations per parameter, 0.08% invented mass, exact distance
-#    in ~2 s — and it is also null. That is worth knowing: the failure is not
+#    in well under a millisecond — and it is also null. That is worth knowing: the failure is not
 #    fixable by conditioning or by substrate size at this recording length and
 #    sampling rate.
 #

@@ -822,8 +822,9 @@ separating them, so the failure is not one that better TPM estimation fixes.
 
 The 3-neuron global TPM is nonetheless the best-conditioned configuration in the
 repo — 622 observations per parameter, 0.08% invented mass, 3–4 distinctions so
-the **exact** minimisation runs in ~2 s (identity −0.037 p = 0.63; exact −0.010
-p = 0.73). It is worth knowing that the best-conditioned, exactly-computable
+the **exact** minimisation is essentially free — **1.0 ms** for the full 10 × 10
+matrix, because the 45 stimulus pairs collapse to 9 distinct state pairs
+(identity −0.037 p = 0.63; exact −0.010 p = 0.73). It is worth knowing that the best-conditioned, exactly-computable
 pipeline available is also null.
 
 ![Positive control and signal-to-noise across pipelines](figures/fig22_control_and_snr.png)
