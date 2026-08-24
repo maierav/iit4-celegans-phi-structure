@@ -20,12 +20,17 @@ means 15! ≈ 1.3 × 10¹² bijections. It uses the identity correspondence, whi
 an upper bound. Three of the six pipelines are small enough to brute-force, and
 were; see [Exact vs. identity](#exact-vs-identity-what-the-minimisation-buys).
 
-**The answer.** *Not supported* — and the reason is more informative than the
-hypothesis test. **There is no signal above the noise floor at all:** two
-Φ-structures built for the *same* stimulus from different animals differ as much
-as two built for different stimuli. No pair of stimuli separates, so the class
-contrast could not have been detected even if real. See
-[The result](#the-result).
+**The answer, and what kind of answer it is.** *Not supported* — but the
+informative finding is one level up. **The pipeline fails a positive control.**
+Chemical present vs chemical absent — a far larger contrast than attractant vs
+repellent — is invisible to the Φ-structure distance (ratio 0.95, p = 0.75),
+while the *raw fluorescence* resolves the harder attractant/repellent contrast at
+Cohen's *d* = 0.72 in AWAL. So the class information is present in the data and
+lost by the pipeline. **This repository is therefore best read as a methods
+result**: a working Φ-structure distance with verified metric properties, plus a
+quantified account of the data volume it needs — which these recordings do not
+supply. See [The result](#the-result) and
+[Does the measure detect anything?](#does-the-measure-detect-anything).
 
 ---
 
@@ -39,7 +44,8 @@ contrast could not have been detected even if real. See
 | **Cost** | *n*! where *n* = number of distinctions. Practical to *n* ≈ 9 |
 | **Result** | Not supported — and more fundamentally, **no signal above the noise floor** (signal-to-noise 1.06 and 0.96) |
 | **Why** | Two structures for the *same* stimulus, from different animals, differ as much as two different stimuli |
-| **Robustness** | Null across 6 pipelines (2/3/4 neurons, per-stimulus and global TPM, invented mass 0.3–43%), 4 state rules, 2 choices of τ, at the TPM level with no Φ at all, and under the exact brute-force minimisation wherever it is computable |
+| **Robustness** | Null across 7 pipelines, 4 state rules, 2 choices of τ, at the TPM level with no Φ, and under exact minimisation wherever computable |
+| **Positive control** | **Fails.** Chemical present vs absent gives ratio 0.95 (p = 0.75), while the raw traces resolve attractant vs repellent at *d* = 0.72 |
 | **Next** | More stimuli per class, or per-animal structures — both raise the within-class pair count |
 
 ---
@@ -59,6 +65,8 @@ then `Runtime > Run all`.
 | **06 — The *C. elegans* comparison** | **The headline analysis.** Pooled per-stimulus TPMs, ten Φ-structures, permutation test | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/06_celegans_pooled.ipynb) |
 | **07 — Binarization and τ** | Verifies binarization against the reference notebook bit-for-bit; tests whether τ can be chosen by argmax φ_s | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/07_binarization_and_tau.ipynb) |
 | **08 — TPMs and the global route** | Compares the TPMs directly (no Φ); audits how much of each TPM the prior invents; runs 2- and 3-neuron substrates; builds the one-global-TPM alternative with enrichment-selected states | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/08_tpm_distance_and_global.ipynb) |
+| **09 — Raw-trace responses** | PSTH-style ΔF/F₀ for all eight analysed neurons, by stimulus and by class, for one animal and all animals; tests whether the raw signal discriminates the classes | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/09_raw_trace_responses.ipynb) |
+| **10 — Positive control** | **The section that reframes the rest.** Noise floors for the global pipelines, the stimulus-vs-baseline positive control, and the 3-neuron global TPM | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/10_positive_control.ipynb) |
 
 Locally:
 
@@ -500,7 +508,7 @@ The hypothesis predicts a *negative* difference, and all four rules produce one
 still sits well inside its permutation null. So the **null is robust to the state choice**
 even though the Φ *values* are extremely sensitive to it. Choosing a state that
 reflects the response rather than the baseline remains a real open item — see
-[where to go next](#where-to-go-next--build-intuition-before-adding-power).
+[where to go next](#where-to-go-next).
 
 ### What is being compared: four neurons, two substrates
 
@@ -724,49 +732,150 @@ stimulus lying on the identity line when its mean between-stimulus distance is
 plotted against its own noise floor (f).
 [Vector PDF](figures/fig14_pooled_celegans.pdf)
 
-### Where to go next — build intuition before adding power
+## Does the measure detect anything?
 
-The distance is a new measure and its behaviour on real data is not yet
-understood. Adding statistical power to a measure whose noise properties are
-unknown would be premature. In rough order:
+This is the section that reframes everything above it. Run in
+[`notebooks/09`](notebooks/09_raw_trace_responses.ipynb) and
+[`notebooks/10`](notebooks/10_positive_control.ipynb).
 
-1. **Characterise the noise floor properly.** It is currently one number per
-   stimulus from 10 animal splits. How does it scale with the number of animals
-   pooled, with epoch length, with τ, with the smoothing constant? A measure
-   whose noise floor is understood can be corrected for; one whose is not,
-   cannot.
-2. **Within-animal, within-stimulus variance.** Each animal sees each stimulus 3
-   times. Those repeats give a variance estimate that pooling destroys. It needs
-   per-repeat structures, which current sampling cannot support — but it is the
-   right quantity, and it decomposes the noise into within-animal and
-   between-animal parts.
-3. **A positive control.** Find *any* manipulation this distance detects
-   reliably in these data — sleep versus wake, early versus late in a session,
-   one animal versus another. Without a positive control, a null on the stimulus
-   contrast says nothing about the hypothesis, only about the measure.
-4. **More stimuli per class.** Only after the above. The binding constraint on
-   the class test is 4 stimuli per class = 6 within-class pairs, but more pairs
-   of an uninformative measure buys nothing.
-5. **Prefer the global TPM, or a smaller substrate, or both.** The per-stimulus
-   4-neuron TPM is the worst-conditioned option in the repo (43% invented mass).
-   The global TPM at 0.3%, or a 2-neuron substrate at 2%, are both defensible
-   under IIT in a way the current headline pipeline is not. Neither changes the
-   result here, but future work should not be built on a matrix that is 43%
-   prior. A 3-neuron substrate on the *global* TPM is the untried combination.
-6. **A state that reflects the response.** The headline pipeline evaluates at
-   the most-occupied state, which is the all-off baseline for all ten stimuli.
-   Φ varies 278-fold across states of one TPM, so this is a large lever. The
-   null survives three alternative rules, none of which is *response*-based
-   either — a principled choice (e.g. the state most enriched during the epoch
-   relative to pre-stimulus baseline) needs enough samples to estimate that
-   enrichment.
-   The enrichment criterion in [`notebooks/08`](notebooks/08_tpm_distance_and_global.ipynb)
-   is a working answer for the global-TPM route; a per-stimulus-TPM equivalent
-   does not yet exist.
-7. **Then the remaining modelling choices**: a connectivity constraint once
-   "which connectivity" is settled, and a τ chosen from data once there are
-   enough samples to locate it.
+### The class information is in the raw fluorescence
 
+Before asking whether Φ-structures differ, ask whether the *traces* do. One value
+per epoch — mean ΔF/F₀ over the 15 s stimulus window — tested attractant against
+repellent per neuron, Holm-corrected across the eight neurons analysed:
+
+| neuron | attractant | repellent | control | Cohen's *d* | *p* (Holm) |
+|---|---|---|---|---|---|
+| **AWAL** (sensory) | **0.703** | 0.128 | 0.037 | **+0.72** | **< 10⁻⁵** |
+| **AIBL** (core) | −0.100 | 0.052 | −0.088 | **−0.41** | **0.0003** |
+| AVAL (core) | −0.028 | 0.150 | −0.041 | −0.27 | 0.15 |
+| ASER (sensory) | 0.235 | 0.425 | 0.221 | −0.24 | 0.56 |
+| RIML (core) | −0.030 | 0.099 | −0.081 | −0.24 | 0.29 |
+| AWCL (sensory) | −0.159 | −0.124 | −0.160 | −0.18 | 0.24 |
+| ASEL (sensory) | 0.179 | 0.115 | 0.029 | +0.17 | 1.00 |
+| AVEL (core) | 0.043 | 0.098 | −0.046 | −0.09 | 1.00 |
+
+**Two neurons discriminate the classes**, and the directions are the expected
+ones: AWAL responds to attractant odours ~5× more strongly than to repellents,
+and AIBL runs the other way. This is a real, moderate effect in 96 vs 96 epochs.
+
+![Class-pooled responses of all eight neurons](figures/fig20_psth_classes.png)
+
+Mean ± SEM of ΔF/F₀ for the four core interneurons and four chemosensory
+neurons, per stimulus class. Top row: one animal, variance across the 3 repeats
+of each stimulus. Bottom row: all 8 animals, variance across all 24 epochs.
+[Vector PDF](figures/fig20_psth_classes.pdf) ·
+per-stimulus versions: [one animal](figures/fig21_psth_stimuli_one.pdf),
+[all animals](figures/fig21_psth_stimuli_all.pdf)
+
+Three things worth noting from these traces. **One animal is not enough** — with
+12 epochs per class, no neuron survives correction and several single-animal
+effect signs disagree with the pooled ones. **Control responses are not zero**
+(AWCL ≈ −0.23), so "control" means *vehicle*, not *nothing*; the mechanical
+artefact of fluid delivery is a real stimulus. And **the sensory quartet carries
+much larger responses** than the core quartet — peak |ΔF/F₀| of 0.92 (AWAL) and
+0.58 (ASER) against 0.11–0.20 in the interneurons.
+
+### The positive control fails
+
+Every other analysis here discards the ~45 s between the end of one epoch and
+the next onset — **three times more data than it keeps**. That window is a
+stimulus-*absent* condition, so comparing it against the stimulus-present
+condition is a much larger contrast than attractant vs repellent, and it makes a
+positive control.
+
+The design is matched: **signal** = *D*(stimulus, baseline) within one half of the
+animals; **noise** = *D*(stimulus, stimulus) and *D*(baseline, baseline) across
+the two halves — same condition, different animals, so pure sampling error.
+
+| substrate | signal | noise | ratio | *p* (signal > noise) |
+|---|---|---|---|---|
+| 4 neurons | 0.812 | 0.851 | **0.95** | 0.75 |
+| 3 neurons | 0.236 | 0.247 | **0.95** | 0.38 |
+
+**The measure cannot detect the presence of a chemical.** Not attractant vs
+repellent — chemical vs *no chemical*, on 3× more data, with both substrates
+giving ratio 0.95.
+
+This is the finding that governs how everything else here should be read. An
+instrument that fails its positive control cannot support a conclusion that two
+stimulus classes evoke similar Φ-structures. The class nulls in
+[`notebooks/06`](notebooks/06_celegans_pooled.ipynb) and
+[`notebooks/08`](notebooks/08_tpm_distance_and_global.ipynb) characterise the
+*measure at this data volume*, not the worm.
+
+### Better conditioning makes it worse
+
+The global TPM is far better conditioned than the per-stimulus matrices — 0.3%
+invented mass against 43%, no data-free rows. It does have a lower noise floor.
+But its between-stimulus distances fall further still:
+
+| pipeline | invented mass | between | within (noise) | ratio |
+|---|---|---|---|---|
+| per-stimulus TPM, 4 neurons | 43% | 1.220 | 1.154 | **1.06** |
+| global TPM, 4 neurons | 0.3% | 0.380 | 0.636 | **0.60** |
+| global TPM, 3 neurons | 0.08% | 0.121 | 0.365 | **0.33** |
+
+The relationship runs the wrong way: **the better-conditioned the pipeline, the
+worse its signal-to-noise.** Conditioning concentrates the structures rather than
+separating them, so the failure is not one that better TPM estimation fixes.
+
+The 3-neuron global TPM is nonetheless the best-conditioned configuration in the
+repo — 622 observations per parameter, 0.08% invented mass, 3–4 distinctions so
+the **exact** minimisation runs in ~2 s (identity −0.037 p = 0.63; exact −0.010
+p = 0.73). It is worth knowing that the best-conditioned, exactly-computable
+pipeline available is also null.
+
+![Positive control and signal-to-noise across pipelines](figures/fig22_control_and_snr.png)
+
+Raw-trace class discrimination per neuron (a); signal-to-noise for the three Φ
+pipelines (b); **the positive control (c)** — the panel that carries the result;
+AWAL's attractant selectivity (d); conditioning against signal-to-noise (e); and
+what the exact minimisation costs in *p* (f).
+[Vector PDF](figures/fig22_control_and_snr.pdf)
+
+### What this means for the project
+
+The Φ-structure distance is sound — metric properties verified, higher-order
+relations handled natively, exact where computable. What these data cannot do is
+exercise it. Read as a **methods contribution** the repository is complete: it
+delivers a defensible distance between IIT 4.0 Φ-structures, demonstrates that
+scalar and pairwise measures are blind to content it sees, and quantifies the
+data volume it requires — roughly, more than 8 animals × 30 presentations of
+15 s at 2.7 Hz on 4 binarized neurons can supply.
+
+### Where to go next
+
+The positive control changes the priority order. Adding statistical power to a
+measure that cannot detect the presence of a chemical is not useful, so the first
+three items are all about establishing detectability.
+
+1. **Find any manipulation this distance detects.** Until one exists, no null is
+   interpretable. Candidates in descending order of expected effect: optogenetic
+   or genetic ablation of one neuron in the substrate; a much stronger aversive
+   stimulus; comparing an anaesthetised or immobilised animal against a behaving
+   one. The bar is a between/within ratio meaningfully above 1, on a split-half
+   design like [`notebooks/10`](notebooks/10_positive_control.ipynb).
+2. **Attack the binarization, not the TPM.** Conditioning has been ruled out
+   — better-conditioned pipelines have *worse* signal-to-noise
+   ([above](#better-conditioning-makes-it-worse)). What has not been tried is a
+   finer state space: three levels per neuron instead of two, or a state
+   definition based on the derivative rather than the level. Both cost states
+   (and so data) but preserve information that mid-range thresholding destroys.
+3. **Longer recordings per condition.** The binding constraint is per-structure
+   estimation error. 8 animals × 3 repeats × 15 s = 960 frames per stimulus is
+   what produced a noise floor equal to the signal; the required volume is not
+   yet known, and characterising how the noise floor scales with epoch count
+   would tell us.
+4. **Not more stimuli per class.** The design already detects a 14% class
+   difference in principle (6 within-class pairs, minimum detectable difference
+   0.175 against a mean distance of 1.22). Pairs are not the constraint.
+5. **Publish the methods contribution independently of the biology.** The
+   distance, its verified properties, the demonstration that scalar and pairwise
+   measures are blind to higher-order content, the cost characterisation, and the
+   data-volume requirement stand on their own — and the negative result is a
+   substantive part of that, since nobody else appears to have reported what it
+   takes to make this measurable.
 
 ## Validation on structures PyPhi actually produces
 
@@ -941,11 +1050,11 @@ over distinctions *and* relations.
 ## Repository layout
 
 ```
-notebooks/     01–08 as both .ipynb (Colab) and .py (paired via jupytext)
+notebooks/     01–10 as both .ipynb (Colab) and .py (paired via jupytext)
 src/
   gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
   ces_hypergraph.py   data loading, TPM construction, PyPhi extraction
-figures/       fig01–fig19 as vector PDF + preview PNG
+figures/       fig01–fig22 as vector PDF + preview PNG
 results/       TPMs, extracted hypergraphs (JSON), distance matrices and
                permutation tests (CSV)
 data/          downloaded recordings (gitignored)
@@ -971,13 +1080,15 @@ data/          downloaded recordings (gitignored)
 | you want to… | go to |
 |---|---|
 | see the result | [The result](#the-result) or [`notebooks/06`](notebooks/06_celegans_pooled.ipynb) |
+| **understand why the result is a methods finding** | [Does the measure detect anything?](#does-the-measure-detect-anything) |
+| see the raw neural responses | [`notebooks/09`](notebooks/09_raw_trace_responses.ipynb) |
 | see the TPMs and how a state is chosen | [The TPM, and how one state is chosen](#the-tpm-and-how-one-state-is-chosen) |
 | compare the TPMs without Φ, or see the global-TPM route | [`notebooks/08`](notebooks/08_tpm_distance_and_global.ipynb) |
 | understand the distance | [The distance algorithm](#the-distance-algorithm) |
 | use the distance | [`src/gold_standard.py`](src/gold_standard.py) |
 | see one comparison drawn step by step | [`notebooks/05`](notebooks/05_pyphi2_example.ipynb) |
 | see the distance validated on real structures | [`notebooks/04`](notebooks/04_toy_examples.ipynb) |
-| reproduce every figure | `notebooks/01` → `02` → … → `08` |
+| reproduce every figure | `notebooks/01` → `02` → … → `10` |
 
 ## Sources
 

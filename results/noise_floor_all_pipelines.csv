@@ -1,0 +1,4 @@
+pipeline,between,within,ratio,invented_pct
+"per-stimulus TPM, 4n",1.2198,1.1539,1.057,43.0
+"global TPM, 4n",0.3796,0.6364,0.597,0.32
+"global TPM, 3n",0.1207,0.3649,0.331,0.08

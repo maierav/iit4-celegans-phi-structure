@@ -1,0 +1,11 @@
+stimulus,cls,n_splits,noise_mean,noise_sd
+100mM NaCl,attractant,10,0.88,0.6207
+e-2 IAA,attractant,10,0.3053,0.1699
+e-6 IAA,attractant,10,0.4218,0.1986
+OP50,attractant,10,0.9456,0.686
+450mM NaCl,repellent,10,0.5563,0.2502
+1uM ascr#3,repellent,10,0.9238,0.7515
+10mM CuSO4,repellent,10,0.5009,0.3412
+800mM Sorbitol,repellent,10,1.0446,0.4086
+Control,control,10,0.4643,0.2909
+Fluorescein,control,10,0.3212,0.1507
