@@ -147,7 +147,9 @@ lag.to_csv(os.path.join(REPO_ROOT, "results/response_latency.csv"), index=False)
 print(lag.to_string(index=False))
 print(f"\nsensory peak lags: {sorted(lag[lag.group=='sensory'].peak_lag_s)}")
 print(f"core    peak lags: {sorted(lag[lag.group=='core'].peak_lag_s)}")
-print(f"-> the design is periodic at {np.median(iv):.0f} s, so a lag of +49.5 s is also -10.5 s;")
+_pk = float(lag[lag.group == "core"].peak_lag_s.max())
+print(f"-> the design is periodic at {np.median(iv):.0f} s, so a lag of +{_pk:.1f} s "
+      f"is also {_pk - np.median(iv):+.1f} s;")
 print("   either reading places the core response outside the 15 s presentation.")
 
 # %% [markdown]
