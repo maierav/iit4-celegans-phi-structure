@@ -419,11 +419,35 @@ global_meta.to_csv("results/global_tpm_states.csv", index=False)
 print(global_meta.to_string(index=False))
 
 # %% [markdown]
-# One structural limitation of the single-TPM approach: because the structure is
-# a pure function of the state, **two stimuli that select the same state get
-# distance exactly zero** — including an attractant/repellent pair here. A
-# top-*k* profile avoids that by giving each stimulus a weighted mixture of its
-# *k* most enriched states.
+# One structural limitation of the single-TPM approach, and it is not marginal:
+# because the structure is a pure function of the state, **two stimuli that
+# select the same state get distance exactly zero**. The cell below enumerates
+# and classifies every such pair. Three stimuli land on `1101`, so there are 5
+# zero-distance pairs, **3 of which are attractant/repellent cross-class pairs**
+# — meaning 3 of the 24 cross-class pairs are forced to zero and the top-1
+# contrast is partly an artefact of that collapse. A top-*k* profile removes the
+# degeneracy by giving each stimulus a weighted mixture of its *k* most enriched
+# states.
+
+# %%
+from collections import defaultdict
+from itertools import combinations
+
+by_state = defaultdict(list)
+for _, row in global_meta.iterrows():
+    by_state[str(row.state).zfill(4)].append((row.stimulus, row["class"]))
+
+zero_pairs = pd.DataFrame([
+    dict(state=st, stim_a=a, class_a=ca, stim_b=b, class_b=cb,
+         pair_type="-".join(sorted([ca, cb])))
+    for st, members in by_state.items()
+    for (a, ca), (b, cb) in combinations(members, 2)
+])
+zero_pairs.to_csv("results/global_tpm_zero_pairs.csv", index=False)
+print(zero_pairs.to_string(index=False))
+print("\npair types:", zero_pairs.pair_type.value_counts().to_dict())
+print(f"cross-class attractant/repellent pairs forced to zero: "
+      f"{int((zero_pairs.pair_type == 'attractant-repellent').sum())} of 24")
 
 # %%
 def topk_matrix(k, min_frames=10):

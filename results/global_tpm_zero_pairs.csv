@@ -1,0 +1,6 @@
+state,stim_a,class_a,stim_b,class_b,pair_type
+1101,100mM NaCl,attractant,e-6 IAA,attractant,attractant-attractant
+1101,100mM NaCl,attractant,800mM Sorbitol,repellent,attractant-repellent
+1101,e-6 IAA,attractant,800mM Sorbitol,repellent,attractant-repellent
+1100,OP50,attractant,450mM NaCl,repellent,attractant-repellent
+1001,10mM CuSO4,repellent,Fluorescein,control,control-repellent

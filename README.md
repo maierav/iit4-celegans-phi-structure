@@ -604,11 +604,18 @@ This does what it was designed to. The selected states are `0011`, `1000`,
 `1001`, `1010`, `1100`, `1101` — **neither 0000 nor 1111 is ever chosen**, since
 both dominate the baseline too. Enrichments run 1.1–2.4 bits.
 
-One structural limitation: with a single TPM the structure is a pure function of
-the state, so **two stimuli selecting the same state get distance exactly zero**
-— which happened for one attractant/repellent pair. A top-*k* profile (a
-weighted mixture of each stimulus's *k* most enriched states) removes the
-degeneracy.
+One structural limitation, and it is not marginal: with a single TPM the
+structure is a pure function of the state, so **two stimuli selecting the same
+state get distance exactly zero**. Three stimuli land on `1101` and two on each
+of `1100` and `1001`, giving **5 zero-distance pairs — 3 of them
+attractant/repellent cross-class pairs** (100 mM NaCl–800 mM Sorbitol, e-6
+IAA–800 mM Sorbitol, OP50–450 mM NaCl), one attractant/attractant, one
+control/repellent. Since 3 of the 24 cross-class pairs are forced to zero, the
+top-1 contrast is partly an artefact of the state collapse rather than a
+measurement. A top-*k* profile (a weighted mixture of each stimulus's *k* most
+enriched states) removes the degeneracy entirely — 0 zero-distance pairs at
+k ≥ 2 — which is why top-3 rather than top-1 is the version to read.
+Per-pair detail in [`results/global_tpm_zero_pairs.csv`](results/global_tpm_zero_pairs.csv).
 
 Also null: p = 0.74 (top-1), 0.97 (top-2), 0.79 (top-3).
 
@@ -619,9 +626,12 @@ Also null: p = 0.74 (top-1), 0.97 (top-2), 0.79 (top-3).
 | per-stimulus TPM, 4 neurons | 43% | −0.004 | 0.99 |
 | per-stimulus TPM, 3 neurons | 19% | +0.280 | 0.11 |
 | per-stimulus TPM, 2 neurons | 2% | +0.117 | 0.12 |
-| global TPM, top-1 enriched state | 0.3% | −0.054 | 0.74 |
+| global TPM, top-1 enriched state | 0.3% | −0.054 | 0.74 |ᵈ
 | global TPM, top-2 enriched states | 0.3% | +0.005 | 0.97 |
 | global TPM, top-3 enriched states | 0.3% | −0.097 | 0.79 |
+
+ᵈ degenerate: 3 of 24 cross-class pairs forced to zero by shared states — read
+top-2/top-3 instead.
 
 The hypothesis predicts a negative difference; the sign splits 3–3 and the
 smallest p is 0.11. Spanning invented mass from 0.3% to 43% and both TPM
