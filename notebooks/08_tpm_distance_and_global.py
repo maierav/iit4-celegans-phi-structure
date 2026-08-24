@@ -483,6 +483,119 @@ for k in (1, 2, 3):
 print(f"\nunique states unfolded across all profiles: {len(STRUCT_CACHE)} of 16")
 
 # %% [markdown]
+# ## Exact brute force where it is computable
+#
+# The headline 4-neuron pipeline in `notebooks/06` does **not** minimise over
+# bijections — 13–15 distinctions means up to 15! ≈ 1.3 × 10¹² mappings. It uses
+# the identity correspondence, which is an **upper bound** on the exact distance.
+#
+# Three of the pipelines here are small enough to brute-force, so this cell runs
+# the real minimisation on them and reports what the shortcut costs.
+#
+# Note the caching: exact distances are memoised **per state pair**, not per
+# stimulus pair. Under the global TPM only ~14 distinct states are ever
+# selected, so the same structure pair recurs many times across the top-*k*
+# profiles; without caching the top-1 matrix alone takes ~344 s instead of ~94 s.
+
+# %%
+import math
+import time
+from gold_standard import gold_standard_distance
+
+
+def identity_distance(A, B):
+    return (sum(abs(A[0].get(k, 0.0) - B[0].get(k, 0.0)) for k in set(A[0]) | set(B[0]))
+            + sum(abs(A[1].get(k, 0.0) - B[1].get(k, 0.0)) for k in set(A[1]) | set(B[1])))
+
+
+_exact_cache = {}
+
+
+def exact_between_states(sa, sb):
+    """Exact min-over-bijections distance, memoised per STATE pair."""
+    key = (min(sa, sb), max(sa, sb))
+    if key not in _exact_cache:
+        _exact_cache[key] = gold_standard_distance(global_structure(key[0])[0],
+                                                   global_structure(key[1])[0])
+    return _exact_cache[key]
+
+
+exact_rows = []
+
+# --- per-stimulus pipelines at 2 and 3 neurons -----------------------------
+for nz in (INTER[:2], INTER[:3]):
+    K = 2 ** len(nz)
+    data = [load(r, nz) for r in RECS]
+    shapes = {}
+    for s in STIMULI:
+        C, _ = counts_occ(s, data, K)
+        shapes[s] = unit_phi(canonical(unfold_at(C, int(np.argmax(C.sum(1))), nz), nz))
+    n_dist = len(shapes[STIMULI[0]][0])
+    M_id = np.zeros((n, n))
+    M_ex = np.zeros((n, n))
+    t0 = time.perf_counter()
+    for i in range(n):
+        for j in range(i + 1, n):
+            A, B = shapes[STIMULI[i]], shapes[STIMULI[j]]
+            M_id[i, j] = M_id[j, i] = identity_distance(A, B)
+            M_ex[i, j] = M_ex[j, i] = gold_standard_distance(A, B)
+    elapsed = time.perf_counter() - t0
+    obs_id, p_id = permutation_p(M_id)
+    obs_ex, p_ex = permutation_p(M_ex)
+    iu = np.triu_indices(n, 1)
+    excess = M_id[iu] - M_ex[iu]
+    exact_rows.append(dict(pipeline=f"{len(nz)}n_perstim", n_dist=n_dist,
+                           bijections=math.factorial(n_dist),
+                           secs_full_matrix=round(elapsed, 2),
+                           identity_diff=round(obs_id, 4), identity_p=round(p_id, 4),
+                           exact_diff=round(obs_ex, 4), exact_p=round(p_ex, 4),
+                           mean_overestimate=round(float(excess.mean()), 4),
+                           pct_pairs_identity_suboptimal=round(100 * float((excess > 1e-12).mean()), 1)))
+    print(f"{len(nz)}n per-stimulus ({n_dist} distinctions, {math.factorial(n_dist):,} bijections): "
+          f"identity {obs_id:+.4f} p={p_id:.3f}  ->  EXACT {obs_ex:+.4f} p={p_ex:.3f}   "
+          f"[{elapsed:.1f}s]")
+
+# --- global TPM, top-1 ----------------------------------------------------
+profiles = {s: enriched_states(s, 1) for s in STIMULI}
+M_id = np.zeros((n, n))
+M_ex = np.zeros((n, n))
+t0 = time.perf_counter()
+for i in range(n):
+    for j in range(i + 1, n):
+        sa = profiles[STIMULI[i]][0][0]
+        sb = profiles[STIMULI[j]][0][0]
+        M_id[i, j] = M_id[j, i] = identity_distance(global_structure(sa)[0],
+                                                     global_structure(sb)[0])
+        M_ex[i, j] = M_ex[j, i] = exact_between_states(sa, sb)
+elapsed = time.perf_counter() - t0
+obs_id, p_id = permutation_p(M_id)
+obs_ex, p_ex = permutation_p(M_ex)
+iu = np.triu_indices(n, 1)
+excess = M_id[iu] - M_ex[iu]
+max_nd = max(global_structure(profiles[s][0][0])[2] for s in STIMULI)
+exact_rows.append(dict(pipeline="global_top1", n_dist=max_nd,
+                       bijections=math.factorial(max_nd),
+                       secs_full_matrix=round(elapsed, 2),
+                       identity_diff=round(obs_id, 4), identity_p=round(p_id, 4),
+                       exact_diff=round(obs_ex, 4), exact_p=round(p_ex, 4),
+                       mean_overestimate=round(float(excess.mean()), 4),
+                       pct_pairs_identity_suboptimal=round(100 * float((excess > 1e-12).mean()), 1)))
+print(f"global TPM top-1 (max {max_nd} distinctions, {math.factorial(max_nd):,} bijections): "
+      f"identity {obs_id:+.4f} p={p_id:.3f}  ->  EXACT {obs_ex:+.4f} p={p_ex:.3f}   [{elapsed:.1f}s]")
+
+exact_vs_identity = pd.DataFrame(exact_rows)
+exact_vs_identity.to_csv("results/exact_vs_identity.csv", index=False)
+print()
+print(exact_vs_identity.to_string(index=False))
+print(f"\n4n per-stimulus: 13-15 distinctions -> up to {math.factorial(15):,} bijections; "
+      f"not computed, distances there remain upper bounds.")
+print("\nIn all three computable cases the exact minimisation moves p FURTHER from")
+print("significance and preserves the sign, so the null is not an artefact of")
+print("using a single bijection. But the bound is loose: the identity map is")
+print(f"suboptimal on {exact_vs_identity.pct_pairs_identity_suboptimal.min():.0f}-"
+      f"{exact_vs_identity.pct_pairs_identity_suboptimal.max():.0f}% of pairs.")
+
+# %% [markdown]
 # ## All approaches side by side
 
 # %%

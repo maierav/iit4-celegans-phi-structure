@@ -1,0 +1,4 @@
+pipeline,n_dist,bijections,secs_full_matrix,identity_diff,identity_p,exact_diff,exact_p,mean_overestimate,pct_pairs_identity_suboptimal
+2n_perstim,3,6,0.0,0.1166,0.1202,0.0375,0.6013,0.0401,40.0
+3n_perstim,7,5040,11.52,0.2797,0.1053,0.182,0.1796,0.1198,93.3
+global_top1,9,362880,93.09,-0.0535,0.7379,-0.0163,0.8383,0.0403,84.4

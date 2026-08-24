@@ -14,7 +14,11 @@ problem — and the reason this repository exists.
 **The method.** An exact, brute-force distance: try every way of matching the
 distinctions of one structure onto the other, score each matching, keep the
 smallest. Defined in full under [The distance algorithm](#the-distance-algorithm),
-implemented in [`src/gold_standard.py`](src/gold_standard.py).
+implemented in [`src/gold_standard.py`](src/gold_standard.py). **Note that the
+headline 4-neuron analysis does *not* run the minimisation** — 15 distinctions
+means 15! ≈ 1.3 × 10¹² bijections. It uses the identity correspondence, which is
+an upper bound. Three of the six pipelines are small enough to brute-force, and
+were; see [Exact vs. identity](#exact-vs-identity-what-the-minimisation-buys).
 
 **The answer.** *Not supported* — and the reason is more informative than the
 hypothesis test. **There is no signal above the noise floor at all:** two
@@ -35,7 +39,7 @@ contrast could not have been detected even if real. See
 | **Cost** | *n*! where *n* = number of distinctions. Practical to *n* ≈ 9 |
 | **Result** | Not supported — and more fundamentally, **no signal above the noise floor** (signal-to-noise 1.06 and 0.96) |
 | **Why** | Two structures for the *same* stimulus, from different animals, differ as much as two different stimuli |
-| **Robustness** | Null across 6 pipelines (2/3/4 neurons, per-stimulus and global TPM, invented mass 0.3–43%), 4 state rules, 2 choices of τ, and at the TPM level with no Φ at all |
+| **Robustness** | Null across 6 pipelines (2/3/4 neurons, per-stimulus and global TPM, invented mass 0.3–43%), 4 state rules, 2 choices of τ, at the TPM level with no Φ at all, and under the exact brute-force minimisation wherever it is computable |
 | **Next** | More stimuli per class, or per-animal structures — both raise the within-class pair count |
 
 ---
@@ -542,18 +546,45 @@ the 15 distinction labels are exactly the 15 non-empty subsets of the four
 neurons. Panels (d–f) are the noise-floor result, below.
 [Vector PDF](figures/fig17_structures_and_labels.pdf)
 
-### The distance used, and its honest status
+### Exact vs. identity: what the minimisation buys
 
-The exact distance minimises over all bijections; 15! = 1.3 × 10¹² is far past
-the *n* ≈ 9 ceiling. The identity bijection is used instead, justified by the
-shared substrate.
+**The headline 4-neuron analysis does not brute-force the minimum.** The exact
+distance minimises over all bijections between distinctions; the pooled
+per-stimulus structures have 13–15 distinctions, so 15! ≈ 1.3 × 10¹² mappings —
+far past the *n* ≈ 9 ceiling. The identity correspondence is used instead,
+justified by the shared substrate: with the same four neurons throughout,
+`AIBL·AVEL` denotes the same mechanism in every structure.
 
-**This is not free.** Scoring 2000 random relabellings of one real pair: the
-identity mapping scores 1.12 and beats **99.5%** of them (random mean 1.49), but
-it is **not the minimum** — some relabellings score as low as 0.79. So every
-distance reported here is an **upper bound** on the exact distance, not the
-exact distance. It is a principled and strongly-performing choice of
-correspondence, and it is stated as a bound rather than presented as exact.
+**That is an upper bound, and a loose one.** Scoring 2000 random relabellings of
+one real pair, the identity mapping scores 1.12 and beats 99.5% of them (random
+mean 1.49) — but it is **not the minimum**; some relabellings reach 0.79.
+
+Three of the six pipelines *are* small enough to brute-force, so the
+minimisation was actually run on them:
+
+| pipeline | distinctions | bijections | identity *p* | **exact *p*** | identity overestimates | mean excess |
+|---|---|---|---|---|---|---|
+| per-stimulus, 2 neurons | 3 | 6 | 0.12 | **0.60** | 40% of pairs | 0.040 |
+| per-stimulus, 3 neurons | 7 | 5,040 | 0.11 | **0.18** | 93% of pairs | 0.120 |
+| global TPM, top-1 | 9 | 362,880 | 0.74 | **0.84** | 84% of pairs | 0.040 |
+| per-stimulus, 4 neurons | 13–15 | 1.3 × 10¹² | 0.99 | *not computed* | — | — |
+
+Reproduced by [`notebooks/08`](notebooks/08_tpm_distance_and_global.ipynb),
+written to `results/exact_vs_identity.csv`.
+
+Three things follow. **First, the bound is genuinely loose** — the identity map
+is suboptimal on 40–93% of pairs, so these are not near-exact numbers.
+**Second, the minimisation moves every *p* further from significance**, not
+closer; the sign of the class contrast is preserved in all three cases, so the
+null is not an artefact of using a single bijection. **Third, the cost is real
+but not prohibitive at these sizes** — 9 distinctions took 94 s for a full 10 ×
+10 matrix with per-state caching (there are only ~14 distinct states, so exact
+distances are cached per state pair rather than per stimulus pair). The
+4-neuron per-stimulus pipeline is the one case where the exact value is out of
+reach, and its distances remain upper bounds.
+
+This is a further argument for the smaller substrates and the global TPM: they
+are better conditioned *and* they let the distance be computed as defined.
 
 Φ varies several-fold across stimuli without tracking class, so distances are
 reported after scaling each structure to unit Φ — comparing **shape**
@@ -621,14 +652,14 @@ Also null: p = 0.74 (top-1), 0.97 (top-2), 0.79 (top-3).
 
 ### Six approaches, all null
 
-| approach | invented TPM mass | difference | p |
-|---|---|---|---|
-| per-stimulus TPM, 4 neurons | 43% | −0.004 | 0.99 |
-| per-stimulus TPM, 3 neurons | 19% | +0.280 | 0.11 |
-| per-stimulus TPM, 2 neurons | 2% | +0.117 | 0.12 |
-| global TPM, top-1 enriched state | 0.3% | −0.054 | 0.74 |ᵈ
-| global TPM, top-2 enriched states | 0.3% | +0.005 | 0.97 |
-| global TPM, top-3 enriched states | 0.3% | −0.097 | 0.79 |
+| approach | invented TPM mass | difference | p | mapping |
+|---|---|---|---|---|
+| per-stimulus TPM, 4 neurons | 43% | −0.004 | 0.99 | identity (upper bound) |
+| per-stimulus TPM, 3 neurons | 19% | +0.280 | 0.11 | identity — **exact: +0.182, p = 0.18** |
+| per-stimulus TPM, 2 neurons | 2% | +0.117 | 0.12 | identity — **exact: +0.038, p = 0.60** |
+| global TPM, top-1 enriched state | 0.3% | −0.054 | 0.74 |ᵈ identity — **exact: −0.016, p = 0.84** |
+| global TPM, top-2 enriched states | 0.3% | +0.005 | 0.97 | identity (upper bound) |
+| global TPM, top-3 enriched states | 0.3% | −0.097 | 0.79 | identity (upper bound) |
 
 ᵈ degenerate: 3 of 24 cross-class pairs forced to zero by shared states — read
 top-2/top-3 instead.
@@ -636,7 +667,10 @@ top-2/top-3 instead.
 The hypothesis predicts a negative difference; the sign splits 3–3 and the
 smallest p is 0.11. Spanning invented mass from 0.3% to 43% and both TPM
 philosophies without moving the result is informative: the conclusion is not an
-artefact of the smoothing or of the per-stimulus TPM choice.
+artefact of the smoothing or of the per-stimulus TPM choice. Where the exact
+minimisation is computable it moves every p *further* from significance, so it
+is not an artefact of the single-bijection shortcut either
+([Exact vs. identity](#exact-vs-identity-what-the-minimisation-buys)).
 
 ![TPM distances, the smoothing audit, and the global-TPM route](figures/fig19_tpm_distances_and_global.png)
 
