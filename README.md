@@ -173,12 +173,12 @@ different latencies for the two groups:
 
 | group | peak latency |
 |---|---|
-| sensory (ASEL, ASER, AWAL) | **0.7 – 5.2 s** |
-| core (AVAL, AVEL, AIBL, RIML) | **35 – 51 s** |
+| sensory (ASEL, ASER, AWAL) | **1.1 – 2.6 s** |
+| core (AVAL, AVEL, AIBL, RIML) | **43.9 – 46.9 s** |
 
-The core latencies are ambiguous modulo the 60 s period — +49.5 s is also −10.5 s
-— but either reading puts them outside the presentation window. Averaging the
-full cycle resolves it:
+AWCL is the one exception, peaking at 19.5 s. The core latencies are ambiguous
+modulo the 60 s period — +46 s is also −14 s — but either reading puts them
+outside the presentation window. Averaging the full cycle resolves it:
 
 ![Two response windows on the stimulus cycle](figures/fig28_two_windows.png)
 
