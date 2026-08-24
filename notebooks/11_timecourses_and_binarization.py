@@ -536,3 +536,303 @@ print("wrote figures/fig29_binarized_psth.pdf")
 # * What matters is the **detrending** that precedes it: the original mid-range
 #   rule lets a tonic neuron's threshold ride up with its own response, producing
 #   binary runs longer than the interval between stimuli.
+
+# %% [markdown]
+# ## The high-pass window is the parameter that matters
+#
+# A slow window makes the bit encode **level** — an elevated response is uniformly
+# "up" — rather than fluctuation about a local reference. A transition matrix needs
+# the latter. This sweeps the window from 3 s to 300 s and asks, at each setting,
+# whether the stimulus is detectable in the transition structure.
+
+# %%
+from scipy.spatial.distance import jensenshannon
+
+WINS = [3, 5, 8, 12, 20, 30, 45, 60, 120, 300]
+
+def hp_bits(x, win_s):
+    xf = np.where(np.isfinite(x), x, np.nanmedian(x))
+    return (xf - median_filter(xf, size=max(3, round(win_s * FS)), mode="nearest") > 0).astype(int)
+
+BW = {w: {r: {nm: hp_bits(DAT[r][0][nm], w) for nm in ALL8} for r in RECS} for w in WINS}
+
+rows = []
+for w in WINS:
+    for neurons, tag in [(INTER, "core"), (SENS, "sens")]:
+        selft, const, nst, runs = [], [], [], []
+        for r in RECS:
+            st = ch.combine_states([BW[w][r][nm] for nm in neurons])
+            for s in STIMULI:
+                for t0 in sorted(DAT[r][1].get(s, [])):
+                    seg = st[t0:t0 + EPOCH_N]
+                    if len(seg) < 2:
+                        continue
+                    selft.append(np.mean(seg[:-1] == seg[1:]))
+                    const.append(len(set(seg)) == 1)
+                    nst.append(len(set(seg)))
+            for nm in neurons:
+                b = BW[w][r][nm]
+                chg = np.flatnonzero(np.diff(b)) + 1
+                runs += list(np.diff(np.concatenate([[0], chg, [len(b)]])) / FS)
+        rows.append(dict(window_s=w, substrate=tag,
+                         mean_run_s=round(float(np.mean(runs)), 2),
+                         frac_const_epochs=round(float(np.mean(const)), 3),
+                         self_trans=round(float(np.mean(selft)), 3),
+                         states_per_epoch=round(float(np.mean(nst)), 2)))
+dw = pd.DataFrame(rows)
+print(dw.pivot(index="window_s", columns="substrate",
+               values=["states_per_epoch", "self_trans", "frac_const_epochs"]).round(3).to_string())
+
+# %% [markdown]
+# ### Is a fast window tracking signal or noise?
+#
+# Two checks that bound the window from below. A bit whose lag-1 autocorrelation
+# is negative is alternating sample to sample — noise, not dynamics. And the bit
+# should still track the underlying response.
+
+# %%
+rows = []
+for w in WINS:
+    ac1, cc = [], []
+    for r in RECS:
+        for nm in ALL8:
+            b = BW[w][r][nm].astype(float)
+            ac1.append(np.corrcoef(b[:-1], b[1:])[0, 1])
+            xf = np.where(np.isfinite(DAT[r][0][nm]), DAT[r][0][nm], np.nanmedian(DAT[r][0][nm]))
+            sig = xf - median_filter(xf, size=round(20 * FS), mode="nearest")
+            cc.append(np.corrcoef(b, sig)[0, 1])
+    rows.append(dict(window_s=w, lag1_autocorr=round(float(np.mean(ac1)), 3),
+                     corr_with_20s_signal=round(float(np.mean(cc)), 3)))
+nz = pd.DataFrame(rows)
+nz.to_csv(os.path.join(REPO_ROOT, "results/window_sweep_noise_check.csv"), index=False)
+print(nz.to_string(index=False))
+print(f"\nlag-1 autocorr turns negative below "
+      f"{nz[nz.lag1_autocorr>0].window_s.min():.0f} s -> alternating noise")
+print(f"bit-response correlation peaks at "
+      f"{nz.loc[nz.corr_with_20s_signal.idxmax(),'window_s']:.0f} s")
+
+# %% [markdown]
+# ### The permutation test at the TPM level, per window
+#
+# Epoch stim/base labels are shuffled **within** each animal, so data volume and
+# animal identity are held fixed and only the condition assignment varies.
+
+# %%
+def wins_for(w, neurons):
+    out = {}
+    for r in RECS:
+        st = ch.combine_states([BW[w][r][nm] for nm in neurons])
+        marks = sorted((t, l) for l, ts in DAT[r][1].items() for t in ts)
+        segs = []
+        for i, (t0, lab) in enumerate(marks):
+            nxt = marks[i + 1][0] if i + 1 < len(marks) else len(st)
+            s_, b_ = st[t0:t0 + EPOCH_N], st[t0 + EPOCH_N:nxt]
+            if len(s_) > 1:
+                segs.append(("stim", s_))
+            if len(b_) > 1:
+                segs.append(("base", b_))
+        out[r] = segs
+    return out
+
+def cnt(segs, K=16):
+    C = np.zeros((K, K))
+    for s in segs:
+        for a, b in zip(s[:-1], s[1:]):
+            C[a, b] += 1
+    return C
+
+def tpmd(C1, C2):
+    P1 = (C1 + 0.5) / (C1 + 0.5).sum(1, keepdims=True)
+    P2 = (C2 + 0.5) / (C2 + 0.5).sum(1, keepdims=True)
+    rw = [k for k in range(len(C1)) if C1[k].sum() > 0 and C2[k].sum() > 0]
+    return float(np.mean([jensenshannon(P1[k], P2[k], base=2) for k in rw])), len(rw)
+
+NPERM = 1000
+rows = []
+for w in WINS:
+    for neurons, tag in [(INTER, "core 4n"), (SENS, "sensory 4n")]:
+        W = wins_for(w, neurons)
+        rs = [s for r in RECS for l, s in W[r] if l == "stim"]
+        rb = [s for r in RECS for l, s in W[r] if l == "base"]
+        obs, nr = tpmd(cnt(rs), cnt(rb))
+        rg = np.random.default_rng(0)
+        null = []
+        for _ in range(NPERM):
+            A, B = [], []
+            for r in RECS:
+                labs = np.array([l for l, _ in W[r]])
+                sg = [s for _, s in W[r]]
+                for l, s in zip(rg.permutation(labs), sg):
+                    (A if l == "stim" else B).append(s)
+            null.append(tpmd(cnt(A), cnt(B))[0])
+        null = np.array(null)
+        rows.append(dict(window_s=w, substrate=tag, rows_compared=nr, observed=round(obs, 4),
+                         null_mean=round(float(null.mean()), 4), null_sd=round(float(null.std()), 4),
+                         z=round(float((obs - null.mean()) / null.std()), 2),
+                         p=round(float((np.sum(null >= obs) + 1) / (NPERM + 1)), 4)))
+        print(f"  w={w:>3}s {tag:<11} z={rows[-1]['z']:+6.2f}  p={rows[-1]['p']:.4f}", flush=True)
+tp = pd.DataFrame(rows)
+tp.to_csv(os.path.join(REPO_ROOT, "results/window_sweep_tpm_permutation.csv"), index=False)
+core = tp[tp.substrate == "core 4n"]
+print(f"\ncore quartet: z = {core[core.window_s==300].z.iloc[0]:+.2f} at 300 s, "
+      f"{core.z.max():+.2f} at {int(core.loc[core.z.idxmax(),'window_s'])} s")
+
+# %% [markdown]
+# ### The tension: class coding prefers a slower window
+#
+# Under a **level** code (fraction of the window with the bit ON) the class
+# contrast peaks at a slower window than the transition dynamics do, because class
+# information in these neurons lives in slow amplitude differences. Under a
+# **rate** code (flips per sample) it is weaker everywhere.
+
+# %%
+def epoch_vals(w, nm, kind, a_, b_):
+    out = {"attractant": [], "repellent": [], "control": []}
+    for r in RECS:
+        b = BW[w][r][nm]
+        for s in STIMULI:
+            for t0 in sorted(DAT[r][1].get(s, [])):
+                seg = b[t0 + a_:t0 + b_]
+                if len(seg) < 2:
+                    continue
+                out[CLS[s]].append(seg.mean() if kind == "level" else np.mean(np.diff(seg) != 0))
+    return {k: np.array(v) for k, v in out.items()}
+
+rows = []
+for w in WINS:
+    for kind in ("level", "rate"):
+        for wname, (a_, b_) in [("early", (e0, e1)), ("late", (l0, l1))]:
+            ds, ps = [], []
+            for nm in ALL8:
+                v = epoch_vals(w, nm, kind, a_, b_)
+                a, r_ = v["attractant"], v["repellent"]
+                ds.append((a.mean() - r_.mean()) / np.sqrt((a.var(ddof=1) + r_.var(ddof=1)) / 2))
+                ps.append(stats.mannwhitneyu(a, r_).pvalue)
+            ds, ps = np.array(ds), np.array(ps)
+            rows.append(dict(window_s=w, code=kind, window=wname,
+                             mean_abs_d=round(float(np.abs(ds).mean()), 3),
+                             core_abs_d=round(float(np.abs(ds[:4]).mean()), 3),
+                             sens_abs_d=round(float(np.abs(ds[4:]).mean()), 3),
+                             n_sig=int((ps < 0.05).sum())))
+cd = pd.DataFrame(rows)
+cd.to_csv(os.path.join(REPO_ROOT, "results/window_sweep_coding.csv"), index=False)
+for kind in ("level", "rate"):
+    print(f"\n{kind.upper()} coding, class contrast (mean |d|):")
+    print(cd[cd.code == kind].pivot(index="window_s", columns="window",
+                                    values=["core_abs_d", "sens_abs_d"]).round(3).to_string())
+
+# %% [markdown]
+# ## Figure 30 — the window sweep
+
+# %%
+plt.close("all")
+BLUE, ORANGE, GREY, LIGHT = "#1f6fb4", "#c2571a", "#8a8a8a", "#9bb8d4"
+GREEN, PURPLE = "#4a9b6e", "#8a5fa8"
+
+fig = plt.figure(figsize=(11.6, 6.8))
+g = fig.add_gridspec(2, 3, hspace=0.62, wspace=0.42)
+
+dc = dw[dw.substrate=="core"].set_index("window_s")
+ds = dw[dw.substrate=="sens"].set_index("window_s")
+W = np.array(WINS)
+
+# (a) the problem your objection names: a slow window makes the bit a level, not a dynamic
+ax = fig.add_subplot(g[0,0])
+ax.semilogx(W, [dc.loc[w,"self_trans"] for w in W], "o-", color=BLUE, lw=1.3, ms=4, label="core 4n")
+ax.semilogx(W, [ds.loc[w,"self_trans"] for w in W], "s-", color=ORANGE, lw=1.3, ms=4, label="sensory 4n")
+ax.axvline(300, ls=":", lw=1, color="#c00")
+ax.text(300, 0.05, " original\n 300 s", fontsize=5.6, color="#c00", ha="right", va="bottom")
+ax.set_xlabel("high-pass window (s)", labelpad=5)
+ax.set_ylabel("self-transition fraction", labelpad=5)
+ax.legend(frameon=False, fontsize=6, loc="upper left")
+ax.set_title("a  A slow window freezes\n   the joint state", loc="left")
+
+# (b) states per epoch
+ax = fig.add_subplot(g[0,1])
+ax.semilogx(W, [dc.loc[w,"states_per_epoch"] for w in W], "o-", color=BLUE, lw=1.3, ms=4)
+ax.semilogx(W, [ds.loc[w,"states_per_epoch"] for w in W], "s-", color=ORANGE, lw=1.3, ms=4)
+ax.axhline(16, ls="--", lw=0.8, color="#888")
+ax.text(4, 15.4, "all 16 states", fontsize=5.6, color="#888", va="top")
+ax.axvline(300, ls=":", lw=1, color="#c00")
+ax.set_xlabel("high-pass window (s)", labelpad=5)
+ax.set_ylabel("distinct joint states\nper 15 s epoch", labelpad=5)
+ax.set_title("b  ...and starves the TPM\n   of state coverage", loc="left")
+
+# (c) THE RESULT: TPM permutation z vs window
+ax = fig.add_subplot(g[0,2])
+for tag, col, mk in [("core 4n", BLUE, "o"), ("sensory 4n", ORANGE, "s")]:
+    sub = tp[tp.substrate==tag].sort_values("window_s")
+    ax.semilogx(sub.window_s, sub.z, mk+"-", color=col, lw=1.3, ms=4, label=tag)
+ax.axhline(1.96, ls="--", lw=0.9, color="#333")
+ax.text(220, 2.5, "p = 0.05", fontsize=5.8, color="#333", ha="right")
+ax.axvline(300, ls=":", lw=1, color="#c00")
+ax.axvspan(14, 30, color=GREEN, alpha=0.13, lw=0)
+ax.set_yscale("symlog", linthresh=10)
+ax.set_ylim(-1, 90)
+ax.set_xlabel("high-pass window (s)", labelpad=5)
+ax.set_ylabel("permutation z\n(stimulus vs baseline)", labelpad=5)
+ax.legend(frameon=False, fontsize=6, loc="upper left", bbox_to_anchor=(0.02,0.86))
+ax.set_title("c  Stimulus detectability peaks\n   near 20 s", loc="left")
+
+# (d) core detail, linear -- the finding is invisible on a symlog axis
+ax = fig.add_subplot(g[1,0])
+sub = tp[tp.substrate=="core 4n"].sort_values("window_s")
+cols = [GREEN if z_ > 1.96 else LIGHT for z_ in sub.z]
+ax.bar(range(len(sub)), sub.z, 0.68, color=cols)
+ax.axhline(1.96, ls="--", lw=0.9, color="#333")
+ax.text(len(sub)-0.4, 2.25, "p = 0.05", fontsize=5.8, color="#333", ha="right")
+ax.set_xticks(range(len(sub)))
+ax.set_xticklabels([f"{int(w)}" for w in sub.window_s], fontsize=5.8)
+ax.tick_params(axis="x", pad=1.5)
+for i, w in enumerate(sub.window_s):
+    if w == 300:
+        ax.text(i, sub.z.iloc[i]+0.35, "original", fontsize=5.4, color="#c00", ha="center")
+ax.set_xlabel("high-pass window (s)", labelpad=7)
+ax.set_ylabel("permutation z", labelpad=5)
+ax.set_title("d  Core quartet: z = +0.47 at 300 s,\n   +6.92 at 20 s", loc="left")
+
+# (e) the noise check -- a fast window is not free
+ax = fig.add_subplot(g[1,1])
+ax.semilogx(W, nz.lag1_autocorr, "o-", color=PURPLE, lw=1.3, ms=4, label="lag-1 autocorr of the bit")
+ax.semilogx(W, nz.corr_with_20s_signal, "s-", color=GREEN, lw=1.3, ms=4, label="corr(bit, response)")
+ax.axhline(0, color="#333", lw=0.8, ls="--")
+ax.axvspan(14, 30, color=GREEN, alpha=0.13, lw=0)
+ax.set_xlabel("high-pass window (s)", labelpad=5)
+ax.set_ylabel("correlation", labelpad=5)
+ax.legend(frameon=False, fontsize=5.2, loc="upper left", handlelength=1.6, labelspacing=0.22, borderaxespad=0.2)
+ax.set_ylim(-0.30, 1.24)
+ax.set_title("e  Below ~8 s the bit\n   anti-correlates: noise", loc="left")
+
+# (f) class contrast: level coding wants a SLOW window -- the tension
+ax = fig.add_subplot(g[1,2])
+lv = cd[(cd.code=="level")&(cd.window=="late")].sort_values("window_s")
+rt = cd[(cd.code=="rate")&(cd.window=="late")].sort_values("window_s")
+ax.semilogx(lv.window_s, lv.core_abs_d, "o-", color=BLUE, lw=1.3, ms=4, label="level code, core")
+ax.semilogx(lv.window_s, lv.sens_abs_d, "o--", color=BLUE, lw=1.1, ms=3.4, alpha=0.65, label="level code, sensory")
+ax.semilogx(rt.window_s, rt.core_abs_d, "s-", color=ORANGE, lw=1.3, ms=4, label="rate code, core")
+ax.axvspan(14, 30, color=GREEN, alpha=0.13, lw=0)
+ax.set_xlabel("high-pass window (s)", labelpad=5)
+ax.set_ylabel("class contrast, mean |d|\n(late window)", labelpad=5)
+ax.legend(frameon=False, fontsize=5.2, loc="upper left", handlelength=1.6, labelspacing=0.22, borderaxespad=0.2)
+ax.set_ylim(0, 0.70)
+ax.set_title("f  But class coding wants\n   a slower window", loc="left")
+
+fig.savefig(os.path.join(REPO_ROOT,"figures/fig30_window_sweep.pdf"), bbox_inches="tight")
+fig.savefig(os.path.join(REPO_ROOT,"figures/fig30_window_sweep.png"), dpi=200, bbox_inches="tight")
+r_=fig.canvas.get_renderer()
+tx=[(t,t.get_window_extent(r_)) for t in fig.findobj(mpl.text.Text) if t.get_text().strip() and t.get_visible()]
+tls={a_:set(a_.get_xticklabels()+a_.get_yticklabels()) for a_ in fig.axes}
+print("overlaps:",[(a.get_text()[:16],b.get_text()[:16]) for i,(a,ba) in enumerate(tx) for b,bb in tx[i+1:]
+                   if ba.overlaps(bb) and not any(a in s2 and b in s2 for s2 in tls.values())][:6])
+
+print("wrote figures/fig30_window_sweep.pdf")
+
+# %% [markdown]
+# ## What this leaves open
+#
+# The window is now optimised for the transition dynamics, and at that setting the
+# TPM separates stimulus from baseline at z = +6.9 (core) and z = +35 (sensory).
+# The Phi-structure computed from the same matrices does not (z = +0.5 and -0.4;
+# see `results/tpm_vs_phi_by_window.csv`). So the loss has moved from the
+# binarization to the **unfolding** -- the first time in this project it has landed
+# on a theory-facing step rather than a preprocessing one.

@@ -311,12 +311,74 @@ two conditions:
 | **high-pass, 60 s median** | 0.1040 | 0.0837 ± 0.0050 | **+4.06** | **0.0005** |
 
 **With the high-pass, stimulus presence becomes detectable in the transition
-structure itself.** With the original rule it is not. At the Φ-structure level
-the core quartet gives *D* = 1.173 against a null of 0.744 ± 0.271
-(*z* = +1.58, *p* = 0.0498, 200 permutations) — marginal, and the sensory
-quartet runs the other way (*z* = −3.02), so this is a lead rather than a
-result. It does establish that the binarization rule, not the theory, was
-suppressing the effect.
+structure itself.** With the original rule it is not.
+
+### How fast should the high-pass window be?
+
+The 60 s window above is still slow relative to the response. A slow window makes
+the bit encode *level* — an elevated response is uniformly "up" — rather than
+fluctuation about a local reference, which is what a transition matrix needs.
+Sweeping the window from 3 s to 300 s:
+
+![The high-pass window sweep](figures/fig30_window_sweep.png)
+
+[Vector PDF](figures/fig30_window_sweep.pdf) ·
+[`results/window_sweep_tpm_permutation.csv`](results/window_sweep_tpm_permutation.csv)
+
+| window | self-transitions (core) | states/epoch (core) | TPM permutation *z* (core) |
+|---|---|---|---|
+| 300 s (original scale) | 0.74 | 3.9 | **+0.47** (*p* = 0.30) |
+| 120 s | 0.53 | 6.9 | +1.04 (*p* = 0.15) |
+| 60 s | 0.36 | 9.5 | +4.04 |
+| 30 s | 0.22 | 11.9 | +5.57 |
+| **20 s** | **0.14** | **13.4** | **+6.92** |
+| 8 s | 0.08 | 14.3 | +5.63 |
+| 3 s | 0.11 | 12.6 | +4.41 |
+
+Detectability peaks near **20 s** and falls off in both directions, so the
+window is a genuine optimum rather than a monotone "faster is better". Two
+independent checks bound it from below. The **lag-1 autocorrelation of the bit**
+turns *negative* below ~8 s (−0.09 at 3 s), meaning consecutive samples
+anti-correlate — alternating noise, not dynamics. And the **correlation between
+the bit and the underlying response** peaks at 20 s (0.56) and declines at both
+extremes. A window of 15–30 s is also what the calcium-imaging convention
+recommends, for the same reason: it is comparable to the inter-event interval.
+
+There is one genuine tension. The *class* contrast under a level code prefers a
+**slower** window (core mean |*d*| peaks at 0.40 near 45–60 s and falls to 0.32
+at 20 s), because class information in these neurons lives in slow amplitude
+differences. So no single window optimises both the class contrast and the
+transition dynamics; 20 s is chosen here for the dynamics, since that is what
+IIT consumes.
+
+### The Φ unfolding, not the binarization, is where the effect is lost
+
+With the window optimised, the same permutation test can be run at both levels
+on the same epochs:
+
+| substrate | window | TPM-level *z* | Φ-structure *z* |
+|---|---|---|---|
+| core 4n | 20 s | **+6.92** (*p* = 0.001) | +0.53 (*p* = 0.36) |
+| core 4n | 60 s | **+4.04** (*p* = 0.001) | +1.58 (*p* = 0.0498) |
+| sensory 4n | 20 s | **+35.3** (*p* = 0.001) | −0.38 (*p* = 0.65) |
+| sensory 4n | 60 s | **+42.7** (*p* = 0.001) | −3.02 (*p* = 0.995) |
+
+[`results/tpm_vs_phi_by_window.csv`](results/tpm_vs_phi_by_window.csv)
+
+**The transition matrix distinguishes stimulus from baseline emphatically at
+every window tested. The Φ-structure computed from that same matrix does not.**
+This relocates the problem for the third time and, unlike the previous two
+relocations, it points at the theory-facing step rather than at preprocessing.
+Three candidate explanations, none yet distinguished. First, both conditions
+usually unfold at the **same** state — 0000 for the core quartet at both windows
+and for the sensory quartet at 20 s — so the only channel through which the
+condition can act is the transition probabilities, not the state. (The one
+exception, the sensory quartet at 60 s, selects 0111 for stimulus and 1000 for
+baseline, and is also the configuration with the most negative *z*.) Second, the
+structures are dominated by thousands of relations of similar φ — 4829 against
+5159 for the core quartet at 20 s — so a distance summed over all of them is
+mostly summing near-identical terms. Third, normalising each structure to unit Φ
+discards precisely the amplitude difference the TPM test detects.
 
 ## The distance algorithm
 
