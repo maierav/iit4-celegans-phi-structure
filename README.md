@@ -555,9 +555,11 @@ far past the *n* ≈ 9 ceiling. The identity correspondence is used instead,
 justified by the shared substrate: with the same four neurons throughout,
 `AIBL·AVEL` denotes the same mechanism in every structure.
 
-**That is an upper bound, and a loose one.** Scoring 2000 random relabellings of
-one real pair, the identity mapping scores 1.12 and beats 99.5% of them (random
-mean 1.49) — but it is **not the minimum**; some relabellings reach 0.79.
+**That is an upper bound, and a loose one.** `notebooks/06` scores 2000 random
+relabellings of one real pair (100 mM NaCl vs 450 mM NaCl, interneurons): the
+identity mapping scores **1.1213** and beats **99.5%** of them (random min
+0.7903, mean 1.4871, max 1.6987) — but it is **not the minimum**, since
+relabellings reach 0.7903.
 
 Three of the six pipelines *are* small enough to brute-force, so the
 minimisation was actually run on them:
