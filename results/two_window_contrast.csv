@@ -1,0 +1,49 @@
+method,neuron,group,window,d,p
+mid-range 300 s residual,AIBL,core,early,-0.22,0.12192
+mid-range 300 s residual,AIBL,core,late,-0.395,0.00324
+mid-range 300 s residual,AVEL,core,early,-0.075,0.80812
+mid-range 300 s residual,AVEL,core,late,-0.304,0.01426
+mid-range 300 s residual,AVAL,core,early,-0.112,0.28049
+mid-range 300 s residual,AVAL,core,late,-0.355,0.00343
+mid-range 300 s residual,RIML,core,early,-0.096,0.39496
+mid-range 300 s residual,RIML,core,late,-0.337,0.00894
+mid-range 300 s residual,ASEL,sensory,early,0.289,0.03244
+mid-range 300 s residual,ASEL,sensory,late,0.181,0.04621
+mid-range 300 s residual,ASER,sensory,early,-0.153,0.38636
+mid-range 300 s residual,ASER,sensory,late,0.228,0.0225
+mid-range 300 s residual,AWAL,sensory,early,0.609,0.0
+mid-range 300 s residual,AWAL,sensory,late,0.131,0.38494
+mid-range 300 s residual,AWCL,sensory,early,0.077,0.96374
+mid-range 300 s residual,AWCL,sensory,late,-0.027,0.39065
+"rolling 8th pct 30 s,",AIBL,core,early,-0.034,0.70838
+"rolling 8th pct 30 s,",AIBL,core,late,-0.299,0.10874
+"rolling 8th pct 30 s,",AVEL,core,early,0.075,0.55807
+"rolling 8th pct 30 s,",AVEL,core,late,-0.279,0.37577
+"rolling 8th pct 30 s,",AVAL,core,early,0.058,0.93892
+"rolling 8th pct 30 s,",AVAL,core,late,-0.266,0.21201
+"rolling 8th pct 30 s,",RIML,core,early,0.143,0.86184
+"rolling 8th pct 30 s,",RIML,core,late,-0.25,0.07978
+"rolling 8th pct 30 s,",ASEL,sensory,early,0.252,0.46151
+"rolling 8th pct 30 s,",ASEL,sensory,late,0.285,0.00017
+"rolling 8th pct 30 s,",ASER,sensory,early,-0.283,0.16229
+"rolling 8th pct 30 s,",ASER,sensory,late,0.129,0.48393
+"rolling 8th pct 30 s,",AWAL,sensory,early,0.749,0.0001
+"rolling 8th pct 30 s,",AWAL,sensory,late,0.435,0.00049
+"rolling 8th pct 30 s,",AWCL,sensory,early,0.143,0.28514
+"rolling 8th pct 30 s,",AWCL,sensory,late,-0.046,0.94409
+"high-pass, 60 s median",AIBL,core,early,-0.13,0.06347
+"high-pass, 60 s median",AIBL,core,late,-0.414,0.00028
+"high-pass, 60 s median",AVEL,core,early,0.276,0.52708
+"high-pass, 60 s median",AVEL,core,late,-0.398,0.10258
+"high-pass, 60 s median",AVAL,core,early,0.21,0.18058
+"high-pass, 60 s median",AVAL,core,late,-0.352,0.00569
+"high-pass, 60 s median",RIML,core,early,0.255,0.5953
+"high-pass, 60 s median",RIML,core,late,-0.377,0.00288
+"high-pass, 60 s median",ASEL,sensory,early,0.256,0.48881
+"high-pass, 60 s median",ASEL,sensory,late,0.333,0.00022
+"high-pass, 60 s median",ASER,sensory,early,-0.305,0.06237
+"high-pass, 60 s median",ASER,sensory,late,0.161,0.03029
+"high-pass, 60 s median",AWAL,sensory,early,0.775,0.0
+"high-pass, 60 s median",AWAL,sensory,late,0.519,0.00144
+"high-pass, 60 s median",AWCL,sensory,early,0.017,0.41548
+"high-pass, 60 s median",AWCL,sensory,late,-0.247,0.12318

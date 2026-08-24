@@ -1,0 +1,9 @@
+neuron,group,median_run_s,mean_run_s,frac_runs_over_60s,frac_TIME_in_runs_over_60s
+AIBL,core,0.7,7.8,0.039,0.598
+AVEL,core,0.7,7.0,0.033,0.593
+AVAL,core,0.7,12.9,0.072,0.708
+RIML,core,0.7,10.3,0.047,0.65
+ASEL,sensory,0.7,4.5,0.019,0.557
+ASER,sensory,0.7,6.4,0.027,0.577
+AWAL,sensory,0.7,4.2,0.017,0.586
+AWCL,sensory,0.7,3.4,0.009,0.345

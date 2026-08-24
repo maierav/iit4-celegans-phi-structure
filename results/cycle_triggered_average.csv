@@ -1,0 +1,9 @@
+neuron,group,n_epochs,peak_t_s,peak_val,trough_t_s,mean_in_epoch_0_15,mean_in_baseline_15_60,epoch_minus_baseline
+AIBL,core,232,58.5,0.55,18.0,0.337,0.348,-0.011
+AVEL,core,232,0.7,0.523,19.5,0.446,0.411,0.035
+AVAL,core,232,44.2,0.658,16.9,0.501,0.482,0.019
+RIML,core,232,1.9,0.567,15.7,0.429,0.434,-0.005
+ASEL,sensory,232,3.4,0.433,37.5,0.356,0.253,0.103
+ASER,sensory,232,5.2,0.663,46.9,0.557,0.26,0.296
+AWAL,sensory,232,6.0,0.903,41.6,0.693,0.37,0.323
+AWCL,sensory,232,21.7,0.56,13.1,0.173,0.316,-0.143

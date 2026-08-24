@@ -1,0 +1,3 @@
+substrate,level,state_stim,state_base,phi_stim,phi_base,n_dist_stim,n_dist_base,n_rel_stim,n_rel_base,observed_D,null_mean,null_sd,z,p,n_perm
+core 4n,Phi-structure,0000,0000,84.971,172.844,15,15,2235,5246,1.1729,0.7435,0.271,1.584,0.0498,200
+sensory 4n,Phi-structure,0111,1000,3.813,2.622,11,11,179,166,0.3958,1.237,0.2788,-3.017,0.995,200

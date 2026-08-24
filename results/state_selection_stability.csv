@@ -1,0 +1,7 @@
+scheme,condition,n_halves,distinct_states_picked,modal_state,modal_frac,states
+A_midrange300,stim,20,1,0000,1.0,0000
+A_midrange300,base,20,1,0000,1.0,0000
+B_pct8_30_0.1,stim,20,1,0000,1.0,0000
+B_pct8_30_0.1,base,20,2,0000,0.5,"0000,1111"
+C_highpass_median60,stim,20,1,0000,1.0,0000
+C_highpass_median60,base,20,1,0000,1.0,0000

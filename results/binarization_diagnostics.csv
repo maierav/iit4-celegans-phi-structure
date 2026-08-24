@@ -1,0 +1,3 @@
+substrate,self_transition_frac,frac_epochs_single_state,distinct_states_per_epoch
+core 4n,0.865,0.429,2.38
+sensory 4n,0.723,0.1,3.45

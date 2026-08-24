@@ -1,0 +1,9 @@
+neuron,group,margin_sd,flips_per_epoch,frac_epochs_no_flip,epoch_range_sd
+AIBL,core,0.574,1.68,0.667,0.437
+AVEL,core,0.696,2.13,0.679,0.538
+AVAL,core,0.569,0.99,0.775,0.383
+RIML,core,0.687,1.37,0.758,0.462
+ASEL,sensory,0.925,3.33,0.533,1.155
+ASER,sensory,0.926,2.6,0.537,1.084
+AWAL,sensory,1.154,3.92,0.483,1.535
+AWCL,sensory,0.692,2.72,0.575,0.668

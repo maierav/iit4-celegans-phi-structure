@@ -1,0 +1,6 @@
+substrate,n_epochs,n_features,accuracy,null_mean,p
+core 4n,192,16,0.4479,0.4869,0.801
+sensory 4n,192,16,0.651,0.4947,0.005
+AWAL alone,192,2,0.6562,0.4708,0.005
+AWAL+ASER,192,4,0.6719,0.4892,0.005
+all 8,192,256,0.5677,0.4949,0.0448

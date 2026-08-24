@@ -1,0 +1,17 @@
+neuron,group,window,d_continuous,d_binary,retained,p_binary
+AIBL,core,early,-0.13,-0.231,1.78,0.07977
+AIBL,core,late,-0.414,-0.487,1.178,0.00105
+AVEL,core,early,0.276,0.047,0.17,0.86784
+AVEL,core,late,-0.398,-0.248,0.622,0.13665
+AVAL,core,early,0.21,-0.207,0.986,0.11474
+AVAL,core,late,-0.352,-0.433,1.229,0.01012
+RIML,core,early,0.255,-0.077,0.302,0.42478
+RIML,core,late,-0.377,-0.428,1.136,0.01128
+ASEL,sensory,early,0.256,-0.127,0.497,0.43401
+ASEL,sensory,late,0.333,0.56,1.683,0.00017
+ASER,sensory,early,-0.305,-0.194,0.636,0.15578
+ASER,sensory,late,0.161,0.4,2.485,0.00717
+AWAL,sensory,early,0.775,0.69,0.889,1e-05
+AWAL,sensory,late,0.519,0.533,1.028,0.003
+AWCL,sensory,early,0.017,-0.047,2.783,0.75449
+AWCL,sensory,late,-0.247,-0.301,1.219,0.05144

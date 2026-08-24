@@ -21,7 +21,9 @@ an upper bound. Three of the six pipelines are small enough to brute-force, and
 were; see [Exact vs. identity](#exact-vs-identity-what-the-minimisation-buys).
 
 **The answer, and what kind of answer it is.** *Not supported* — but the
-informative finding is one level up. **The pipeline fails a positive control.**
+informative finding is one level up. **The pipeline as originally specified fails
+a positive control**, and the cause is the binarization rule rather than the
+theory (see [From fluorescence to discrete states](#from-fluorescence-to-discrete-states)).
 Chemical present vs chemical absent — a far larger contrast than attractant vs
 repellent — is invisible to the Φ-structure distance (ratio 0.95, p = 0.75),
 while the *raw fluorescence* resolves the harder attractant/repellent contrast at
@@ -45,7 +47,8 @@ supply. See [The result](#the-result) and
 | **Result** | Not supported — and more fundamentally, **no signal above the noise floor** (signal-to-noise 1.06 and 0.96) |
 | **Why** | Two structures for the *same* stimulus, from different animals, differ as much as two different stimuli |
 | **Robustness** | Null across 7 pipelines, 4 state rules, 2 choices of τ, at the TPM level with no Φ, and under exact minimisation wherever computable |
-| **Positive control** | **Fails.** Chemical present vs absent gives ratio 0.95 (p = 0.75), while the raw traces resolve attractant vs repellent at *d* = 0.72 |
+| **Positive control** | **Fails** under the original binarization (ratio 0.95, p = 0.75). Under a high-pass flattening, stimulus presence becomes detectable in the TPM (*z* = +4.06, p = 0.0005) |
+| **Where the signal is** | Two timescales: sensory neurons in an **early** window (1–15 s), core interneurons in a **late** one (16–31 s). Binarization is *not* the lossy step |
 | **Next** | More stimuli per class, or per-animal structures — both raise the within-class pair count |
 
 ---
@@ -65,8 +68,9 @@ then `Runtime > Run all`.
 | **06 — The *C. elegans* comparison** | **The headline analysis.** Pooled per-stimulus TPMs, ten Φ-structures, permutation test | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/06_celegans_pooled.ipynb) |
 | **07 — Binarization and τ** | Verifies binarization against the reference notebook bit-for-bit; tests whether τ can be chosen by argmax φ_s | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/07_binarization_and_tau.ipynb) |
 | **08 — TPMs and the global route** | Compares the TPMs directly (no Φ); audits how much of each TPM the prior invents; runs 2- and 3-neuron substrates; builds the one-global-TPM alternative with enrichment-selected states | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/08_tpm_distance_and_global.ipynb) |
-| **09 — Raw-trace responses** | PSTH-style ΔF/F₀ for all eight analysed neurons, by stimulus and by class, for one animal and all animals; tests whether the raw signal discriminates the classes | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/09_raw_trace_responses.ipynb) |
-| **10 — Positive control** | **The section that reframes the rest.** Noise floors for the global pipelines, the stimulus-vs-baseline positive control, and the 3-neuron global TPM | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/10_positive_control.ipynb) |
+| **09 — Response time courses** | PSTH-style ΔF/F₀ for all eight neurons, by stimulus and by class, one animal and all animals; the 60 s cycle-triggered average; the early/late window split | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/09_raw_trace_responses.ipynb) |
+| **11 — Time courses and binarization** | Reproduces figures 26–29: each flattening method on single traces and on the 60 s cycle average, the response-latency measurement, the early/late window split, and the binarized PSTH | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/11_timecourses_and_binarization.ipynb) |
+| **10 — Positive control** | Noise floors for the global pipelines, the stimulus-vs-baseline positive control, the 3-neuron global TPM, and the flattening-method comparison that recovers the effect | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/10_positive_control.ipynb) |
 
 Locally:
 
@@ -113,6 +117,206 @@ So a Φ-structure is exactly:
 with no choice of representation to make, and no flattening.
 
 ---
+
+## The data: response time courses
+
+Everything downstream — binarization, the TPM, the Φ-structures — is a
+transformation of these traces. So they come first.
+
+Eight neurons are analysed throughout: the **core quartet** AIBL, AVEL, AVAL,
+RIML (the tentative main complex identified in the reference work) and the
+**chemosensory quartet** ASEL, ASER, AWAL, AWCL. All eight are present in all
+eight recordings at confidence 1.0, with ~1% missing frames.
+
+### Class-averaged responses
+
+![Class-pooled responses of all eight neurons](figures/fig20_psth_classes.png)
+
+Mean ± SEM of ΔF/F₀, where F₀ is the mean of the 5 s before each onset. Top row:
+one animal, variance across the 3 repeats of each stimulus. Bottom row: all 8
+animals, variance across all 24 epochs of each stimulus.
+[Vector PDF](figures/fig20_psth_classes.pdf) · per-stimulus versions:
+[one animal](figures/fig21_psth_stimuli_one.pdf),
+[all animals](figures/fig21_psth_stimuli_all.pdf)
+
+Testing one value per epoch — mean ΔF/F₀ over the 15 s presentation —
+attractant against repellent, Holm-corrected across the eight neurons:
+
+| neuron | attractant | repellent | control | Cohen's *d* | *p* (Holm) |
+|---|---|---|---|---|---|
+| **AWAL** (sensory) | **0.703** | 0.128 | 0.037 | **+0.72** | **< 10⁻⁵** |
+| **AIBL** (core) | −0.100 | 0.052 | −0.088 | **−0.41** | **0.0003** |
+| AVAL (core) | −0.028 | 0.150 | −0.041 | −0.27 | 0.15 |
+| ASER (sensory) | 0.235 | 0.425 | 0.221 | −0.24 | 0.56 |
+| RIML (core) | −0.030 | 0.099 | −0.081 | −0.24 | 0.29 |
+| AWCL (sensory) | −0.159 | −0.124 | −0.160 | −0.18 | 0.24 |
+| ASEL (sensory) | 0.179 | 0.115 | 0.029 | +0.17 | 1.00 |
+| AVEL (core) | 0.043 | 0.098 | −0.046 | −0.09 | 1.00 |
+
+**The class distinction is present in the fluorescence.** AWAL responds to
+attractant odours ~5× more strongly than to repellents, matching AWA's known
+role; AIBL runs the other way. Three further observations. **One animal is not
+enough** — with 12 epochs per class nothing survives correction, and several
+single-animal effect signs disagree with the pooled ones. **Control responses
+are not zero** (AWCL ≈ −0.23), so "control" means *vehicle*, not *nothing*. And
+**the sensory quartet carries much larger responses** than the core quartet:
+peak |ΔF/F₀| of 0.92 (AWAL) and 0.58 (ASER) against 0.14–0.20.
+
+### Two response windows, not one
+
+The stimulus design is periodic at **exactly 60.0 s** (sd 0.11 s across 232
+inter-onset intervals), so the whole cycle can be averaged: the 15 s
+presentation *and* the 45 s that follows it.
+
+Cross-correlating each neuron against a stimulus-present indicator gives very
+different latencies for the two groups:
+
+| group | peak latency |
+|---|---|
+| sensory (ASEL, ASER, AWAL) | **0.7 – 5.2 s** |
+| core (AVAL, AVEL, AIBL, RIML) | **35 – 51 s** |
+
+The core latencies are ambiguous modulo the 60 s period — +49.5 s is also −10.5 s
+— but either reading puts them outside the presentation window. Averaging the
+full cycle resolves it:
+
+![Two response windows on the stimulus cycle](figures/fig28_two_windows.png)
+
+Rows are the four representations (raw plus the three flattenings below); columns
+are neurons; shading marks the two windows. [Vector PDF](figures/fig28_two_windows.pdf) · single-trial version:
+[fig26](figures/fig26_flattening_timecourses.pdf) · all five methods on the
+cycle: [fig27](figures/fig27_cycle_by_method.pdf)
+
+Sensory neurons rise within seconds of onset and decay at offset — the **early
+window (1–15 s)** captures them. The core interneurons show no onset-locked
+transient but do separate by class later in the cycle, in a **late window
+(16–31 s)**. Splitting the contrast by window makes this quantitative:
+
+| | early 1–15 s | late 16–31 s |
+|---|---|---|
+| core quartet, mean \|*d*\| | 0.22 | **0.39** |
+| sensory quartet, mean \|*d*\| | **0.34** | 0.32 |
+
+So a single 15 s window is the right choice for the sensory neurons and the
+wrong one for the core quartet. This is a design finding, not a preprocessing
+detail: the two populations carry stimulus information on different timescales.
+
+## From fluorescence to discrete states
+
+IIT 4.0 requires discrete states. Every result below depends on how the
+continuous traces become bits, and that step turns out to matter more than any
+later choice.
+
+### The original rule, and what it does
+
+The reference implementation thresholds each neuron at the **mid-range** of a
+moving window: `(max + min) / 2` over 300 s, centred on each sample. Our
+implementation is bit-for-bit identical to it across all 8 recordings.
+
+![What the binarization actually produces](figures/fig24_binarization_outcome.png)
+
+[Vector PDF](figures/fig24_binarization_outcome.pdf)
+
+Panels a and b show why the rule treats the two neuron groups so differently.
+**AWAL** is phasic — near-silent baseline, sharp transient, rapid decay — so the
+threshold sits below its peak and each response becomes a clean, epoch-locked 1.
+**AIBL** is tonic and drifting: it ramps up and stays elevated across *several*
+presentations, the threshold rides up with it, and the resulting bit is one long
+run spanning epochs of different stimuli. The bit cannot tell consecutive
+stimuli apart.
+
+| | core quartet | sensory quartet |
+|---|---|---|
+| epoch dynamic range | 0.38 – 0.54 SD | 0.67 – 1.54 SD |
+| epochs with **zero** bit flips | 67 – 78% | 48 – 58% |
+| **time** spent in runs longer than the 60 s stimulus interval | **59 – 71%** | 35 – 59% |
+
+The core neurons spend most of their recorded time inside a binary run longer
+than the interval between stimuli. The consequence for IIT is direct: **86% of
+core-quartet transitions are self-transitions** and **43% of epochs never leave a
+single joint state**, so the TPM is almost all diagonal and stimulus-evoked
+deflections never become transitions.
+
+### Detrending, and what the field does
+
+The standard in calcium imaging is not a mid-range threshold but a **rolling
+low-percentile baseline** — CaImAn uses the 8th percentile over a sliding window
+by default, and the recommended window is 15–30 s, comparable to the
+inter-event interval. The mid-range is outlier-driven by construction, and 300 s
+is 5–20× longer than that convention.
+
+Three flattenings are compared throughout:
+
+| method | definition | preserves decreases | states/epoch (core) |
+|---|---|---|---|
+| mid-range 300 s | `x − (max+min)/2` | yes (69% of samples < 0) | 2.4 |
+| rolling 8th pct, 30 s | `x − pctl₈` | yes (48%) | 5.7 |
+| **high-pass, 60 s median** | `x − median` | yes (48%) | **9.5** |
+
+![Flattening methods compared](figures/fig25_binarization_schemes.png)
+
+[Vector PDF](figures/fig25_binarization_schemes.pdf)
+
+Two caveats found in testing these. **A ratio-based ΔF/F₀ is undefined for
+AWAL**, whose fluorescence reaches exactly 0 in three recordings (160 samples in
+one), making a percentile baseline of 0 and the ratio infinite; the subtractive
+form `x − F₀` is well defined everywhere and is what is used here. And **the
+ratio form cannot represent decreases** — with F₀ at the 8th percentile only
+**3.8%** of AIBL samples fall below it, so a response that is a *dip* binarizes
+to a constant 1 and AIBL's class effect flips sign (*d* = −0.41 → +0.03). Both
+are reasons to prefer subtraction over division for this substrate.
+
+### The binarized PSTH
+
+The question that matters is whether a response visible in the continuous trace
+survives thresholding.
+
+![Binarized PSTH, averaged and single-trial](figures/fig29_binarized_psth.png)
+
+Top: continuous high-pass signal. Middle: the same epochs **binarized first,
+then averaged** — P(bit = 1) across 232 epochs, which is what the state
+distribution actually looks like. Bottom: **one presentation in one animal**
+(100 mM NaCl, first repeat, 20220327_herm_2) — the actual binary input to a TPM,
+with the continuous signal rescaled so its zero crossing coincides with the bit
+flip. [Vector PDF](figures/fig29_binarized_psth.pdf)
+
+The averaged binary traces (middle row) track the continuous ones: ASER and AWAL
+show clear elevation through the early window, AIBL and RIML show late-window
+class separation. The single-trial row shows how coarse one epoch is — AIBL's bit
+is ON for 8% of the early window and 0% of the late one, and the state sequence
+is a handful of flips, not a smooth response.
+
+Quantitatively, thresholding costs little and in the late window costs nothing
+at all:
+
+| window | mean \|*d*\| continuous | mean \|*d*\| binarized | retained |
+|---|---|---|---|
+| early 1–15 s | 0.28 | 0.20 | 73% |
+| **late 16–31 s** | 0.35 | **0.42** | **121%** |
+
+In the late window binarization *increases* the mean class contrast, and six of
+eight neurons separate the classes significantly after thresholding (AIBL
+*p* = 0.001, AVAL 0.010, RIML 0.011, ASEL 0.0002, ASER 0.007, AWAL 0.003).
+**Binarization is not where the class signal is lost.**
+
+### Does the choice of rule change what IIT sees? Yes
+
+Shuffling stimulus/baseline epoch labels *within* each animal — holding data
+volume and animal identity fixed — and measuring the TPM distance between the
+two conditions:
+
+| flattening | observed | null | *z* | *p* |
+|---|---|---|---|---|
+| mid-range 300 s | 0.1483 | 0.1615 ± 0.0114 | −1.15 | 0.88 |
+| **high-pass, 60 s median** | 0.1040 | 0.0837 ± 0.0050 | **+4.06** | **0.0005** |
+
+**With the high-pass, stimulus presence becomes detectable in the transition
+structure itself.** With the original rule it is not. At the Φ-structure level
+the core quartet gives *D* = 1.173 against a null of 0.744 ± 0.271
+(*z* = +1.58, *p* = 0.0498, 200 permutations) — marginal, and the sensory
+quartet runs the other way (*z* = −3.02), so this is a lead rather than a
+result. It does establish that the binarization rule, not the theory, was
+suppressing the effect.
 
 ## The distance algorithm
 
@@ -308,61 +512,6 @@ Ten stimuli × 3 repeats per animal: four attractants (100 mM NaCl, e-2 IAA,
 e-6 IAA, OP50), four repellents (450 mM NaCl, 1 µM ascr#3, 10 mM CuSO₄, 800 mM
 sorbitol), two controls (buffer, fluorescein).
 
-### Preprocessing follows the reference implementation
-
-Traces are binarized with a **mid-range threshold in an 800-sample window
-centred on each sample** (300 s at 2.667 Hz), then the four binary traces are
-packed into one integer state series with neuron *i* on bit *i*. This is
-verified **bit-for-bit identical** to the reference notebook that defines the
-project's state of the art — same sampling rate, same window, same threshold,
-same output on all 8 recordings × 4 neurons *and* on the combined state series
-([`notebooks/07`](notebooks/07_binarization_and_tau.ipynb)).
-
-Two inherited properties worth stating plainly: the window is **centred**, so
-the binarization uses future samples and is non-causal; and the **mid-range**
-threshold is set by the two most extreme values in the window, making it
-sensitive to transients rather than to the bulk of the distribution. Both are
-kept for exact agreement with the reference.
-
-![Binarization and the choice of τ](figures/fig15_binarization_and_tau.png)
-
-The binarization on a stimulus response (a). Panels b–e concern τ, below.
-[Vector PDF](figures/fig15_binarization_and_tau.pdf)
-
-### Temporal grain: τ = one sampling interval
-
-Transitions are counted between **consecutive frames** — τ = 1 sample =
-0.375 s, the native acquisition rate. Three reasons:
-
-1. **Data.** Coarse-graining time discards samples we cannot spare. At τ = 1 a
-   40-frame epoch yields 39 transitions; at τ = 8 (3 s) it yields 32, an 18%
-   loss across the dataset.
-2. **Plausibility.** The only consciousness we can reason about from the inside
-   is our own, and the integration window relevant to an experience — say the
-   positive valence of an attractant — is very unlikely to be on the order of
-   seconds.
-3. **Scope.** The published argument for selecting τ by `argmax φ_s` was made
-   for single-animal, single-session TPMs. It does not transfer
-   straightforwardly to a TPM concatenated across animals and sessions, which
-   is what is built here.
-
-[`notebooks/07`](notebooks/07_binarization_and_tau.ipynb) implements the
-argmax-φ_s selection anyway and shows it is **not identifiable at this data
-volume**: widening epochs from 15 s to 30 s shifts τ* by a mean of 11.2 s with
-0 of 10 stimuli agreeing, so τ* is tracking the window rather than the
-dynamics. **Selecting τ properly is left for future runs** with more samples per
-epoch.
-
-**Caveat, stated plainly.** The temporal grain here is somewhat arbitrary — as
-is the choice of binarization. Analysis of experimental data always rests on
-auxiliary assumptions, and sometimes those assumptions are known to be imperfect
-rather than merely unverified. Both are recorded here so a reader can judge what
-rests on them.
-
-### Two further decisions
-
-Both deliberate trade-offs.
-
 ### No connectivity matrix
 
 PyPhi is given the TPM alone, so it assumes full connectivity. The functional
@@ -394,6 +543,36 @@ which is arguably worse than the saturated assumption because the error is
 correlated with the contrast of interest.
 
 Left as-is for now, and flagged rather than resolved.
+
+### Temporal grain: τ = one sampling interval
+
+Transitions are counted between **consecutive frames** — τ = 1 sample =
+0.375 s, the native acquisition rate. Three reasons:
+
+1. **Data.** Coarse-graining time discards samples we cannot spare. At τ = 1 a
+   40-frame epoch yields 39 transitions; at τ = 8 (3 s) it yields 32, an 18%
+   loss across the dataset.
+2. **Plausibility.** The only consciousness we can reason about from the inside
+   is our own, and the integration window relevant to an experience — say the
+   positive valence of an attractant — is very unlikely to be on the order of
+   seconds.
+3. **Scope.** The published argument for selecting τ by `argmax φ_s` was made
+   for single-animal, single-session TPMs. It does not transfer
+   straightforwardly to a TPM concatenated across animals and sessions, which
+   is what is built here.
+
+[`notebooks/07`](notebooks/07_binarization_and_tau.ipynb) implements the
+argmax-φ_s selection anyway and shows it is **not identifiable at this data
+volume**: widening epochs from 15 s to 30 s shifts τ* by a mean of 11.2 s with
+0 of 10 stimuli agreeing, so τ* is tracking the window rather than the
+dynamics. **Selecting τ properly is left for future runs** with more samples per
+epoch.
+
+**Caveat, stated plainly.** The temporal grain here is somewhat arbitrary — as
+is the choice of binarization. Analysis of experimental data always rests on
+auxiliary assumptions, and sometimes those assumptions are known to be imperfect
+rather than merely unverified. Both are recorded here so a reader can judge what
+rests on them.
 
 ### Epochs pooled across animals
 
@@ -738,45 +917,11 @@ This is the section that reframes everything above it. Run in
 [`notebooks/09`](notebooks/09_raw_trace_responses.ipynb) and
 [`notebooks/10`](notebooks/10_positive_control.ipynb).
 
-### The class information is in the raw fluorescence
-
-Before asking whether Φ-structures differ, ask whether the *traces* do. One value
-per epoch — mean ΔF/F₀ over the 15 s stimulus window — tested attractant against
-repellent per neuron, Holm-corrected across the eight neurons analysed:
-
-| neuron | attractant | repellent | control | Cohen's *d* | *p* (Holm) |
-|---|---|---|---|---|---|
-| **AWAL** (sensory) | **0.703** | 0.128 | 0.037 | **+0.72** | **< 10⁻⁵** |
-| **AIBL** (core) | −0.100 | 0.052 | −0.088 | **−0.41** | **0.0003** |
-| AVAL (core) | −0.028 | 0.150 | −0.041 | −0.27 | 0.15 |
-| ASER (sensory) | 0.235 | 0.425 | 0.221 | −0.24 | 0.56 |
-| RIML (core) | −0.030 | 0.099 | −0.081 | −0.24 | 0.29 |
-| AWCL (sensory) | −0.159 | −0.124 | −0.160 | −0.18 | 0.24 |
-| ASEL (sensory) | 0.179 | 0.115 | 0.029 | +0.17 | 1.00 |
-| AVEL (core) | 0.043 | 0.098 | −0.046 | −0.09 | 1.00 |
-
-**Two neurons discriminate the classes**, and the directions are the expected
-ones: AWAL responds to attractant odours ~5× more strongly than to repellents,
-and AIBL runs the other way. This is a real, moderate effect in 96 vs 96 epochs.
-
-![Class-pooled responses of all eight neurons](figures/fig20_psth_classes.png)
-
-Mean ± SEM of ΔF/F₀ for the four core interneurons and four chemosensory
-neurons, per stimulus class. Top row: one animal, variance across the 3 repeats
-of each stimulus. Bottom row: all 8 animals, variance across all 24 epochs.
-[Vector PDF](figures/fig20_psth_classes.pdf) ·
-per-stimulus versions: [one animal](figures/fig21_psth_stimuli_one.pdf),
-[all animals](figures/fig21_psth_stimuli_all.pdf)
-
-Three things worth noting from these traces. **One animal is not enough** — with
-12 epochs per class, no neuron survives correction and several single-animal
-effect signs disagree with the pooled ones. **Control responses are not zero**
-(AWCL ≈ −0.23), so "control" means *vehicle*, not *nothing*; the mechanical
-artefact of fluid delivery is a real stimulus. And **the sensory quartet carries
-much larger responses** than the core quartet — peak |ΔF/F₀| of 0.92 (AWAL) and
-0.58 (ASER) against 0.11–0.20 in the interneurons.
-
 ### The positive control fails
+
+> Under the **original** mid-range binarization. See
+> [Does the choice of rule change what IIT sees?](#does-the-choice-of-rule-change-what-iit-sees-yes)
+> for the high-pass result, where the same contrast becomes detectable.
 
 Every other analysis here discards the ~45 s between the end of one epoch and
 the next onset — **three times more data than it keeps**. That window is a
@@ -1055,7 +1200,7 @@ notebooks/     01–10 as both .ipynb (Colab) and .py (paired via jupytext)
 src/
   gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
   ces_hypergraph.py   data loading, TPM construction, PyPhi extraction
-figures/       fig01–fig22 as vector PDF + preview PNG
+figures/       fig01–fig29 as vector PDF + preview PNG
 results/       TPMs, extracted hypergraphs (JSON), distance matrices and
                permutation tests (CSV)
 data/          downloaded recordings (gitignored)

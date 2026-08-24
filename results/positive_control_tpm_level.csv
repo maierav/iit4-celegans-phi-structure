@@ -1,0 +1,4 @@
+scheme,level,rows_compared,full_D,signal,noise,ratio,p
+A_midrange300,TPM (no Phi),16,0.1483,0.2059,0.2383,0.864,0.99933
+B_pct8_30_0.1,TPM (no Phi),16,0.1168,0.1632,0.2168,0.753,1.0
+C_highpass_median60,TPM (no Phi),16,0.104,0.1356,0.1565,0.866,0.81033

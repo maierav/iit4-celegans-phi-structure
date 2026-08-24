@@ -1,0 +1,5 @@
+substrate,level,diff,p
+core 4n,occupancy,0.0507,0.3655
+core 4n,transitions,-0.0148,0.6306
+sensory 4n,occupancy,0.151,0.2346
+sensory 4n,transitions,0.0524,0.1768

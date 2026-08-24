@@ -1,0 +1,2 @@
+design,n_structures,obs_per_param,n_between_pairs,n_noise_pairs,diff,p_pairlevel,p_stimuluslevel,between,noise_floor,ratio
+"replicate structures, 2n (AWAL+ASER)",64,7.5,1568,224,0.0936,0.00108,0.4009,0.7227,0.7375,0.98
