@@ -1,0 +1,4 @@
+n_neurons,neurons,n_states,within_attractant,within_repellent,diff,p_two_sided,Phi_min,Phi_max
+2,AIBL|AVEL,4,0.27844,0.16183,0.1166,0.12024,2.719,3.639
+3,AIBL|AVEL|AVAL,8,0.83678,0.55711,0.27967,0.10534,6.112,10.732
+4,AIBL|AVEL|AVAL|RIML,16,1.25825,1.2622,-0.00395,0.98715,78.332,383.362

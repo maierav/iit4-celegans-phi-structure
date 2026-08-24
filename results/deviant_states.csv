@@ -1,0 +1,11 @@
+stimulus,class,dev_state,log2_enrich,stim_frac,base_frac,n_frames
+100mM NaCl,attractant,1101,1.12,0.06,0.028,58
+e-2 IAA,attractant,0011,2.25,0.041,0.009,39
+e-6 IAA,attractant,1101,1.6,0.084,0.028,81
+OP50,attractant,1100,1.3,0.031,0.013,30
+450mM NaCl,repellent,1100,1.3,0.031,0.013,30
+1uM ascr#3,repellent,1000,1.21,0.048,0.021,46
+10mM CuSO4,repellent,1001,2.1,0.018,0.004,17
+800mM Sorbitol,repellent,1101,1.26,0.067,0.028,64
+Control,control,1010,2.37,0.029,0.006,28
+Fluorescein,control,1001,1.6,0.013,0.004,12

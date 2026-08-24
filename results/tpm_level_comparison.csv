@@ -1,0 +1,5 @@
+metric,within_attractant,within_repellent,diff,p_two_sided
+L1_all,0.6186,0.5967,0.0219,0.7494
+JS_all,0.318,0.3151,0.0029,0.9299
+L1_observed,0.5654,0.5985,-0.0331,0.6401
+JS_observed,0.3086,0.3234,-0.0148,0.6306

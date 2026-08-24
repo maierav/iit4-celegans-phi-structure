@@ -1,0 +1,11 @@
+stimulus,n_neurons,n_states,unvisited_rows,pct_rows_prior_only,mean_pct_mass_invented,transitions,obs_per_param
+100mM NaCl,4,16,2,12.5,44.3,936,3.66
+e-2 IAA,4,16,5,31.2,45.4,936,3.66
+e-6 IAA,4,16,4,25.0,45.3,936,3.66
+OP50,4,16,5,31.2,58.9,936,3.66
+450mM NaCl,4,16,2,12.5,43.0,936,3.66
+1uM ascr#3,4,16,2,12.5,36.9,936,3.66
+10mM CuSO4,4,16,1,6.2,35.3,936,3.66
+800mM Sorbitol,4,16,3,18.8,50.2,936,3.66
+Control,4,16,1,6.2,39.4,936,3.66
+Fluorescein,4,16,0,0.0,31.7,936,3.66

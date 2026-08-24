@@ -35,7 +35,7 @@ contrast could not have been detected even if real. See
 | **Cost** | *n*! where *n* = number of distinctions. Practical to *n* ≈ 9 |
 | **Result** | Not supported — and more fundamentally, **no signal above the noise floor** (signal-to-noise 1.06 and 0.96) |
 | **Why** | Two structures for the *same* stimulus, from different animals, differ as much as two different stimuli |
-| **Robustness** | Binarization verified bit-for-bit against the reference notebook; the null holds under both substrates and both choices of τ |
+| **Robustness** | Null across 6 pipelines (2/3/4 neurons, per-stimulus and global TPM, invented mass 0.3–43%), 4 state rules, 2 choices of τ, and at the TPM level with no Φ at all |
 | **Next** | More stimuli per class, or per-animal structures — both raise the within-class pair count |
 
 ---
@@ -54,6 +54,7 @@ then `Runtime > Run all`.
 | **05 — PyPhi 2.0 example** | One comparison end to end: two structures from update rules, all 24 mappings drawn, cost broken down term by term | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/05_pyphi2_example.ipynb) |
 | **06 — The *C. elegans* comparison** | **The headline analysis.** Pooled per-stimulus TPMs, ten Φ-structures, permutation test | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/06_celegans_pooled.ipynb) |
 | **07 — Binarization and τ** | Verifies binarization against the reference notebook bit-for-bit; tests whether τ can be chosen by argmax φ_s | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/07_binarization_and_tau.ipynb) |
+| **08 — TPMs and the global route** | Compares the TPMs directly (no Φ); audits how much of each TPM the prior invents; runs 2- and 3-neuron substrates; builds the one-global-TPM alternative with enrichment-selected states | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/08_tpm_distance_and_global.ipynb) |
 
 Locally:
 
@@ -421,11 +422,38 @@ probabilities with **Laplace smoothing**, α = 0.5:
 P[a,b] = (C[a,b] + α) / Σ_b (C[a,b] + α)
 ```
 
-The smoothing is load-bearing, not cosmetic. With 960 frames against 256
-parameters, some rows have **zero** observed transitions — states never visited
-in any epoch of that stimulus. Unsmoothed, those rows are undefined and PyPhi
-cannot proceed; smoothed, they become the uniform prior. Between **0 and 5 of
-16 rows per stimulus** are prior-only, carrying no data at all.
+**What the per-stimulus TPM represents.** Because *C. elegans* anatomical
+connectivity is static, a TPM that changes with the chemical is best read as an
+estimate of **dynamic effective connectivity** — how causal influence among
+these four neurons is reconfigured by the stimulus, not how the wiring changes.
+Since the selected state is the same (0000) for all ten stimuli, the
+Φ-structures differ *only* because the effective causal networks differ. That
+reading is consistent with the dynamic-effective-connectivity literature, and it
+is the reading under which the whole comparison makes sense.
+
+**The smoothing is a real violation of IIT, not a technicality.** With 960 frames
+against 256 parameters, some rows have **zero** observed transitions — states
+never visited in any epoch of that stimulus (0–5 of 16 rows, depending on
+stimulus). Unsmoothed those rows are undefined and PyPhi cannot proceed;
+smoothed, they become the uniform prior. But IIT derives cause–effect power
+*from the TPM*, so wherever the TPM is prior rather than data, the resulting
+distinctions and relations describe an assumption rather than the system.
+
+Measured across the whole matrix — prior mass αK against observed mass per row —
+**the prior supplies a mean of 43% of the probability mass at 4 neurons.** That
+is not regularisation; it is invention. The fix is a smaller substrate:
+
+| neurons | states | params | mean invented mass | unvisited rows |
+|---|---|---|---|---|
+| 4 | 16 | 256 | **43%** | 0–5 |
+| 3 | 8 | 64 | 19% | 0–2 |
+| 2 | 4 | 16 | **2%** | 0 |
+
+Both smaller substrates were run end to end ([`notebooks/08`](notebooks/08_tpm_distance_and_global.ipynb)).
+Reducing the invented mass from 43% to 2% changes the numbers substantially — Φ
+falls from 78–383 to 2.7–3.6 — but not the conclusion: 3 neurons gives
+p = 0.11 and 2 neurons p = 0.12, both with the sign *opposite* to the
+hypothesis.
 
 **Choosing the state.** A Φ-structure is defined for a system **in a particular
 state** — IIT 4.0 is state-dependent, and there is no such thing as "the
@@ -531,6 +559,83 @@ correspondence, and it is stated as a bound rather than presented as exact.
 reported after scaling each structure to unit Φ — comparing **shape**
 independent of magnitude.
 
+### Do the TPMs themselves separate the classes? No
+
+Before asking whether Φ-structures differ by class, ask whether the transition
+matrices do. If the effect exists at all it should be visible one level down,
+without any IIT machinery.
+
+| TPM distance | within-attractant | within-repellent | difference | p |
+|---|---|---|---|---|
+| L1, all rows | 0.619 | 0.597 | +0.022 | 0.75 |
+| Jensen–Shannon, all rows | 0.318 | 0.315 | +0.003 | 0.93 |
+| L1, observed rows only | 0.565 | 0.599 | −0.033 | 0.64 |
+| Jensen–Shannon, observed rows only | 0.309 | 0.323 | −0.015 | 0.63 |
+
+("observed rows only" restricts to states where *both* stimuli actually recorded
+transitions — the comparison that does not lean on the prior.)
+
+**The null is upstream of Φ.** It is not that the Φ-structure distance fails to
+see a real difference in the TPMs; the TPMs do not differ by class either. Any
+account of why the analysis is null has to start here.
+
+### The alternative: one global TPM, stimulus-specific states
+
+If anatomical connectivity dominates the causal Markov chain and is static, the
+more defensible object is a **single TPM for the whole dataset**, with stimuli
+distinguished by *which state* they drive the system into rather than by each
+having its own transition matrix.
+
+This is much better conditioned: **156 observations per parameter, no unvisited
+rows, and 0.3% invented mass** against 3.7 / 0–5 / 43% for the per-stimulus
+matrices.
+
+The difficulty is the state criterion — 0000 dominates every stimulus *and* the
+baseline, so "most frequent" would assign every stimulus the same state and
+every distance would be zero. Instead each stimulus gets the state most
+**enriched during its epochs relative to a non-stimulated baseline** (the ~45 s
+between the end of one epoch and the next onset):
+
+```
+enrichment(state) = log₂( P(state | stimulus) / P(state | baseline) )
+```
+
+This does what it was designed to. The selected states are `0011`, `1000`,
+`1001`, `1010`, `1100`, `1101` — **neither 0000 nor 1111 is ever chosen**, since
+both dominate the baseline too. Enrichments run 1.1–2.4 bits.
+
+One structural limitation: with a single TPM the structure is a pure function of
+the state, so **two stimuli selecting the same state get distance exactly zero**
+— which happened for one attractant/repellent pair. A top-*k* profile (a
+weighted mixture of each stimulus's *k* most enriched states) removes the
+degeneracy.
+
+Also null: p = 0.74 (top-1), 0.97 (top-2), 0.79 (top-3).
+
+### Six approaches, all null
+
+| approach | invented TPM mass | difference | p |
+|---|---|---|---|
+| per-stimulus TPM, 4 neurons | 43% | −0.004 | 0.99 |
+| per-stimulus TPM, 3 neurons | 19% | +0.280 | 0.11 |
+| per-stimulus TPM, 2 neurons | 2% | +0.117 | 0.12 |
+| global TPM, top-1 enriched state | 0.3% | −0.054 | 0.74 |
+| global TPM, top-2 enriched states | 0.3% | +0.005 | 0.97 |
+| global TPM, top-3 enriched states | 0.3% | −0.097 | 0.79 |
+
+The hypothesis predicts a negative difference; the sign splits 3–3 and the
+smallest p is 0.11. Spanning invented mass from 0.3% to 43% and both TPM
+philosophies without moving the result is informative: the conclusion is not an
+artefact of the smoothing or of the per-stimulus TPM choice.
+
+![TPM distances, the smoothing audit, and the global-TPM route](figures/fig19_tpm_distances_and_global.png)
+
+TPM-level distances with no Φ involved (a); how much of each per-stimulus TPM is
+prior rather than data (b); how that falls with substrate size (c); the
+enrichment criterion eliminating both baseline-dominant states (d); the
+global-TPM distance matrix (e); and all six approaches (f).
+[Vector PDF](figures/fig19_tpm_distances_and_global.pdf)
+
 ### The noise floor — the result that matters most
 
 Before asking whether *classes* differ, ask whether **anything** does. Split the
@@ -596,14 +701,23 @@ unknown would be premature. In rough order:
 4. **More stimuli per class.** Only after the above. The binding constraint on
    the class test is 4 stimuli per class = 6 within-class pairs, but more pairs
    of an uninformative measure buys nothing.
-5. **A state that reflects the response.** Every structure here is evaluated at
+5. **Prefer the global TPM, or a smaller substrate, or both.** The per-stimulus
+   4-neuron TPM is the worst-conditioned option in the repo (43% invented mass).
+   The global TPM at 0.3%, or a 2-neuron substrate at 2%, are both defensible
+   under IIT in a way the current headline pipeline is not. Neither changes the
+   result here, but future work should not be built on a matrix that is 43%
+   prior. A 3-neuron substrate on the *global* TPM is the untried combination.
+6. **A state that reflects the response.** The headline pipeline evaluates at
    the most-occupied state, which is the all-off baseline for all ten stimuli.
    Φ varies 278-fold across states of one TPM, so this is a large lever. The
    null survives three alternative rules, none of which is *response*-based
    either — a principled choice (e.g. the state most enriched during the epoch
    relative to pre-stimulus baseline) needs enough samples to estimate that
    enrichment.
-6. **Then the remaining modelling choices**: a connectivity constraint once
+   The enrichment criterion in [`notebooks/08`](notebooks/08_tpm_distance_and_global.ipynb)
+   is a working answer for the global-TPM route; a per-stimulus-TPM equivalent
+   does not yet exist.
+7. **Then the remaining modelling choices**: a connectivity constraint once
    "which connectivity" is settled, and a τ chosen from data once there are
    enough samples to locate it.
 
@@ -781,11 +895,11 @@ over distinctions *and* relations.
 ## Repository layout
 
 ```
-notebooks/     01–07 as both .ipynb (Colab) and .py (paired via jupytext)
+notebooks/     01–08 as both .ipynb (Colab) and .py (paired via jupytext)
 src/
   gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
   ces_hypergraph.py   data loading, TPM construction, PyPhi extraction
-figures/       fig01–fig18 as vector PDF + preview PNG
+figures/       fig01–fig19 as vector PDF + preview PNG
 results/       TPMs, extracted hypergraphs (JSON), distance matrices and
                permutation tests (CSV)
 data/          downloaded recordings (gitignored)
@@ -812,11 +926,12 @@ data/          downloaded recordings (gitignored)
 |---|---|
 | see the result | [The result](#the-result) or [`notebooks/06`](notebooks/06_celegans_pooled.ipynb) |
 | see the TPMs and how a state is chosen | [The TPM, and how one state is chosen](#the-tpm-and-how-one-state-is-chosen) |
+| compare the TPMs without Φ, or see the global-TPM route | [`notebooks/08`](notebooks/08_tpm_distance_and_global.ipynb) |
 | understand the distance | [The distance algorithm](#the-distance-algorithm) |
 | use the distance | [`src/gold_standard.py`](src/gold_standard.py) |
 | see one comparison drawn step by step | [`notebooks/05`](notebooks/05_pyphi2_example.ipynb) |
 | see the distance validated on real structures | [`notebooks/04`](notebooks/04_toy_examples.ipynb) |
-| reproduce every figure | `notebooks/01` → `02` → … → `07` |
+| reproduce every figure | `notebooks/01` → `02` → … → `08` |
 
 ## Sources
 
