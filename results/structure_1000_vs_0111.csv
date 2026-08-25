@@ -1,0 +1,5 @@
+variant,signal,noise,ratio,p,full_data_signal
+raw,4.5717,5.0023,0.914,0.79831,3.1691
+unit-Phi,1.155,1.2475,0.926,0.88047,1.4794
+distinctions-only,0.1297,0.2107,0.616,1.0,0.1377
+"distinctions-only, unit",0.2293,0.2594,0.884,0.92446,0.3824

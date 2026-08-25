@@ -50,7 +50,7 @@ system, and builds the tools the question needs.
 |---|---|
 | **Method** | An exact, brute-force Φ-structure distance with verified metric properties ([`src/gold_standard.py`](src/gold_standard.py)); handles relations of every degree natively; exact up to ~12 distinctions, upper-bounded by the identity mapping beyond that |
 | **Stimulus detection** | The transition structure detects chemical-present-vs-absent emphatically once the preprocessing is right (TPM permutation *z* = +6.9 core / +35 sensory at the 20 s high-pass window). **Φ(t)** — every sample's state mapped to its Φ under one giant, well-conditioned TPM — detects the stimulus **offset** (sensory Φ drops below the pre-stimulus baseline after delivery ends: −0.32, *p* = 10⁻⁵, 6 of 8 animals, all classes) |
-| **Chemical identity** | Not yet reached through any Φ-level quantity. The class signal exists in the raw traces (AWAL *d* = 0.72, *p* < 10⁻⁵) and survives binarization; it dies where the 16-state repertoire is collapsed — into one unfolding state, or into the scalar Φ. The open route is the per-state **structure** |
+| **Chemical identity** | Not yet reached through any Φ-level quantity. The class signal exists in the raw traces (AWAL *d* = 0.72, *p* < 10⁻⁵) and survives binarization; it dies where the 16-state repertoire is collapsed — into one unfolding state, or into the scalar Φ. The condition-assigned structure comparison (1000 vs 0111, notebook 15) fails its noise floor at current data volume: the *states* are settled, the *structures* at them are not yet stable enough to compare |
 
 **The two headline mechanisms, in one sentence each.** Φ under this TPM is
 concentrated on the quiescent state 0000 (66.1 vs 0.4–2.0 for most active
@@ -81,6 +81,7 @@ then `Runtime > Run all`.
 | **07 — Binarization and τ** | Verifies binarization against the reference notebook bit-for-bit; tests whether τ can be chosen by argmax φ_s | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/07_binarization_and_tau.ipynb) |
 | **08 — TPMs and the global route** | Compares the TPMs directly (no Φ); audits how much of each TPM the prior invents; runs 2- and 3-neuron substrates; builds the one-global-TPM alternative with enrichment-selected states | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/08_tpm_distance_and_global.ipynb) |
 | **09 — Response time courses** | PSTH-style ΔF/F₀ for all eight neurons, by stimulus and by class, one animal and all animals; the 60 s cycle-triggered average; the early/late window split | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/09_raw_trace_responses.ipynb) |
+| **15 — Structure comparison** | The first condition-assigned structure comparison (1000 vs 0111) with the split-half noise floor defined and explained; fails at ratio 0.91 because half-data structures are unstable | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/15_structure_comparison.ipynb) |
 | **14 — State identification** | Which state is "stimulus" and which "no stimulus": paired occupancy distributions, rank–frequency by condition, enrichment ladder with Holm correction; names 1000 (AWCL alone) as baseline and 0111 (its complement) as stimulus | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/14_state_identification.ipynb) |
 | **13 — Robustness checks** | Median vs mean Φ(t), the explicit stimulus-vs-no-stimulus contrast across all 10 stimuli, raw-fluorescence mean/median, and TPM drop-k stability plus the fragility of the φ-per-state map | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/13_robustness.ipynb) |
 | **12 — Φ as a time series** | One giant TPM from the entire dataset (~40k transitions, every row ≥1,648 obs), Φ for each of the 16 states, and Φ(t) by mapping each sample's state to its Φ — single-trial, grand-average, and by-class | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/12_phi_timeseries.ipynb) |
@@ -557,6 +558,73 @@ while the informative states were invisible to a scalar dominated by 0000's
 0111** — condition-assigned, well-estimated (both rows have >1,600
 observations), and small enough that the gold-standard distance is exact.
 
+## The structure comparison, and what "noise floor" means
+
+### The noise floor, defined
+
+Every distance this repository reports is judged against a **split-half noise
+floor**, and the logic deserves to be explicit because it decides what counts
+as a result.
+
+A distance between two Φ-structures — say 3.2 — carries no meaning on its own.
+The structures are *estimates*, built from finite data through a nonlinear
+pipeline (binarize → count transitions → smooth → unfold). Two estimates of the
+**same** structure, from different animals, will not be identical; the question
+is never "is the distance nonzero?" but "is it larger than the distance between
+two estimates of the same thing?" The noise floor is that reference:
+
+1. Split the 8 animals into two disjoint halves A and B. All 35 balanced
+   4-vs-4 splits are used.
+2. Run the identical pipeline on each half; unfold the **same state** in both.
+   D(state_A, state_B) is pure **estimation noise** — same condition, same
+   state, same pipeline; the only difference is which animals supplied the
+   data.
+3. Measure the **signal** — D(condition₁, condition₂) — *within* one half, so
+   signal and noise are computed at the same data volume. (Comparing full-data
+   signal to half-data noise would flatter the signal, since noise shrinks
+   with data.)
+4. Test whether signal exceeds noise (one-sided Mann–Whitney over the split
+   ensemble). A ratio near 1 means the condition contrast is indistinguishable
+   from re-measuring the same condition — the instrument cannot resolve the
+   question at this data volume, and any p-value computed from the contrast
+   alone would be uninterpretable.
+
+This is test–retest reliability applied to Φ-structures: **a measure cannot
+distinguish two conditions by less than it differs from itself.** It is the
+check that reframed the original class comparison (ratio 1.06/0.96 — see
+[The road here](#the-road-here--what-we-tried-and-what-it-taught-us)), the
+positive control, and now the state-level comparison below.
+
+### 1000 vs 0111: the first condition-assigned structure comparison
+
+Notebook 14 named the states; [`notebooks/15`](notebooks/15_structure_comparison.ipynb)
+compares their structures under the giant TPM.
+
+![The structure comparison and its noise floor](figures/fig40_structure_comparison.png)
+
+The full-data structures look dramatically different — 1000 gives Φ = 0.97
+with 6 distinctions and 12 relations; 0111 gives Φ = 4.08 with 15 distinctions
+and 1,802 relations; D = 3.17. (With 15 distinctions the exact minimisation is
+infeasible at 15!, so distances use the canonical-label correspondence — an
+upper bound, exact when the minimum is at the identity; both structures live on
+the same four neurons, so the labels are shared.)
+
+**But the comparison fails its noise floor**: signal/noise ratio 0.91
+(*p* = 0.80), and no variant rescues it — unit-Φ normalisation 0.93,
+distinctions-only 0.62, both together 0.88
+([`results/structure_1000_vs_0111.csv`](results/structure_1000_vs_0111.csv)).
+
+Panel c shows why, and it is the φ-fragility of notebook 13 made concrete: at
+half-data volume the 0111 structure swings between **5 and 15 distinctions and
+7 and 5,385 relations** across splits
+([`results/structure_split_sizes.csv`](results/structure_split_sizes.csv)).
+The object is not yet stable enough to compare. The occupancy statistics that
+named the states are rock-solid (Holm p = 10⁻²²); the *structures* at those
+states are not — which cleanly separates what this dataset can support
+(state-level, occupancy-level inference) from what it cannot yet
+(structure-level inference), and says the binding constraint is per-condition
+data volume, not the contrast itself.
+
 ## The distance algorithm
 
 It is called the **gold standard** (or "brute force") because it evaluates the
@@ -917,15 +985,13 @@ the positive control had just failed) is superseded — its item 2, "attack the
 binarization," was carried out in notebooks 11–12 and produced the offset-dip
 detection.
 
-1. **Structure(t), not Φ(t).** The scalar collapses the 16-state repertoire to
-   one informative bit (in-0000 or not) and detects delivery but not identity.
-   Each state already has its full Φ-structure under the giant TPM
-   ([`results/phi_by_state_giant_tpm.csv`](results/phi_by_state_giant_tpm.csv)
-   carries the distinction and relation counts), so "which structure is the
-   system in at time t" is available at no extra Φ cost — and the gold-standard
-   distance can compare the structures the different chemicals actually visit.
-   This is the first place the structure distance would operate on
-   well-estimated objects, with a question the scalar has demonstrably failed.
+1. **Stabilise the structures before comparing them.** The 1000-vs-0111
+   comparison (notebook 15) was run and fails its noise floor — not because the
+   contrast is absent but because half-data structures of the same state swing
+   from 5 to 15 distinctions across splits. Before any further structure-level
+   test: apply a φ-threshold (drop the near-zero distinction/relation tail that
+   flickers across resamples), or compare only the top-k distinctions by φ, and
+   re-measure the split-half stability of the *thresholded* objects first.
 2. **Budget for the φ-map's fragility, not the TPM's.** The drop-*k* analysis
    ([`results/tpm_stability_phi.csv`](results/tpm_stability_phi.csv)) says the
    binding constraint on any per-condition comparison is the nonlinearity of Φ
