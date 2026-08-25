@@ -31,27 +31,39 @@ Cohen's *d* = 0.72 in AWAL. So the class information is present in the data and
 lost by the pipeline. **This repository is therefore best read as a methods
 result**: a working Φ-structure distance with verified metric properties, plus a
 quantified account of the data volume it needs — which these recordings do not
-supply. See [The result](#the-result) and
+supply. See [The result](#the-original-class-comparison) and
 [Does the measure detect anything?](#does-the-measure-detect-anything).
 
 ---
 
 ## If you read nothing else
 
-| | |
-|---|---|
-| **Goal** | Test whether attractant Φ-structures resemble each other more than repellent ones do |
-| **Distance** | Exact minimum over all bijections between distinctions ("gold standard") |
-| **Why not simpler** | \|ΔΦ\| is a scalar and collapses distinct structures; a pairwise-only representation cannot see relations binding >2 distinctions |
-| **Cost** | *n*! where *n* = number of distinctions. Practical to *n* ≈ 9 |
-| **Result** | Not supported — and more fundamentally, **no signal above the noise floor** (signal-to-noise 1.06 and 0.96) |
-| **Why** | Two structures for the *same* stimulus, from different animals, differ as much as two different stimuli |
-| **Robustness** | Null across 7 pipelines, 4 state rules, 2 choices of τ, at the TPM level with no Φ, and under exact minimisation wherever computable |
-| **Positive control** | **Fails** under the original binarization (ratio 0.95, p = 0.75). Under a high-pass flattening, stimulus presence becomes detectable in the TPM (*z* = +4.06, p = 0.0005) |
-| **Where the signal is** | Two timescales: sensory neurons in an **early** window (1–15 s), core interneurons in a **late** one (16–31 s). Binarization is *not* the lossy step |
-| **Next** | More stimuli per class, or per-animal structures — both raise the within-class pair count |
+**The question.** Do chemically similar stimuli evoke similar cause–effect
+structures in *C. elegans* chemosensory circuits? IIT 4.0 predicts that
+phenomenologically similar experiences should have similar Φ-structures; this
+repository asks the operational version of that question in a small nervous
+system, and builds the tools the question needs.
 
----
+**Where it stands.** Three layers, in order of what is now established:
+
+| layer | status |
+|---|---|
+| **Method** | An exact, brute-force Φ-structure distance with verified metric properties ([`src/gold_standard.py`](src/gold_standard.py)); handles relations of every degree natively; exact up to ~12 distinctions, upper-bounded by the identity mapping beyond that |
+| **Stimulus detection** | The transition structure detects chemical-present-vs-absent emphatically once the preprocessing is right (TPM permutation *z* = +6.9 core / +35 sensory at the 20 s high-pass window). **Φ(t)** — every sample's state mapped to its Φ under one giant, well-conditioned TPM — detects the stimulus **offset** (sensory Φ drops below the pre-stimulus baseline after delivery ends: −0.32, *p* = 10⁻⁵, 6 of 8 animals, all classes) |
+| **Chemical identity** | Not yet reached through any Φ-level quantity. The class signal exists in the raw traces (AWAL *d* = 0.72, *p* < 10⁻⁵) and survives binarization; it dies where the 16-state repertoire is collapsed — into one unfolding state, or into the scalar Φ. The open route is the per-state **structure** |
+
+**The two headline mechanisms, in one sentence each.** Φ under this TPM is
+concentrated on the quiescent state 0000 (66.1 vs 0.4–2.0 for most active
+states), so Φ(t) is effectively a rest-state-occupancy readout — sensory
+activity *lowers* Φ, and the offset dip is that mechanism working (dip vs
+Δ-occupancy of 0000: ρ = +0.99). And the TPM itself is the most robust object
+in the pipeline (drop-*k* error ∝ √k) while the φ-per-state map built from it
+is fragile (ρ = 0.30/0.13 vs the full map at one-stimulus sample sizes) — the
+nonlinearity of Φ, not the data volume, is the budget constraint.
+
+**The track record** — what was tried before this picture emerged, and what
+each step taught — is preserved in full in
+[The road here](#the-road-here--what-we-tried-and-what-it-taught-us).
 
 ## Quick start
 
@@ -257,6 +269,10 @@ Three flattenings are compared throughout:
 
 ![Flattening methods compared](figures/fig25_binarization_schemes.png)
 
+*Reading note: the state-dynamics panels of this figure (states per epoch,
+self-transition fraction) are computed on the **core quartet only**; sensory
+values differ (see the table below and `results/` CSVs).*
+
 [Vector PDF](figures/fig25_binarization_schemes.pdf)
 
 Two caveats found in testing these. **A ratio-based ΔF/F₀ is undefined for
@@ -365,36 +381,7 @@ their continuous responses — AWAL's attractant selectivity and AWCL's OFF
 rebound are visible after thresholding — while the core bits fluctuate without
 onset-locking, consistent with their slow, class-dependent coding.
 
-### The Φ unfolding, not the binarization, is where the effect is lost
-
-With the window optimised, the same permutation test can be run at both levels
-on the same epochs:
-
-| substrate | window | TPM-level *z* | Φ-structure *z* |
-|---|---|---|---|
-| core 4n | 20 s | **+6.92** (*p* = 0.001) | +0.53 (*p* = 0.36) |
-| core 4n | 60 s | **+4.04** (*p* = 0.001) | +1.58 (*p* = 0.0498) |
-| sensory 4n | 20 s | **+35.3** (*p* = 0.001) | −0.38 (*p* = 0.65) |
-| sensory 4n | 60 s | **+42.7** (*p* = 0.001) | −3.02 (*p* = 0.995) |
-
-[`results/tpm_vs_phi_by_window.csv`](results/tpm_vs_phi_by_window.csv)
-
-**The transition matrix distinguishes stimulus from baseline emphatically at
-every window tested. The Φ-structure computed from that same matrix does not.**
-This relocates the problem for the third time and, unlike the previous two
-relocations, it points at the theory-facing step rather than at preprocessing.
-Three candidate explanations, none yet distinguished. First, both conditions
-usually unfold at the **same** state — 0000 for the core quartet at both windows
-and for the sensory quartet at 20 s — so the only channel through which the
-condition can act is the transition probabilities, not the state. (The one
-exception, the sensory quartet at 60 s, selects 0111 for stimulus and 1000 for
-baseline, and is also the configuration with the most negative *z*.) Second, the
-structures are dominated by thousands of relations of similar φ — 4829 against
-5159 for the core quartet at 20 s — so a distance summed over all of them is
-mostly summing near-identical terms. Third, normalising each structure to unit Φ
-discards precisely the amplitude difference the TPM test detects.
-
-### Φ as a time series
+## Φ as a time series
 
 A different use of the same machinery
 ([`notebooks/12`](notebooks/12_phi_timeseries.ipynb)): build **one TPM from the
@@ -453,6 +440,35 @@ OFF-response means less time in 0000. The scalar Φ collapses the 16-state
 repertoire to essentially one informative bit — in-0000 or not. Any route to
 chemical identity through IIT will need the per-state **structure** (which
 distinctions and relations exist in each state), not the scalar.
+
+### The Φ unfolding, not the binarization, is where the effect is lost
+
+With the window optimised, the same permutation test can be run at both levels
+on the same epochs:
+
+| substrate | window | TPM-level *z* | Φ-structure *z* |
+|---|---|---|---|
+| core 4n | 20 s | **+6.92** (*p* = 0.001) | +0.53 (*p* = 0.36) |
+| core 4n | 60 s | **+4.04** (*p* = 0.001) | +1.58 (*p* = 0.0498) |
+| sensory 4n | 20 s | **+35.3** (*p* = 0.001) | −0.38 (*p* = 0.65) |
+| sensory 4n | 60 s | **+42.7** (*p* = 0.001) | −3.02 (*p* = 0.995) |
+
+[`results/tpm_vs_phi_by_window.csv`](results/tpm_vs_phi_by_window.csv)
+
+**The transition matrix distinguishes stimulus from baseline emphatically at
+every window tested. The Φ-structure computed from that same matrix does not.**
+This relocates the problem for the third time and, unlike the previous two
+relocations, it points at the theory-facing step rather than at preprocessing.
+Three candidate explanations, none yet distinguished. First, both conditions
+usually unfold at the **same** state — 0000 for the core quartet at both windows
+and for the sensory quartet at 20 s — so the only channel through which the
+condition can act is the transition probabilities, not the state. (The one
+exception, the sensory quartet at 60 s, selects 0111 for stimulus and 1000 for
+baseline, and is also the configuration with the most negative *z*.) Second, the
+structures are dominated by thousands of relations of similar φ — 4829 against
+5159 for the core quartet at 20 s — so a distance summed over all of them is
+mostly summing near-identical terms. Third, normalising each structure to unit Φ
+discards precisely the amplitude difference the TPM test detects.
 
 ### Robustness: median, all stimuli, raw traces, and TPM stability
 
@@ -683,7 +699,244 @@ phi_of(S1)                                           # -> 0.69  (Σφ_d + Σφ_r
 
 ---
 
-## The result
+## Validation on structures PyPhi actually produces
+
+### Nine real Φ-structures
+
+[`notebooks/04`](notebooks/04_toy_examples.ipynb) unfolds nine Φ-structures from
+five 3-unit networks (AND-OR-XOR, all-XOR, all-AND, all-OR, majority).
+
+**Higher-order relations are common, not exotic.** 10 of the 25 states surveyed
+contain a relation of degree ≥ 3, and degree-4 relations appear throughout.
+Across the nine structures used: 217 relations, of which **86 are degree > 2**
+and **126 have no pairwise form** at all.
+
+Two controlled perturbations isolate higher-order content. `all-XOR[000]` has
+4 distinctions and 15 relations, exactly one of degree 4 (φ_r = 0.5):
+
+| test | \|ΔΦ\| | pairwise-only | gold standard |
+|---|---|---|---|
+| **A** delete the degree-4 relation | 0.5 | **0.0** | 0.5 |
+| **B** move its φ_r to a degree-2 relation (Φ preserved) | **0.0** | 0.5 | 1.0 |
+| **C** all-XOR[000] vs all-XOR[101] | 2.5 | 0.375 | 2.5 |
+| **D** all-XOR[000] vs all-XOR[011] — *isomorphic* | 0.0 | 0.0 | **0.0** |
+| **E** AND-OR-XOR[101] vs [111] | 0.223 | 1.703 | 3.129 |
+
+Test **A** is the clean demonstration of the pairwise blind spot: the
+representation has nowhere to store a degree-4 relation, so deleting it changes
+nothing it can see. Test **B** is sharper — the same φ_r is *moved* from degree
+4 to degree 2, so Φ is unchanged and |ΔΦ| reports 0, while the exact distance
+charges the loss at one degree and the gain at the other.
+
+Over the full 9 × 9 matrix (7 distinctions max, 5040 bijections per pair, 2.8 s):
+the diagonal is zero, the matrix symmetric, the triangle inequality holds on all
+**729** ordered triples, and **every** off-diagonal zero was confirmed a genuine
+isomorphism by an independent brute-force test.
+
+![Toy examples](figures/fig10_toy_examples.png)
+
+All nine structures against each other (a); the relation degrees they contain
+(b); the three measures on the five tests (c).
+[Vector PDF](figures/fig10_toy_examples.pdf)
+
+### A single comparison, end to end on PyPhi 2.0
+
+[`notebooks/05`](notebooks/05_pyphi2_example.ipynb) does one comparison
+completely from scratch: two update rules in, one distance out, with every
+intermediate step drawn.
+
+**On PyPhi 2.0.** It is not on PyPI — the latest release there is 1.2.0 — so the
+notebook installs from the `2.0` branch. It needs Python ≥ 3.13, drops the
+`graphillion` dependency, and replaces `Network`/`Subsystem`/`phi_structure()`
+with `Substrate` → `System` → `.ces()`. Its installed default formalism is
+`IIT_4_0_2023`, matching the rest of this repo, and it **reproduces the pinned
+branch's numbers exactly**. (The 2026 refinement, `pyphi.iit4_2026`, adds an
+intrinsic-information requirement under which deterministic systems give
+φ_s = 0 — relevant when comparing against published values.)
+
+| | rule | state | Φ | distinctions | relations |
+|---|---|---|---|---|---|
+| Structure 1 | A=OR(B,C), B=AND(A,C), C=XOR(A,B) | 101 | 4.792 | 4 | 15 (degrees 1–4) |
+| Structure 2 | each unit = XOR of the other two | 011 | 7.000 | 4 | 11 (degrees 2–4) |
+
+![Two structures](figures/fig11_two_structures.png)
+
+Node area is φ_d, edge and loop width are φ_r, orange shading marks a relation
+of degree ≥ 3. [Vector PDF](figures/fig11_two_structures.pdf)
+
+All 4! = 24 bijections are scored and the smallest is the distance. Their costs
+genuinely differ — the minimisation is doing work, not picking among ties.
+
+![Mapping search](figures/fig12_mapping_search.png)
+
+*D* = **3.8141**, via `A→AB, C→AC, AC→BC, ABC→ABC`. This is not the mapping that
+best matches φ_d values pairwise: relations are carried along by the distinction
+mapping, so a locally worse pairing can win by placing the relations better.
+[Vector PDF](figures/fig12_mapping_search.pdf)
+
+![Cost breakdown](figures/fig13_cost_breakdown.png)
+
+Of the total 3.8141: **0.783** from distinctions and **3.032** from relations,
+splitting by degree as 0.803 (self), 1.212 (pairwise), 0.780 (degree 3), 0.237
+(degree 4). **27% comes from relations of degree > 2** — content no pairwise
+representation could hold. |ΔΦ| = 2.208 would understate the difference by 42%.
+[Vector PDF](figures/fig13_cost_breakdown.pdf)
+
+---
+
+## Scaling beyond the exact distance
+
+Past ~9 distinctions the exact search must be replaced by an estimate. The
+project's parallel line of work does this with **optimal transport**, which
+brackets the exact value:
+
+$$d_{\mathrm{OT}} \;\le\; d_{\mathrm{exact}} \;\le\; \Delta_{\mu^*}$$
+
+Both bounds are cheap even when the exact search is intractable.
+
+That approach folds each relation's φ_r onto its participating distinctions
+(**Φ-folds**: divide φ_r by the number of distinctions the relation joins, add
+each share to those distinctions) so the hypergraph becomes a flat vector OT can
+consume. The exact distance never needs this step — which is why higher-order
+relations require no special handling there.
+
+**Two versions of Φ-folds exist, and the difference matters.**
+
+* A **scalar fold** — one value per distinction — is degenerate: a filled
+  triangle (three pairwise relations at 0.1 plus a degree-3 at 0.3) and an empty
+  triangle (three pairwise at 0.2) fold to the *identical* vector, distance 0
+  where the exact distance gives 0.6. Solving symbolically, folds coincide
+  whenever each pairwise φ_r in the empty structure equals `e + t/3`. Every
+  member of that family also has identical Φ, so |ΔΦ| is blind to it too.
+* The **per-degree fold (manuscript Eq 40–43)** folds separately for each
+  relation degree *k*, giving a vector of per-degree contributions. This
+  resolves the degeneracy: the same filled/empty pair scores **0.6000**,
+  matching the exact distance.
+
+Only the per-degree version should be used. Measured over 800 random pairs, it
+is a genuine **lower bound** — never above the exact distance — and tight:
+**74.8% of pairs agree exactly**, r = 0.991, mean ratio 0.973. Residual loss
+comes from discarding *which* distinctions a relation joins; recovering that
+would need Gromov–Wasserstein.
+
+![Per-degree fold](figures/fig09_writeup_check.png)
+
+Per-degree folding scores the filled/empty pair correctly (a); across 800 random
+pairs it is exact on 75% and never exceeds the exact distance (b).
+[Vector PDF](figures/fig09_writeup_check.pdf) ·
+[scalar-fold diagnostics](figures/fig08_phi_folds.pdf)
+
+### One equation to amend
+
+Manuscript Eq 38 writes the relation term as a sum over *r* ∈ R₁ only. Read
+literally that makes the distance **asymmetric** — 285 of 300 random pairs —
+because relations present in R₂ with no preimage in R₁ are never charged. It
+also contradicts the manuscript's own worked examples: Example 1 charges
+|φ_r − φ′_r| when one side has no relation, and Eq 10 explicitly includes
+φ_r⁽²⁾(p). The examples use the **union** R₁ ∪ μ⁻¹(R₂), which is what
+`src/gold_standard.py` implements and what reproduces Eq 10's 0.4500 exactly.
+
+### What upstream PyPhi already provides
+
+PyPhi has a `feature/ces-distance` branch. Its HEAD is from **December 2020** —
+it predates IIT 4.0 — and it registers two CES measures:
+
+* `EMD` — earth-mover's distance in **concept space**, expanding each concept's
+  cause and effect repertoires onto a shared purview and summing the two
+  repertoire EMDs.
+* `SUM_SMALL_PHI` — the signed scalar difference of summed φ.
+
+Neither is a Φ-structure distance in the sense used here. Both operate on
+**distinctions only** — the word "relation" does not appear in that module — so
+all the higher-order content this repo concerns is invisible to them. Both
+survive into the `2.0` branch under a renamed module (`pyphi/metrics/` →
+`pyphi/measures/`), still typed over `Distinctions`, with `SUM_SMALL_PHI` the
+configured default.
+
+The `EMD` measure is worth noting as prior art for the transport route: it is
+optimal transport over concepts with a repertoire-based ground metric, which is
+the shape a Gromov–Wasserstein estimate would take with a ground metric defined
+over distinctions *and* relations.
+
+### Other candidate directions
+
+* **Topological.** Treat the CES as a filtered simplicial complex and compare
+  persistence diagrams. Handles all degrees natively, relabeling-invariant.
+* **Gromov–Wasserstein** directly between hypergraphs, preserving *which*
+  distinctions each relation joins.
+* **Hypergraph kernels.** Weisfeiler–Leman-style refinement on the incidence
+  structure, yielding a positive-definite similarity.
+
+---
+
+## Where to go next
+
+Updated for the Φ(t) findings; the earlier version of this list (written when
+the positive control had just failed) is superseded — its item 2, "attack the
+binarization," was carried out in notebooks 11–12 and produced the offset-dip
+detection.
+
+1. **Structure(t), not Φ(t).** The scalar collapses the 16-state repertoire to
+   one informative bit (in-0000 or not) and detects delivery but not identity.
+   Each state already has its full Φ-structure under the giant TPM
+   ([`results/phi_by_state_giant_tpm.csv`](results/phi_by_state_giant_tpm.csv)
+   carries the distinction and relation counts), so "which structure is the
+   system in at time t" is available at no extra Φ cost — and the gold-standard
+   distance can compare the structures the different chemicals actually visit.
+   This is the first place the structure distance would operate on
+   well-estimated objects, with a question the scalar has demonstrably failed.
+2. **Budget for the φ-map's fragility, not the TPM's.** The drop-*k* analysis
+   ([`results/tpm_stability_phi.csv`](results/tpm_stability_phi.csv)) says the
+   binding constraint on any per-condition comparison is the nonlinearity of Φ
+   (ρ ≈ 0.3 at one-stimulus sample sizes), not TPM estimation (√k). Split-half
+   noise floors for structure(t) should be computed *first*, before any class
+   test — the lesson of the original six-pipeline null.
+3. **Chase the offset dip's identity dependence at the state level.** The dip
+   itself is class-blind, but the *states visited* during the post-offset window
+   need not be: ASER's and AWCL's OFF-transients are salt- and odour-specific in
+   the raw traces. A per-class occupancy profile of the post-offset window is a
+   two-line analysis on existing tensors.
+4. **A positive control for structure(t).** Same discipline as before: no class
+   test is interpretable until stimulus-present-vs-absent separates in the same
+   quantity. The TPM already passes (*z* = +6.9/+35); the question is whether
+   structure(t) inherits that.
+
+## The road here — what we tried and what it taught us
+
+Everything in this section is retained deliberately: the project learned more
+from its null results and its failed shortcuts than from anything that worked
+on the first try.
+
+For orientation, this was the headline card as it stood at the end of the
+original class-comparison campaign (superseded by the current summary at the
+top of this README):
+
+| | |
+|---|---|
+| **Goal** | Test whether attractant Φ-structures resemble each other more than repellent ones do |
+| **Distance** | Exact minimum over all bijections between distinctions ("gold standard") |
+| **Why not simpler** | \|ΔΦ\| is a scalar and collapses distinct structures; a pairwise-only representation cannot see relations binding >2 distinctions |
+| **Cost** | *n*! where *n* = number of distinctions. Practical to *n* ≈ 9 |
+| **Result** | Not supported — and more fundamentally, **no signal above the noise floor** (signal-to-noise 1.06 and 0.96) |
+| **Why** | Two structures for the *same* stimulus, from different animals, differ as much as two different stimuli |
+| **Robustness** | Null across 7 pipelines, 4 state rules, 2 choices of τ, at the TPM level with no Φ, and under exact minimisation wherever computable |
+| **Positive control** | **Fails** under the original binarization (ratio 0.95, p = 0.75). Under a high-pass flattening, stimulus presence becomes detectable in the TPM (*z* = +4.06, p = 0.0005) |
+| **Where the signal is** | Two timescales: sensory neurons in an **early** window (1–15 s), core interneurons in a **late** one (16–31 s). Binarization is *not* the lossy step |
+ Each subsection is unchanged from when it was the live state
+of the analysis; the summary table says what each one taught.
+
+| step | what it taught |
+|---|---|
+| Connectivity matrix omitted | The published matrix had a sink node (φ_s = 0 silently) and an edge absent from its own source table; PyPhi runs without one |
+| Per-stimulus TPMs, pooled epochs | 43% of the 4-neuron TPM was smoothing prior, not data; state coverage ~5 of 16 per epoch |
+| Six class-comparison pipelines | All null — and the split-half noise floor equalled the between-stimulus distance, so no pair of stimuli separated |
+| Exact vs identity minimisation | The identity bound is loose (suboptimal on 40–93% of pairs) but every exact p moved *further* from significance |
+| Positive control (chemical present vs absent) | Failed on every substrate under the original binarization — the instrument, not the biology, was the limit |
+| Better TPM conditioning | Made signal-to-noise *worse*: conditioning concentrates structures rather than separating them |
+| Mid-range 300 s binarization | The threshold tracked slow drift, freezing the core quartet into runs longer than the inter-stimulus interval |
+| Original 60 s high-pass | First stimulus detection at the TPM level — and the discovery that the Φ unfolding, not preprocessing, loses the effect |
+
+### The original class comparison
 
 Run in [`notebooks/06`](notebooks/06_celegans_pooled.ipynb).
 
@@ -1093,7 +1346,7 @@ stimulus lying on the identity line when its mean between-stimulus distance is
 plotted against its own noise floor (f).
 [Vector PDF](figures/fig14_pooled_celegans.pdf)
 
-## Does the measure detect anything?
+### Does the measure detect anything?
 
 This is the section that reframes everything above it. Run in
 [`notebooks/09`](notebooks/09_raw_trace_responses.ipynb) and
@@ -1172,209 +1425,6 @@ scalar and pairwise measures are blind to content it sees, and quantifies the
 data volume it requires — roughly, more than 8 animals × 30 presentations of
 15 s at 2.7 Hz on 4 binarized neurons can supply.
 
-### Where to go next
-
-The positive control changes the priority order. Adding statistical power to a
-measure that cannot detect the presence of a chemical is not useful, so the first
-three items are all about establishing detectability.
-
-1. **Find any manipulation this distance detects.** Until one exists, no null is
-   interpretable. Candidates in descending order of expected effect: optogenetic
-   or genetic ablation of one neuron in the substrate; a much stronger aversive
-   stimulus; comparing an anaesthetised or immobilised animal against a behaving
-   one. The bar is a between/within ratio meaningfully above 1, on a split-half
-   design like [`notebooks/10`](notebooks/10_positive_control.ipynb).
-2. **Attack the binarization, not the TPM.** Conditioning has been ruled out
-   — better-conditioned pipelines have *worse* signal-to-noise
-   ([above](#better-conditioning-makes-it-worse)). What has not been tried is a
-   finer state space: three levels per neuron instead of two, or a state
-   definition based on the derivative rather than the level. Both cost states
-   (and so data) but preserve information that mid-range thresholding destroys.
-3. **Longer recordings per condition.** The binding constraint is per-structure
-   estimation error. 8 animals × 3 repeats × 15 s = 960 frames per stimulus is
-   what produced a noise floor equal to the signal; the required volume is not
-   yet known, and characterising how the noise floor scales with epoch count
-   would tell us.
-4. **Not more stimuli per class.** The design already detects a 14% class
-   difference in principle (6 within-class pairs, minimum detectable difference
-   0.175 against a mean distance of 1.22). Pairs are not the constraint.
-5. **Publish the methods contribution independently of the biology.** The
-   distance, its verified properties, the demonstration that scalar and pairwise
-   measures are blind to higher-order content, the cost characterisation, and the
-   data-volume requirement stand on their own — and the negative result is a
-   substantive part of that, since nobody else appears to have reported what it
-   takes to make this measurable.
-
-## Validation on structures PyPhi actually produces
-
-### Nine real Φ-structures
-
-[`notebooks/04`](notebooks/04_toy_examples.ipynb) unfolds nine Φ-structures from
-five 3-unit networks (AND-OR-XOR, all-XOR, all-AND, all-OR, majority).
-
-**Higher-order relations are common, not exotic.** 10 of the 25 states surveyed
-contain a relation of degree ≥ 3, and degree-4 relations appear throughout.
-Across the nine structures used: 217 relations, of which **86 are degree > 2**
-and **126 have no pairwise form** at all.
-
-Two controlled perturbations isolate higher-order content. `all-XOR[000]` has
-4 distinctions and 15 relations, exactly one of degree 4 (φ_r = 0.5):
-
-| test | \|ΔΦ\| | pairwise-only | gold standard |
-|---|---|---|---|
-| **A** delete the degree-4 relation | 0.5 | **0.0** | 0.5 |
-| **B** move its φ_r to a degree-2 relation (Φ preserved) | **0.0** | 0.5 | 1.0 |
-| **C** all-XOR[000] vs all-XOR[101] | 2.5 | 0.375 | 2.5 |
-| **D** all-XOR[000] vs all-XOR[011] — *isomorphic* | 0.0 | 0.0 | **0.0** |
-| **E** AND-OR-XOR[101] vs [111] | 0.223 | 1.703 | 3.129 |
-
-Test **A** is the clean demonstration of the pairwise blind spot: the
-representation has nowhere to store a degree-4 relation, so deleting it changes
-nothing it can see. Test **B** is sharper — the same φ_r is *moved* from degree
-4 to degree 2, so Φ is unchanged and |ΔΦ| reports 0, while the exact distance
-charges the loss at one degree and the gain at the other.
-
-Over the full 9 × 9 matrix (7 distinctions max, 5040 bijections per pair, 2.8 s):
-the diagonal is zero, the matrix symmetric, the triangle inequality holds on all
-**729** ordered triples, and **every** off-diagonal zero was confirmed a genuine
-isomorphism by an independent brute-force test.
-
-![Toy examples](figures/fig10_toy_examples.png)
-
-All nine structures against each other (a); the relation degrees they contain
-(b); the three measures on the five tests (c).
-[Vector PDF](figures/fig10_toy_examples.pdf)
-
-### A single comparison, end to end on PyPhi 2.0
-
-[`notebooks/05`](notebooks/05_pyphi2_example.ipynb) does one comparison
-completely from scratch: two update rules in, one distance out, with every
-intermediate step drawn.
-
-**On PyPhi 2.0.** It is not on PyPI — the latest release there is 1.2.0 — so the
-notebook installs from the `2.0` branch. It needs Python ≥ 3.13, drops the
-`graphillion` dependency, and replaces `Network`/`Subsystem`/`phi_structure()`
-with `Substrate` → `System` → `.ces()`. Its installed default formalism is
-`IIT_4_0_2023`, matching the rest of this repo, and it **reproduces the pinned
-branch's numbers exactly**. (The 2026 refinement, `pyphi.iit4_2026`, adds an
-intrinsic-information requirement under which deterministic systems give
-φ_s = 0 — relevant when comparing against published values.)
-
-| | rule | state | Φ | distinctions | relations |
-|---|---|---|---|---|---|
-| Structure 1 | A=OR(B,C), B=AND(A,C), C=XOR(A,B) | 101 | 4.792 | 4 | 15 (degrees 1–4) |
-| Structure 2 | each unit = XOR of the other two | 011 | 7.000 | 4 | 11 (degrees 2–4) |
-
-![Two structures](figures/fig11_two_structures.png)
-
-Node area is φ_d, edge and loop width are φ_r, orange shading marks a relation
-of degree ≥ 3. [Vector PDF](figures/fig11_two_structures.pdf)
-
-All 4! = 24 bijections are scored and the smallest is the distance. Their costs
-genuinely differ — the minimisation is doing work, not picking among ties.
-
-![Mapping search](figures/fig12_mapping_search.png)
-
-*D* = **3.8141**, via `A→AB, C→AC, AC→BC, ABC→ABC`. This is not the mapping that
-best matches φ_d values pairwise: relations are carried along by the distinction
-mapping, so a locally worse pairing can win by placing the relations better.
-[Vector PDF](figures/fig12_mapping_search.pdf)
-
-![Cost breakdown](figures/fig13_cost_breakdown.png)
-
-Of the total 3.8141: **0.783** from distinctions and **3.032** from relations,
-splitting by degree as 0.803 (self), 1.212 (pairwise), 0.780 (degree 3), 0.237
-(degree 4). **27% comes from relations of degree > 2** — content no pairwise
-representation could hold. |ΔΦ| = 2.208 would understate the difference by 42%.
-[Vector PDF](figures/fig13_cost_breakdown.pdf)
-
----
-
-## Scaling beyond the exact distance
-
-Past ~9 distinctions the exact search must be replaced by an estimate. The
-project's parallel line of work does this with **optimal transport**, which
-brackets the exact value:
-
-$$d_{\mathrm{OT}} \;\le\; d_{\mathrm{exact}} \;\le\; \Delta_{\mu^*}$$
-
-Both bounds are cheap even when the exact search is intractable.
-
-That approach folds each relation's φ_r onto its participating distinctions
-(**Φ-folds**: divide φ_r by the number of distinctions the relation joins, add
-each share to those distinctions) so the hypergraph becomes a flat vector OT can
-consume. The exact distance never needs this step — which is why higher-order
-relations require no special handling there.
-
-**Two versions of Φ-folds exist, and the difference matters.**
-
-* A **scalar fold** — one value per distinction — is degenerate: a filled
-  triangle (three pairwise relations at 0.1 plus a degree-3 at 0.3) and an empty
-  triangle (three pairwise at 0.2) fold to the *identical* vector, distance 0
-  where the exact distance gives 0.6. Solving symbolically, folds coincide
-  whenever each pairwise φ_r in the empty structure equals `e + t/3`. Every
-  member of that family also has identical Φ, so |ΔΦ| is blind to it too.
-* The **per-degree fold (manuscript Eq 40–43)** folds separately for each
-  relation degree *k*, giving a vector of per-degree contributions. This
-  resolves the degeneracy: the same filled/empty pair scores **0.6000**,
-  matching the exact distance.
-
-Only the per-degree version should be used. Measured over 800 random pairs, it
-is a genuine **lower bound** — never above the exact distance — and tight:
-**74.8% of pairs agree exactly**, r = 0.991, mean ratio 0.973. Residual loss
-comes from discarding *which* distinctions a relation joins; recovering that
-would need Gromov–Wasserstein.
-
-![Per-degree fold](figures/fig09_writeup_check.png)
-
-Per-degree folding scores the filled/empty pair correctly (a); across 800 random
-pairs it is exact on 75% and never exceeds the exact distance (b).
-[Vector PDF](figures/fig09_writeup_check.pdf) ·
-[scalar-fold diagnostics](figures/fig08_phi_folds.pdf)
-
-### One equation to amend
-
-Manuscript Eq 38 writes the relation term as a sum over *r* ∈ R₁ only. Read
-literally that makes the distance **asymmetric** — 285 of 300 random pairs —
-because relations present in R₂ with no preimage in R₁ are never charged. It
-also contradicts the manuscript's own worked examples: Example 1 charges
-|φ_r − φ′_r| when one side has no relation, and Eq 10 explicitly includes
-φ_r⁽²⁾(p). The examples use the **union** R₁ ∪ μ⁻¹(R₂), which is what
-`src/gold_standard.py` implements and what reproduces Eq 10's 0.4500 exactly.
-
-### What upstream PyPhi already provides
-
-PyPhi has a `feature/ces-distance` branch. Its HEAD is from **December 2020** —
-it predates IIT 4.0 — and it registers two CES measures:
-
-* `EMD` — earth-mover's distance in **concept space**, expanding each concept's
-  cause and effect repertoires onto a shared purview and summing the two
-  repertoire EMDs.
-* `SUM_SMALL_PHI` — the signed scalar difference of summed φ.
-
-Neither is a Φ-structure distance in the sense used here. Both operate on
-**distinctions only** — the word "relation" does not appear in that module — so
-all the higher-order content this repo concerns is invisible to them. Both
-survive into the `2.0` branch under a renamed module (`pyphi/metrics/` →
-`pyphi/measures/`), still typed over `Distinctions`, with `SUM_SMALL_PHI` the
-configured default.
-
-The `EMD` measure is worth noting as prior art for the transport route: it is
-optimal transport over concepts with a repertoire-based ground metric, which is
-the shape a Gromov–Wasserstein estimate would take with a ground metric defined
-over distinctions *and* relations.
-
-### Other candidate directions
-
-* **Topological.** Treat the CES as a filtered simplicial complex and compare
-  persistence diagrams. Handles all degrees natively, relabeling-invariant.
-* **Gromov–Wasserstein** directly between hypergraphs, preserving *which*
-  distinctions each relation joins.
-* **Hypergraph kernels.** Weisfeiler–Leman-style refinement on the incidence
-  structure, yielding a positive-definite similarity.
-
----
-
 ## Repository layout
 
 ```
@@ -1407,7 +1457,7 @@ data/          downloaded recordings (gitignored)
 
 | you want to… | go to |
 |---|---|
-| see the result | [The result](#the-result) or [`notebooks/06`](notebooks/06_celegans_pooled.ipynb) |
+| see the result | [The result](#the-original-class-comparison) or [`notebooks/06`](notebooks/06_celegans_pooled.ipynb) |
 | **understand why the result is a methods finding** | [Does the measure detect anything?](#does-the-measure-detect-anything) |
 | see the raw neural responses | [`notebooks/09`](notebooks/09_raw_trace_responses.ipynb) |
 | see the TPMs and how a state is chosen | [The TPM, and how one state is chosen](#the-tpm-and-how-one-state-is-chosen) |
