@@ -542,8 +542,9 @@ The two named states are exact complements, and the whole enrichment ladder
 follows the same rule: every baseline-enriched state has AWCL ON; every
 stimulus-enriched state has AWCL OFF with ON cells among ASEL/ASER/AWAL. AWCL
 is an OFF cell — odour removal activates it — so the ladder reads as
-chemosensory biology straight off the state labels. Twelve of sixteen sensory
-states shift significantly; medians agree with means throughout.
+chemosensory biology straight off the state labels. Nine of sixteen sensory
+states shift significantly after Holm correction; medians agree with means on
+every one of them.
 
 **The consequential row is the one that does not move.** 0000 — the
 argmax-occupancy state at which *every* earlier per-condition Φ-structure was

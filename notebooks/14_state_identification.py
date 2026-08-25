@@ -165,8 +165,8 @@ pd.DataFrame(res).to_csv(os.path.join(REPO_ROOT, "results/state_distribution_tes
 #   **1000 = AWCL alone ON** (occupancy 0.107 pre → 0.047 stim, log₂ = −1.20,
 #   Holm p = 3 × 10⁻²²) and the stimulus-enriched state is its exact complement,
 #   **0111 = ASEL+ASER+AWAL ON, AWCL OFF** (0.036 → 0.081, log₂ = +1.15,
-#   Holm p = 4 × 10⁻¹³). Twelve of sixteen sensory states shift significantly;
-#   the ladder is bit-interpretable throughout — every baseline-enriched state
+#   Holm p = 4 × 10⁻¹³). Nine of sixteen sensory states shift significantly
+#   after Holm correction; the ladder is bit-interpretable throughout — every baseline-enriched state
 #   contains AWCL ON, every stimulus-enriched state has AWCL OFF with ON cells
 #   among ASEL/ASER/AWAL. AWCL is an OFF cell (odour removal activates it), so
 #   this is chemosensory biology read straight off the state labels.
