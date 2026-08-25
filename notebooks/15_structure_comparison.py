@@ -574,3 +574,89 @@ ax.set_title("c  Relations flip wholesale", loc="left")
 fig.savefig(os.path.join(REPO_ROOT, "figures/fig42_amplification.pdf"), bbox_inches="tight")
 fig.savefig(os.path.join(REPO_ROOT, "figures/fig42_amplification.png"), dpi=200, bbox_inches="tight")
 print("wrote figures/fig42")
+
+# %% [markdown]
+# ## The precision convention, implemented
+#
+# Proposal under test: *declare a floating-point precision for the transition
+# probabilities; certify by subsampling that the TPM is stable at that
+# precision; then treat the TPM as ground truth at that precision.* This is a
+# legitimate convention — the question it turns on is empirical: **is the
+# precision the data certify ≥ the precision the unfolding needs?** Both are
+# measurable.
+
+# %%
+# (1) the precision the data certify
+Pfull = (Cfull + 0.5) / (Cfull + 0.5).sum(1, keepdims=True)
+n_row = Cfull.sum(1)
+SE = np.sqrt(Pfull * (1 - Pfull) / np.maximum(n_row[:, None], 1))
+print(f"per-entry binomial SE: median {np.median(SE):.4f} -> ~2 decimals")
+for d in (1, 2, 3, 4):
+    agree = []
+    for CA, CB in half_C:
+        for C_ in (CA, CB):
+            P_ = (C_ + 0.5) / (C_ + 0.5).sum(1, keepdims=True)
+            agree.append(np.mean(np.round(P_, d) == np.round(Pfull, d)))
+    print(f"  d={d}: half-data rounds to the same value for {100*np.mean(agree):.1f}% of entries")
+
+# %%
+# (2) the precision the unfolding needs: round the TPM to d decimals, renormalise,
+#     unfold both condition states, compare to unrounded
+def struct_at_P(P, si):
+    net = pyphi.Network(convert.state_by_state2state_by_node(P), node_labels=SENS)
+    ps = pyphi.new_big_phi.phi_structure(
+        pyphi.Subsystem(net, tuple((si >> i) & 1 for i in range(4))))
+    return canon(ps), float(ps.big_phi), len(ps.distinctions), len(ps.relations)
+
+rows = []
+for d in (1, 2, 3, 4, 5):
+    Pd = np.round(Pfull, d)
+    Pd = np.maximum(Pd, 1e-12); Pd = Pd / Pd.sum(1, keepdims=True)
+    jsd = float(np.mean([jensenshannon(Pfull[s_], Pd[s_], base=2) for s_ in range(16)]))
+    Sbd = struct_at_P(Pd, S_BASE)[0]; Ssd, _, _, nrsd = struct_at_P(Pd, S_STIM)
+    rows.append(dict(decimals=d, jsd_from_full=round(jsd, 6),
+                     D_1000=round(D_id(Sb, Sbd), 4), D_0111=round(D_id(Ss, Ssd), 4),
+                     D_1000_vs_0111=round(D_id(Sbd, Ssd), 4), nrel_0111=nrsd))
+    print(rows[-1])
+prec = pd.DataFrame(rows)
+prec.to_csv(os.path.join(REPO_ROOT, "results/precision_convention.csv"), index=False)
+
+med_SE = float(np.median(SE)); target = 5e-5
+factor = (med_SE / target) ** 2
+pd.DataFrame([dict(median_binomial_SE=round(med_SE, 5), certified_decimals=2,
+                   unfolding_stable_decimals=4, data_factor_to_close=round(factor, 0),
+                   years_of_recording=round(4.15 * factor / 24 / 365, 1))]).to_csv(
+    os.path.join(REPO_ROOT, "results/precision_gap.csv"), index=False)
+print(f"\ngap: certified d=2, needed d=4 -> ~{factor:.0f}x more data (~4 years of recording)")
+
+# %% [markdown]
+# ## Reading
+#
+# * **The convention is coherent, and its premise is half-verified.** The TPM is
+#   certified at ~2 decimals: median binomial SE 0.005, and half-data estimates
+#   round to the same value as full data for 92% of entries at d=1, 55% at d=2,
+#   7% at d=3. Subsampling stability at 2 decimals is real, exactly as argued.
+# * **But the unfolding consumes ~4 decimals.** Rounding the full-data TPM to
+#   its OWN certified precision (d=2) — a re-representation the convention
+#   treats as identity — moves the 0111 structure by D = 2.47 and the
+#   1000-vs-0111 contrast itself by 32% (3.17 -> 2.16). The structure only
+#   stabilises at d=4 (D < 0.04, relation count restored to 1802). The
+#   membership discontinuities live in decimals 3-4, below the certified
+#   precision.
+# * **Closing the gap by data alone needs ~9,400x more transitions** (binomial
+#   SE scales as 1/sqrt n): roughly four years of continuous recording under
+#   this protocol. Not a route.
+# * **Where the convention DOES hold as stated:** every readout that is stable
+#   at d=2 — occupancy profiles, Phi(t) grand averages, the offset dip, the
+#   distinction-level phi values (median |dphi| = 0.0012 under perturbation) —
+#   can validly treat the TPM as ground truth at certified precision. The
+#   convention licenses exactly the analyses that already succeeded, and
+#   withholds exactly the one that failed (relation-membership-sensitive
+#   structure distances).
+# * **The user's null-logic is also right, and worth adopting explicitly:** a
+#   positive finding under a noisy estimate is conservative — estimation noise
+#   dilutes real contrasts rather than manufacturing them (for label-symmetric
+#   designs like ours). The noise floor therefore gates the interpretation of
+#   NULLS, not of positives. Had 1000-vs-0111 cleared its floor, it would stand.
+#   What the floor blocks is only the claim that the current absence of an
+#   effect is informative about the worm rather than about the estimate.

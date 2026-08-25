@@ -732,6 +732,50 @@ level, which is demonstrably stable. And the fragility is not IIT failing — it
 is the analysis inheriting the theory's own sharp existence conditions, which
 were designed for exactly-known TPMs, not estimated ones.
 
+### The precision convention: certify the TPM, treat it as ground truth
+
+A methodological proposal worth recording as the project's position: *declare a
+floating-point precision for the transition probabilities, certify by
+subsampling that the TPM is stable at that precision, and treat it as ground
+truth at that precision — the nonlinearity of the unfolding is a feature of
+IIT 4.0, not a bug, and real-world data always rests on such conventions (as
+the choices of τ and binarization already do).* Two further points come with
+it: the null assumption is "you are so far from truth you should find
+nothing," so a positive finding works *for* the analysis; and stability under
+leave-out is evidence the estimate is near truth.
+
+The convention is coherent, and both of its halves are now measured
+([`results/precision_convention.csv`](results/precision_convention.csv)):
+
+**What the data certify: ~2 decimals.** Median binomial SE per entry is 0.005;
+half-data estimates round to the same value as the full data for 92% of the
+256 entries at 1 decimal, 55% at 2, 7% at 3.
+
+**What the unfolding needs: ~4 decimals.** Rounding the full-data TPM to its
+*own certified precision* — a re-representation the convention treats as
+identity — moves the 0111 structure by D = 2.47 and the 1000-vs-0111 contrast
+itself by 32% (3.17 → 2.16). The structure stabilises only at 4 decimals
+(D ≤ 0.04, relation count restored). The membership discontinuities live in
+decimals 3–4, below what 39,824 transitions can pin down; closing the gap by
+data alone needs ~9,400× more transitions (binomial SE ∝ 1/√n), roughly four
+years of continuous recording
+([`results/precision_gap.csv`](results/precision_gap.csv)).
+
+**So the convention is adopted — with its scope set by that measurement.**
+Every readout stable at the certified precision may treat the TPM as ground
+truth: occupancy profiles, Φ(t) grand averages, the offset dip, and the
+distinction-level φ values (median |Δφ| = 0.0012 under perturbation). That
+licenses exactly the analyses that succeeded. What it does not license is the
+one readout that consumes precision the data cannot certify — relation
+*membership* — which is where the structure distance failed.
+
+**The null-logic point is also right, and adopted.** For a label-symmetric
+design, estimation noise dilutes real contrasts rather than manufacturing
+them, so a *positive* finding under a noisy estimate is conservative — had
+1000-vs-0111 cleared its floor, it would stand. The noise floor gates the
+interpretation of **nulls only**: it blocks the claim that an absent effect is
+information about the worm rather than about the estimate. Nothing more.
+
 ### Which connectivity? The one the data defines
 
 On the question of *which* connectome to use as a constraint — synaptic,
