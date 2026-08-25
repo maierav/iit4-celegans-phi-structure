@@ -769,7 +769,7 @@ whole-brain imaging; wild-type scalar amplitudes from
 ![Three connectivities of the sensory quartet](figures/fig43_connectivity_comparison.png)
 
 **The three disagree — including the two published ones.** Anatomy's strongest
-quartet edge (ASEL→AWCL, 18 synapses) is our weakest effective entry (0.009)
+quartet edge (ASEL→AWCL, 17 synaptic contacts) is our weakest effective entry (0.009)
 and is unmeasured in the functional atlas. The atlas's strongest quartet edge
 (AWCL→ASER, 0.230) has one synapse behind it. ASEL↔AWAL propagates strongly in
 the atlas (0.163/0.165) over **zero** direct anatomical synapses in the

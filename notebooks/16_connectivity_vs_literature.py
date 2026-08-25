@@ -34,13 +34,17 @@ el = pd.read_csv("/tmp/herm_full_edgelist.csv")
 el.columns = [c.strip() for c in el.columns]
 for c in ("Source", "Target"):
     el[c] = el[c].str.strip()
+# Electrical edges are ALREADY listed reciprocally in the source (verified:
+# 99.8% of electrical rows have their mirror row present), so rows are added
+# exactly as listed — re-symmetrizing would double-count each gap junction.
+ee = el[el.Type.str.strip() == "electrical"]
+pairs = set(zip(ee.Source, ee.Target))
+recip = sum((b, a) in pairs for a, b in pairs)
+print(f"electrical reciprocal-listing check: {recip}/{len(pairs)} rows mirrored")
 sub = el[el.Source.isin(Q) & el.Target.isin(Q)]
 A = np.zeros((4, 4)); idx = {n: i for i, n in enumerate(Q)}
 for _, r_ in sub.iterrows():
-    i, j = idx[r_.Source], idx[r_.Target]; w = float(r_.Weight)
-    A[i, j] += w
-    if r_.Type.strip() == "electrical":
-        A[j, i] += w
+    A[idx[r_.Source], idx[r_.Target]] += float(r_.Weight)
 pd.DataFrame(A, index=Q, columns=Q).to_csv(
     os.path.join(REPO_ROOT, "results/anatomical_weights_quartet.csv"))
 print("anatomy (rows source, cols target):")
@@ -100,7 +104,7 @@ print(f"pairs with all three measured: {len(m)} (functional atlas covers 4 of 12
 # ## Reading
 #
 # * **The three connectivities disagree — including the two published ones.**
-#   Anatomy's strongest edge (ASEL→AWCL, 18 synapses) is our weakest effective
+#   Anatomy's strongest edge (ASEL→AWCL, 17 synaptic contacts) is our weakest effective
 #   entry (0.009) and is unmeasured in the functional atlas. The functional
 #   atlas's strongest quartet edge (AWCL→ASER, 0.230) has 1 synapse behind it.
 #   ASEL↔AWAL propagates strongly in the atlas (0.163/0.165) over **zero**
