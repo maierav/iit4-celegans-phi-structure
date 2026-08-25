@@ -423,6 +423,24 @@ quiescent state. This is the first Φ-level quantity in the project that
 distinguishes a stimulus event from baseline — at the offset, and in the
 direction opposite to intuition.
 
+**The dip does not carry chemical identity, and its mechanism is fully
+resolved.** Testing the dip magnitude by class
+([`results/phi_dip_class_test.csv`](results/phi_dip_class_test.csv)):
+
+![The offset dip by stimulus, class, and mechanism](figures/fig34_offset_dip_by_class.png)
+
+Every class shows the dip — control's is the *largest* (−0.60, vs attractant
+−0.44 and repellent −0.08) — and the attractant-vs-repellent contrast is null
+under the stimulus-level permutation (*p* = 0.31). The mechanism panel closes
+the question of what Φ(t) measures here: the per-epoch dip correlates at
+**ρ = +0.99** with the change in 0000 occupancy. Φ(t) analysis under this TPM
+*is* occupancy analysis of the rest state, scaled by one large constant; the
+sensory OFF-transient amplitude predicts the dip (ρ = −0.28) because a bigger
+OFF-response means less time in 0000. The scalar Φ collapses the 16-state
+repertoire to essentially one informative bit — in-0000 or not. Any route to
+chemical identity through IIT will need the per-state **structure** (which
+distinctions and relations exist in each state), not the scalar.
+
 ## The distance algorithm
 
 It is called the **gold standard** (or "brute force") because it evaluates the

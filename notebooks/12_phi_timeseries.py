@@ -471,3 +471,133 @@ print(f"negative in {int((pa.post_minus_pre < 0).sum())} of 8 animals")
 # * This is the first Φ-level quantity in the project that distinguishes a
 #   stimulus event from baseline. It is an OFF-event signature: "stimulus ON vs
 #   OFF" is detected at the transition, in the direction opposite to intuition.
+
+# %% [markdown]
+# ## Does the offset dip carry chemical identity?
+#
+# The dip is the first Φ-level event this pipeline detects, so the natural next
+# question is whether its **magnitude** differs between attractants and
+# repellents. Per-epoch dip = mean Φ(post 16–31 s) − mean Φ(pre −15–0 s).
+
+# %%
+from itertools import combinations
+
+def dips(key):
+    rows = []
+    for r in RECS:
+        for s in STIMULI:
+            for k, t0 in enumerate(sorted(DAT[r][1].get(s, []))):
+                if t0 - PRE_N >= 0 and t0 + CYC_N <= len(ST[r][key]):
+                    seg = ST[r][key][t0 - PRE_N:t0 + CYC_N]
+                    pp = np.array([PHI_OF[key][x] for x in seg])
+                    rows.append(dict(animal=r, stimulus=s, cls=CLS[s], rep=k,
+                        dip=float(pp[segs["post (16-31)"]].mean() - pp[segs["pre (-15-0)"]].mean())))
+    return pd.DataFrame(rows)
+
+D_sens = dips("sens")
+D_sens.to_csv(os.path.join(REPO_ROOT, "results/phi_dip_epochs.csv"), index=False)
+print(D_sens.groupby("cls").dip.agg(["mean", "sem", "count"]).round(3).to_string())
+
+# stimulus-level permutation: class labels live on stimuli, so that is the
+# exchangeable unit (the project's standard design)
+stim_means = D_sens.groupby("stimulus").dip.mean()
+stims_nc = [s for s in STIMULI if CLS[s] != "control"]
+obs = (stim_means[[s for s in stims_nc if CLS[s] == "attractant"]].mean()
+       - stim_means[[s for s in stims_nc if CLS[s] == "repellent"]].mean())
+labs = np.array([CLS[s] for s in stims_nc])
+vals = stim_means[stims_nc].values
+rg = np.random.default_rng(0)
+null = []
+for _ in range(20000):
+    pl = rg.permutation(labs)
+    null.append(vals[pl == "attractant"].mean() - vals[pl == "repellent"].mean())
+null = np.array(null)
+p_stim = (np.sum(np.abs(null) >= abs(obs)) + 1) / 20001
+print(f"\natt - rep dip contrast: {obs:+.4f}   stimulus-level permutation p = {p_stim:.4f}")
+pd.DataFrame([dict(contrast="att - rep (dip)", diff=round(float(obs), 4),
+                   p=round(float(p_stim), 4))]).to_csv(
+    os.path.join(REPO_ROOT, "results/phi_dip_class_test.csv"), index=False)
+
+# %% [markdown]
+# ## Mechanism: the dip is the loss of 0000 occupancy, almost identically
+
+# %%
+rows = []
+for r in RECS:
+    for s in STIMULI:
+        for t0 in sorted(DAT[r][1].get(s, [])):
+            if t0 - PRE_N >= 0 and t0 + CYC_N <= len(ST[r]["sens"]):
+                seg = ST[r]["sens"][t0 - PRE_N:t0 + CYC_N]
+                pp = np.array([PHI_OF["sens"][x] for x in seg])
+                dip = pp[segs["post (16-31)"]].mean() - pp[segs["pre (-15-0)"]].mean()
+                off = np.mean([HPS[r][nm][t0 + round(16 * FS):t0 + round(31 * FS)].mean()
+                               - HPS[r][nm][t0 - PRE_N:t0].mean() for nm in SENS])
+                z0 = (np.mean(seg[segs["post (16-31)"]] == 0)
+                      - np.mean(seg[segs["pre (-15-0)"]] == 0))
+                rows.append(dict(dip=dip, off_amp=off, d_occ0=z0))
+M = pd.DataFrame(rows)
+M.to_csv(os.path.join(REPO_ROOT, "results/phi_dip_mechanism.csv"), index=False)
+r1 = stats.spearmanr(M.off_amp, M.dip)
+r2 = stats.spearmanr(M.d_occ0, M.dip)
+print(f"dip vs OFF-transient amplitude : rho = {r1.statistic:+.3f}  p = {r1.pvalue:.2e}")
+print(f"dip vs Delta occupancy of 0000 : rho = {r2.statistic:+.3f}  p = {r2.pvalue:.2e}")
+
+# %% [markdown]
+# ## Reading
+#
+# * **The dip carries no chemical identity.** Class means differ numerically
+#   (attractant −0.44, repellent −0.08, control −0.60) but the stimulus-level
+#   permutation gives p = 0.31, and the control dip is the largest of the three
+#   — whatever drives it is present in the vehicle deliveries too.
+# * **The mechanism is fully resolved.** The per-epoch dip correlates at
+#   ρ = +0.99 with the change in 0000 occupancy: Φ(t) analysis here IS occupancy
+#   analysis of the rest state, passed through one large constant. The OFF
+#   amplitude of the sensory quartet predicts the dip (ρ = −0.28): a larger
+#   OFF-transient means less time in 0000 and hence lower Φ.
+# * **Where this leaves the thread.** Φ(t) detects the delivery event (offset,
+#   p = 1e-5) but not the chemical. The bottleneck is now clear and quantified:
+#   Φ collapses the 16-state repertoire to essentially one informative bit
+#   (in-0000 vs not). Any route to chemical identity through IIT will need the
+#   per-state STRUCTURE (which distinctions and relations exist in each state),
+#   not the scalar.
+
+# %% [markdown]
+# ## Figure 34 — the offset dip by stimulus, class, and mechanism
+
+# %%
+CCOL = {"attractant": "#1f6fb4", "repellent": "#c2571a", "control": "#8a8a8a"}
+fig, axes = plt.subplots(1, 3, figsize=(11.6, 3.4), constrained_layout=True)
+ax = axes[0]
+bs = D_sens.groupby(["cls", "stimulus"]).dip.agg(["mean", "sem"]).reset_index()
+bs = bs.loc[sorted(bs.index, key=lambda i: (bs.loc[i, "cls"], bs.loc[i, "mean"]))].reset_index(drop=True)
+ax.barh(range(len(bs)), bs["mean"], 0.62, xerr=bs["sem"],
+        color=[CCOL[c] for c in bs.cls], error_kw=dict(lw=0.7))
+ax.set_yticks(range(len(bs)))
+ax.set_yticklabels([s if len(s) <= 13 else s[:13] for s in bs.stimulus], fontsize=5.6)
+ax.axvline(0, color="#333", lw=0.8)
+ax.set_xlabel("offset dip in Φ (post − pre)", labelpad=5)
+ax.set_title("a  The dip is universal:\n   every stimulus class shows it", loc="left")
+
+ax = axes[1]
+cm = D_sens.groupby("cls").dip.agg(["mean", "sem"]).reindex(["attractant", "repellent", "control"])
+ax.bar(range(3), cm["mean"], 0.6, yerr=cm["sem"], color=[CCOL[c] for c in cm.index],
+       error_kw=dict(lw=0.8))
+ax.set_xticks(range(3)); ax.set_xticklabels(cm.index, fontsize=6)
+ax.axhline(0, color="#333", lw=0.8)
+ax.set_ylabel("offset dip in Φ", labelpad=5)
+ax.text(0.5, 0.06, f"att − rep: p = {p_stim:.2f} (stimulus-level permutation)",
+        transform=ax.transAxes, fontsize=5.8, ha="center", color="#333")
+ax.set_title("b  ...and carries no\n   chemical identity", loc="left")
+
+ax = axes[2]
+ax.scatter(M.d_occ0, M.dip, s=7, alpha=0.45, color="#555", lw=0)
+ax.set_xlabel("Δ occupancy of state 0000\n(post − pre)", labelpad=4)
+ax.set_ylabel("offset dip in Φ", labelpad=5)
+ax.text(0.03, 0.95, f"Spearman ρ = {r2.statistic:+.2f}\n(OFF amplitude: ρ = {r1.statistic:+.2f})",
+        transform=ax.transAxes, fontsize=6.2, va="top", color="#333")
+ax.axhline(0, color="#333", lw=0.6, ls=":"); ax.axvline(0, color="#333", lw=0.6, ls=":")
+ax.set_title("c  Mechanism: the dip IS the\n   loss of 0000 occupancy", loc="left")
+
+fig.savefig(os.path.join(REPO_ROOT, "figures/fig34_offset_dip_by_class.pdf"), bbox_inches="tight")
+fig.savefig(os.path.join(REPO_ROOT, "figures/fig34_offset_dip_by_class.png"), dpi=200, bbox_inches="tight")
+print("wrote figures/fig34_offset_dip_by_class.pdf")
