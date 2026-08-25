@@ -69,6 +69,7 @@ then `Runtime > Run all`.
 | **07 — Binarization and τ** | Verifies binarization against the reference notebook bit-for-bit; tests whether τ can be chosen by argmax φ_s | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/07_binarization_and_tau.ipynb) |
 | **08 — TPMs and the global route** | Compares the TPMs directly (no Φ); audits how much of each TPM the prior invents; runs 2- and 3-neuron substrates; builds the one-global-TPM alternative with enrichment-selected states | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/08_tpm_distance_and_global.ipynb) |
 | **09 — Response time courses** | PSTH-style ΔF/F₀ for all eight neurons, by stimulus and by class, one animal and all animals; the 60 s cycle-triggered average; the early/late window split | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/09_raw_trace_responses.ipynb) |
+| **13 — Robustness checks** | Median vs mean Φ(t), the explicit stimulus-vs-no-stimulus contrast across all 10 stimuli, raw-fluorescence mean/median, and TPM drop-k stability plus the fragility of the φ-per-state map | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/13_robustness.ipynb) |
 | **12 — Φ as a time series** | One giant TPM from the entire dataset (~40k transitions, every row ≥1,648 obs), Φ for each of the 16 states, and Φ(t) by mapping each sample's state to its Φ — single-trial, grand-average, and by-class | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/12_phi_timeseries.ipynb) |
 | **11 — Time courses and binarization** | Reproduces figures 26–29: each flattening method on single traces and on the 60 s cycle average, the response-latency measurement, the early/late window split, and the binarized PSTH | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/11_timecourses_and_binarization.ipynb) |
 | **10 — Positive control** | Noise floors for the global pipelines, the stimulus-vs-baseline positive control, the 3-neuron global TPM, and the flattening-method comparison that recovers the effect | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/10_positive_control.ipynb) |
@@ -352,6 +353,18 @@ differences. So no single window optimises both the class contrast and the
 transition dynamics; 20 s is chosen here for the dynamics, since that is what
 IIT consumes.
 
+### The binarized responses at the settled window
+
+![Binarized responses at the 20 s window](figures/fig31_binarized_20s.png)
+
+Single-trial bits (top; grey trace = continuous signal rescaled so its zero maps
+to the threshold), grand-average P(bit = 1) over all 232 epochs (middle), and
+by class (bottom), for all eight neurons
+([`notebooks/12`](notebooks/12_phi_timeseries.ipynb)). The sensory bits track
+their continuous responses — AWAL's attractant selectivity and AWCL's OFF
+rebound are visible after thresholding — while the core bits fluctuate without
+onset-locking, consistent with their slow, class-dependent coding.
+
 ### The Φ unfolding, not the binarization, is where the effect is lost
 
 With the window optimised, the same permutation test can be run at both levels
@@ -440,6 +453,52 @@ OFF-response means less time in 0000. The scalar Φ collapses the 16-state
 repertoire to essentially one informative bit — in-0000 or not. Any route to
 chemical identity through IIT will need the per-state **structure** (which
 distinctions and relations exist in each state), not the scalar.
+
+### Robustness: median, all stimuli, raw traces, and TPM stability
+
+Four checks in [`notebooks/13`](notebooks/13_robustness.ipynb).
+
+![Mean vs median Φ(t), the ON-vs-OFF contrast, and every stimulus](figures/fig35_phi_mean_median_contrast.png)
+
+**Median vs mean.** The median Φ(t) is flat at ~1 while the mean carries all the
+structure ([fig38](figures/fig38_phi_median_rasters.png) shows both under the
+state rasters). That is exactly what the top-2-state mechanism predicts: the
+high-Φ states occupy 16–21% of samples, so the median sits in the low-Φ bulk at
+every time point. For a quantity carried by a minority of samples the mean is
+the appropriate statistic; the flat median *confirms* the mechanism.
+
+**All stimuli, stimulus vs no stimulus.** Baseline-correcting every epoch
+against its own pre-stimulus window and pooling all 10 stimuli (panels c–f):
+no stimulus-window effect (core +0.67, *p* = 0.22; sensory −0.04, *p* = 0.66)
+and the sensory post-offset dip at −0.32, *p* = 10⁻⁵
+([`results/phi_on_off_contrast.csv`](results/phi_on_off_contrast.csv)). The
+per-stimulus traces show the dip in every class.
+
+**Raw fluorescence, mean and median.**
+
+![Raw fluorescence mean and median](figures/fig36_raw_mean_median.png)
+
+Mean and median agree on every response shape (sensory ON transients, AWCL's
+OFF rebound, the slow core declines), so the Φ-level story is not driven by
+outlier epochs at the fluorescence level either. The wide IQRs on the core
+neurons show their epoch-to-epoch variability is intrinsic, not induced by the
+processing.
+
+**TPM stability under dropout.**
+
+![TPM stability](figures/fig37_tpm_stability.png)
+
+Dropping *k* random transitions of the 39,824 and comparing to the full TPM:
+the error grows as √k and stays below JSD 0.01 until ~3,000 transitions are
+removed ([`results/tpm_stability_dropout.csv`](results/tpm_stability_dropout.csv)).
+The giant TPM is the most robust object in the pipeline. **But the φ-per-state
+map built from it is not**: subsampled to 30k transitions (75% of the data) the
+per-state φ ranking correlates only ρ = 0.82 (core) / 0.69 (sensory) with the
+full-data map, and at one-stimulus scale (~1,000 transitions) ρ = 0.30 / 0.13
+([`results/tpm_stability_phi.csv`](results/tpm_stability_phi.csv)). Φ inherits
+none of the TPM's √k robustness — it is a highly nonlinear readout that
+amplifies small row perturbations. Any per-stimulus or per-condition Φ
+comparison must budget for this instability, not the TPM's.
 
 ## The distance algorithm
 

@@ -1,0 +1,5 @@
+substrate,window,mean_dPhi,p_wilcoxon
+core,stim window,0.6734,0.21898
+core,post window,0.2695,0.39472
+sens,stim window,-0.0365,0.65732
+sens,post window,-0.3239,1e-05
