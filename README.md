@@ -75,8 +75,9 @@ states), so Φ(t) is effectively a rest-state-occupancy readout — sensory
 activity *lowers* Φ, and the offset dip is that mechanism working (dip vs
 Δ-occupancy of 0000: ρ = +0.99). And the TPM itself is the most robust object
 in the pipeline — certified stable to ~2 decimals, drop-*k* error ∝ √k — while
-the unfolding consumes ~4 decimals: a 1% TPM change moves the structure by a
-third of the full condition contrast (~150× amplification), because relation
+the unfolding consumes ~4 decimals: a 1% TPM change moves the structure by
+over half the full condition contrast (1.74 vs 3.17, ~150× amplification),
+because relation
 *membership* flips discontinuously while every φ value drifts smoothly. The
 adopted position ([the precision convention](#the-precision-convention-certify-the-tpm-treat-it-as-ground-truth))
 is that the TPM is ground truth at its certified precision, which licenses the
@@ -733,8 +734,8 @@ under controlled conditions rather than inferred from animal splits
 Each row of the full-data TPM is multinomially resampled at a chosen sample
 size, giving a perturbed TPM whose distance from the original is *known*. At
 the smallest perturbation tested — mean row JSD 0.012, a ~1% change — the 0111
-structure moves by D = 1.74 (over a third of the full stimulus-vs-baseline
-contrast), and its relation count swings between 913 and 2,747. The measured
+structure moves by D = 1.74 (over half the full stimulus-vs-baseline
+contrast of 3.17), and its relation count swings between 913 and 2,747. The measured
 amplification is **~150×**.
 
 The traced minimal pair shows *where* the discontinuity lives. All 15

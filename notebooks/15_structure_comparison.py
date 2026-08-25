@@ -518,8 +518,8 @@ print("   while the distinctions' phi values drift smoothly.")
 # ## Reading
 #
 # * **Yes — measured amplification is ~150×** at the smallest perturbation
-#   tested: mean row JSD 0.012 (a ~1.2% TPM change) produces D = 1.74, over a
-#   third of the full condition contrast (D = 3.17), and the relation count
+#   tested: mean row JSD 0.012 (a ~1.2% TPM change) produces D = 1.74, over half
+#   the full condition contrast (D = 3.17), and the relation count
 #   swings between 913 and 2,747.
 # * **The locus is the relations, not the distinctions.** In a traced minimal
 #   pair, all 15 distinctions survive with median |Δφ| = 0.0012 — the
