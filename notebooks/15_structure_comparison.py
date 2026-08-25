@@ -461,3 +461,116 @@ print(pd.DataFrame(SNR, index=SENS, columns=SENS).round(1).to_string())
 #   preprocessing. The near-diagonal answer also explains the structure
 #   fragility: the cross-mechanisms whose φ the unfolding thresholds are
 #   exactly the weak, marginally-estimated entries.
+
+# %% [markdown]
+# ## The concern, isolated: controlled tiny perturbations
+#
+# The question in one sentence: *can very, very small differences in the TPM
+# cause very, very large differences in the Φ-structure?* Yes — and here it is
+# with the input difference KNOWN and controlled, rather than inherited from an
+# animal split. Each row of the full-data TPM is resampled from its own
+# multinomial at a scaled count, giving a perturbed TPM whose distance from the
+# original (mean row JSD) is set by the scale. The 0111 structure is then
+# unfolded from each perturbed TPM.
+
+# %%
+Pfull = (Cfull + 0.5) / (Cfull + 0.5).sum(1, keepdims=True)
+def perturbed_C(scale, rng):
+    C = np.zeros_like(Cfull)
+    for s_ in range(16):
+        n = max(1, int(round(Cfull[s_].sum() * scale)))
+        C[s_] = rng.multinomial(n, Pfull[s_]) * (Cfull[s_].sum() / n)
+    return C
+
+rng = np.random.default_rng(0)
+rows = []
+for scale in [8.0, 4.0, 2.0, 1.0, 0.5, 0.25]:
+    for rep in range(6):
+        Cp = perturbed_C(scale, rng)
+        Pp = (Cp + 0.5) / (Cp + 0.5).sum(1, keepdims=True)
+        jsd = float(np.mean([jensenshannon(Pfull[s_], Pp[s_], base=2) for s_ in range(16)]))
+        Sp, phip, ndp, nrp = struct_at(Cp, S_STIM)
+        rows.append(dict(scale=scale, rep=rep, jsd=round(jsd, 5),
+                         D_from_full=round(D_id(Ss, Sp), 4), n_dist=ndp, n_rel=nrp))
+pert = pd.DataFrame(rows)
+pert.to_csv(os.path.join(REPO_ROOT, "results/perturbation_sweep.csv"), index=False)
+g = pert.groupby("scale").agg(jsd=("jsd", "mean"), D=("D_from_full", "mean"),
+                              nr_min=("n_rel", "min"), nr_max=("n_rel", "max"))
+print(g.round(4).to_string())
+print(f"amplification at the smallest perturbation: "
+      f"{g.D.loc[8.0]/g.jsd.loc[8.0]:.0f}x")
+
+# %%
+# one minimal pair, traced to the mechanism
+Cp = perturbed_C(8.0, np.random.default_rng(42))
+Sp = struct_at(Cp, S_STIM)[0]
+d_full, d_pert = Ss[0], Sp[0]
+moved = [abs(d_full[k] - d_pert[k]) for k in d_full if k in d_pert]
+flips = len(set(d_full) ^ set(d_pert))
+rel_flips = len(set(Ss[1]) ^ set(Sp[1]))
+print(f"distinctions: {flips} existence flips, median |dphi| of survivors {np.median(moved):.4f}")
+print(f"relations: {rel_flips} existence flips (of {len(Ss[1])} vs {len(Sp[1])})")
+print("-> the discontinuity is in the RELATIONS: tiny repertoire shifts flip")
+print("   the congruence/overlap conditions that decide whether a relation exists,")
+print("   while the distinctions' phi values drift smoothly.")
+
+# %% [markdown]
+# ## Reading
+#
+# * **Yes — measured amplification is ~150×** at the smallest perturbation
+#   tested: mean row JSD 0.012 (a ~1.2% TPM change) produces D = 1.74, over a
+#   third of the full condition contrast (D = 3.17), and the relation count
+#   swings between 913 and 2,747.
+# * **The locus is the relations, not the distinctions.** In a traced minimal
+#   pair, all 15 distinctions survive with median |Δφ| = 0.0012 — the
+#   distinction level is as smooth as the TPM. But 590 of ~1,800 relations flip
+#   existence, because relation existence depends on discrete congruence and
+#   overlap conditions among purviews that tiny repertoire shifts can flip.
+# * **Consequences.** (i) The noise floor is not pessimism about the data; it
+#   is this amplification acting on unavoidable sampling error. (ii) Any robust
+#   structure comparison must either regularise relation existence (φ-threshold,
+#   congruence margins) or restrict itself to the distinction level, which is
+#   demonstrably stable here. (iii) The distinction-level comparison already
+#   failed the noise floor for OTHER reasons (fewer objects to compare), so the
+#   practical route is thresholded relations — with the threshold chosen by
+#   exactly this perturbation analysis.
+
+# %% [markdown]
+# ## Figure 42 — the amplification, isolated
+
+# %%
+fig, axes = plt.subplots(1, 3, figsize=(11.8, 3.5), constrained_layout=True)
+ax = axes[0]
+gm = pert.groupby("scale").agg(jsd=("jsd", "mean"), D=("D_from_full", "mean"),
+                               Dsd=("D_from_full", "std"))
+ax.errorbar(gm.jsd, gm.D, yerr=gm.Dsd, fmt="o-", color=ORANGE, lw=1.3, ms=4, capsize=2)
+ax.plot([0, 0.07], [0, 0.07], ls=":", lw=0.9, color="#555")
+ax.text(0.052, 0.005, "y = x (no amplification)", fontsize=5.6, color="#555", rotation=4)
+ax.set_xlabel("TPM perturbation (mean row JSD)", labelpad=5)
+ax.set_ylabel("structure distance D from full data", labelpad=5)
+ax.set_title("a  ~150× amplification", loc="left")
+
+ax = axes[1]
+keys = sorted(set(d_full) | set(d_pert), key=lambda k: -(d_full.get(k, 0)))
+vals_f = [d_full[k] for k in keys]; vals_p = [d_pert[k] for k in keys]
+ax.scatter(vals_f, vals_p, s=18, color=BLUE, zorder=3, lw=0)
+lim = max(max(vals_f), max(vals_p)) * 1.12
+ax.plot([0, lim], [0, lim], ls=":", lw=0.9, color="#555")
+ax.set_xlim(0, lim); ax.set_ylim(0, lim)
+ax.set_xlabel("distinction φ, full-data TPM", labelpad=5)
+ax.set_ylabel("distinction φ, perturbed TPM", labelpad=5)
+ax.set_title("b  Distinctions barely move", loc="left")
+
+ax = axes[2]
+sets = [("shared", len(set(Ss[1]) & set(Sp[1])), "#8a8a8a"),
+        ("only in full", len(set(Ss[1]) - set(Sp[1])), BLUE),
+        ("only in perturbed", len(set(Sp[1]) - set(Ss[1])), ORANGE)]
+ax.bar(range(3), [v for _, v, _ in sets], 0.55, color=[c for _, _, c in sets])
+for i, (l, v, _) in enumerate(sets):
+    ax.text(i, v + 28, str(v), ha="center", fontsize=6.6)
+ax.set_xticks(range(3)); ax.set_xticklabels([l for l, _, _ in sets], fontsize=6.2)
+ax.set_ylabel("relations", labelpad=5); ax.set_ylim(0, 1450)
+ax.set_title("c  Relations flip wholesale", loc="left")
+fig.savefig(os.path.join(REPO_ROOT, "figures/fig42_amplification.pdf"), bbox_inches="tight")
+fig.savefig(os.path.join(REPO_ROOT, "figures/fig42_amplification.png"), dpi=200, bbox_inches="tight")
+print("wrote figures/fig42")

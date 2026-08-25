@@ -699,6 +699,39 @@ structure comparison lives in the bottom half. Neither observation refutes the
 other; they sit at different levels, separated by the unfolding's
 discontinuity.
 
+### The concern in one experiment: ~150× amplification
+
+Stated plainly: **yes, very small differences in the TPM can cause very large
+differences in the Φ-structure**, and the size of the effect is now measured
+under controlled conditions rather than inferred from animal splits
+([`results/perturbation_sweep.csv`](results/perturbation_sweep.csv)).
+
+![Controlled perturbation: tiny ΔTPM, large Δstructure](figures/fig42_amplification.png)
+
+Each row of the full-data TPM is multinomially resampled at a chosen sample
+size, giving a perturbed TPM whose distance from the original is *known*. At
+the smallest perturbation tested — mean row JSD 0.012, a ~1% change — the 0111
+structure moves by D = 1.74 (over a third of the full stimulus-vs-baseline
+contrast), and its relation count swings between 913 and 2,747. The measured
+amplification is **~150×**.
+
+The traced minimal pair shows *where* the discontinuity lives. All 15
+distinctions survive the perturbation with a median |Δφ| of **0.0012** — the
+distinction level is as smooth as the TPM itself (panel b). But **590 of
+~1,800 relations flip existence** (panel c): whether a relation exists depends
+on discrete congruence and overlap conditions among purviews, and a tiny
+repertoire shift can flip those conditions without meaningfully changing any
+φ. The Φ-structure is continuous in its weights but discontinuous in its
+*membership*, and the membership carries most of the distance.
+
+Three consequences. The noise floor is not pessimism about the data — it is
+this amplification acting on unavoidable sampling error. Any robust structure
+comparison must regularise relation membership (a φ-threshold with its margin
+chosen by exactly this perturbation analysis) or stay at the distinction
+level, which is demonstrably stable. And the fragility is not IIT failing — it
+is the analysis inheriting the theory's own sharp existence conditions, which
+were designed for exactly-known TPMs, not estimated ones.
+
 ### Which connectivity? The one the data defines
 
 On the question of *which* connectome to use as a constraint — synaptic,
