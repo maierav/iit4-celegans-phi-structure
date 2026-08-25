@@ -589,6 +589,18 @@ two estimates of the same thing?" The noise floor is that reference:
    question at this data volume, and any p-value computed from the contrast
    alone would be uninterpretable.
 
+![Nothing is decomposed — the animals are split, every structure computed whole](figures/fig41_noise_floor_schematic.png)
+
+**A point worth stating twice, because the name "split-half" invites a
+misreading: no Φ-structure is ever decomposed.** The structure is holistic and
+undecomposable, and every one in this analysis is unfolded whole by PyPhi. What
+is split is the *set of animals* used to estimate the TPM. The structure is a
+deterministic function of an empirically *estimated* input, so it inherits that
+input's sampling uncertainty — two whole structures of the same state, built
+from disjoint animals, disagree exactly to the extent the TPM estimate moves.
+The noise floor measures that inherited uncertainty without cutting anything
+apart.
+
 This is test–retest reliability applied to Φ-structures: **a measure cannot
 distinguish two conditions by less than it differs from itself.** It is the
 check that reframed the original class comparison (ratio 1.06/0.96 — see

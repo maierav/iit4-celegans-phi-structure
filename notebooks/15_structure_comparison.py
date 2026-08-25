@@ -28,6 +28,12 @@
 #
 # This is the same logic as any test–retest reliability bound: a measure
 # cannot distinguish two conditions by less than it differs from itself.
+#
+# **No Φ-structure is decomposed anywhere in this design.** The structure is
+# holistic; every one here is unfolded whole. What is split is the set of
+# ANIMALS that estimate the TPM — the structure is a deterministic function of
+# an estimated input and inherits its sampling uncertainty. See
+# `figures/fig41_noise_floor_schematic.png`.
 
 # %%
 import os, sys, ast, time, itertools, math
