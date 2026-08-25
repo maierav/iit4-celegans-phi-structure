@@ -44,6 +44,23 @@ phenomenologically similar experiences should have similar Φ-structures; this
 repository asks the operational version of that question in a small nervous
 system, and builds the tools the question needs.
 
+**The guide star.** One principle governs every analysis in this repository,
+because the pipeline is estimation stacked on estimation (binarization, TPM,
+state selection, unfolding, distance):
+
+> **Estimation mistakes and noise are far more likely to *dilute* lawful
+> relationships than to *manufacture* them.**
+
+For a label-symmetric design, noise pushes contrasts toward zero; it does not
+create them. Two working consequences: a **positive** finding under a noisy
+estimate is conservative and stands on its own; a **null** is interpretable
+only after it clears the split-half noise floor — otherwise it is information
+about the estimate, not the worm. The one standing exception is kept in view:
+selection effects (choosing a state, a window, or a threshold *because* it
+scored well) can manufacture structure from noise, which is why every
+selection step here is either paired within epochs, permutation-tested, or
+fixed before the contrast is scored.
+
 **Where it stands.** Three layers, in order of what is now established:
 
 | layer | status |
@@ -769,12 +786,13 @@ licenses exactly the analyses that succeeded. What it does not license is the
 one readout that consumes precision the data cannot certify — relation
 *membership* — which is where the structure distance failed.
 
-**The null-logic point is also right, and adopted.** For a label-symmetric
-design, estimation noise dilutes real contrasts rather than manufacturing
-them, so a *positive* finding under a noisy estimate is conservative — had
-1000-vs-0111 cleared its floor, it would stand. The noise floor gates the
-interpretation of **nulls only**: it blocks the claim that an absent effect is
-information about the worm rather than about the estimate. Nothing more.
+**The null-logic point is the project's guide star** — stated at the top of
+this README: estimation noise dilutes lawful relationships rather than
+manufacturing them. A *positive* finding under a noisy estimate is
+conservative — had 1000-vs-0111 cleared its floor, it would stand. The noise
+floor gates the interpretation of **nulls only**: it blocks the claim that an
+absent effect is information about the worm rather than about the estimate.
+Nothing more.
 
 ### Which connectivity? The one the data defines
 
