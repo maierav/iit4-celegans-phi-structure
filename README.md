@@ -74,9 +74,14 @@ concentrated on the quiescent state 0000 (66.1 vs 0.4–2.0 for most active
 states), so Φ(t) is effectively a rest-state-occupancy readout — sensory
 activity *lowers* Φ, and the offset dip is that mechanism working (dip vs
 Δ-occupancy of 0000: ρ = +0.99). And the TPM itself is the most robust object
-in the pipeline (drop-*k* error ∝ √k) while the φ-per-state map built from it
-is fragile (ρ = 0.30/0.13 vs the full map at one-stimulus sample sizes) — the
-nonlinearity of Φ, not the data volume, is the budget constraint.
+in the pipeline — certified stable to ~2 decimals, drop-*k* error ∝ √k — while
+the unfolding consumes ~4 decimals: a 1% TPM change moves the structure by a
+third of the full condition contrast (~150× amplification), because relation
+*membership* flips discontinuously while every φ value drifts smoothly. The
+adopted position ([the precision convention](#the-precision-convention-certify-the-tpm-treat-it-as-ground-truth))
+is that the TPM is ground truth at its certified precision, which licenses the
+occupancy- and distinction-level analyses and withholds only
+relation-membership-sensitive distances.
 
 **The track record** — what was tried before this picture emerged, and what
 each step taught — is preserved in full in
@@ -98,12 +103,12 @@ then `Runtime > Run all`.
 | **07 — Binarization and τ** | Verifies binarization against the reference notebook bit-for-bit; tests whether τ can be chosen by argmax φ_s | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/07_binarization_and_tau.ipynb) |
 | **08 — TPMs and the global route** | Compares the TPMs directly (no Φ); audits how much of each TPM the prior invents; runs 2- and 3-neuron substrates; builds the one-global-TPM alternative with enrichment-selected states | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/08_tpm_distance_and_global.ipynb) |
 | **09 — Response time courses** | PSTH-style ΔF/F₀ for all eight neurons, by stimulus and by class, one animal and all animals; the 60 s cycle-triggered average; the early/late window split | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/09_raw_trace_responses.ipynb) |
-| **15 — Structure comparison** | The first condition-assigned structure comparison (1000 vs 0111) with the split-half noise floor defined and explained; fails at ratio 0.91 because half-data structures are unstable | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/15_structure_comparison.ipynb) |
-| **14 — State identification** | Which state is "stimulus" and which "no stimulus": paired occupancy distributions, rank–frequency by condition, enrichment ladder with Holm correction; names 1000 (AWCL alone) as baseline and 0111 (its complement) as stimulus | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/14_state_identification.ipynb) |
-| **13 — Robustness checks** | Median vs mean Φ(t), the explicit stimulus-vs-no-stimulus contrast across all 10 stimuli, raw-fluorescence mean/median, and TPM drop-k stability plus the fragility of the φ-per-state map | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/13_robustness.ipynb) |
-| **12 — Φ as a time series** | One giant TPM from the entire dataset (~40k transitions, every row ≥1,648 obs), Φ for each of the 16 states, and Φ(t) by mapping each sample's state to its Φ — single-trial, grand-average, and by-class | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/12_phi_timeseries.ipynb) |
-| **11 — Time courses and binarization** | Reproduces figures 26–29: each flattening method on single traces and on the 60 s cycle average, the response-latency measurement, the early/late window split, and the binarized PSTH | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/11_timecourses_and_binarization.ipynb) |
 | **10 — Positive control** | Noise floors for the global pipelines, the stimulus-vs-baseline positive control, the 3-neuron global TPM, and the flattening-method comparison that recovers the effect | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/10_positive_control.ipynb) |
+| **11 — Time courses and binarization** | Reproduces figures 26–29: each flattening method on single traces and on the 60 s cycle average, the response-latency measurement, the early/late window split, and the binarized PSTH | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/11_timecourses_and_binarization.ipynb) |
+| **12 — Φ as a time series** | One giant TPM from the entire dataset (~40k transitions, every row ≥1,648 obs), Φ for each of the 16 states, and Φ(t) by mapping each sample's state to its Φ — single-trial, grand-average, and by-class | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/12_phi_timeseries.ipynb) |
+| **13 — Robustness checks** | Median vs mean Φ(t), the explicit stimulus-vs-no-stimulus contrast across all 10 stimuli, raw-fluorescence mean/median, and TPM drop-k stability plus the fragility of the φ-per-state map | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/13_robustness.ipynb) |
+| **14 — State identification** | Which state is "stimulus" and which "no stimulus": paired occupancy distributions, rank–frequency by condition, enrichment ladder with Holm correction; names 1000 (AWCL alone) as baseline and 0111 (its complement) as stimulus | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/14_state_identification.ipynb) |
+| **15 — Structure comparison** | The first condition-assigned structure comparison (1000 vs 0111) with the split-half noise floor defined and explained; fails at ratio 0.91 because half-data structures are unstable | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/15_structure_comparison.ipynb) |
 
 Locally:
 
@@ -1183,33 +1188,36 @@ over distinctions *and* relations.
 
 ## Where to go next
 
-Updated for the Φ(t) findings; the earlier version of this list (written when
-the positive control had just failed) is superseded — its item 2, "attack the
-binarization," was carried out in notebooks 11–12 and produced the offset-dip
-detection.
+Updated after the precision-convention and amplification analyses; earlier
+versions of this list are superseded as their items were carried out (the
+binarization attack became notebooks 11–12 and the offset dip; "run the
+condition-assigned structure comparison" became notebook 15).
 
-1. **Stabilise the structures before comparing them.** The 1000-vs-0111
-   comparison (notebook 15) was run and fails its noise floor — not because the
-   contrast is absent but because half-data structures of the same state swing
-   from 5 to 15 distinctions across splits. Before any further structure-level
-   test: apply a φ-threshold (drop the near-zero distinction/relation tail that
-   flickers across resamples), or compare only the top-k distinctions by φ, and
-   re-measure the split-half stability of the *thresholded* objects first.
-2. **Budget for the φ-map's fragility, not the TPM's.** The drop-*k* analysis
-   ([`results/tpm_stability_phi.csv`](results/tpm_stability_phi.csv)) says the
-   binding constraint on any per-condition comparison is the nonlinearity of Φ
-   (ρ ≈ 0.3 at one-stimulus sample sizes), not TPM estimation (√k). Split-half
-   noise floors for structure(t) should be computed *first*, before any class
-   test — the lesson of the original six-pipeline null.
-3. **Chase the offset dip's identity dependence at the state level.** The dip
+1. **Stabilise relation membership with a perturbation-calibrated φ-threshold.**
+   The amplification analysis locates the fragility precisely: distinctions are
+   smooth (median |Δφ| = 0.0012 under a 1% TPM perturbation) while relations
+   flip existence wholesale (590 of ~1,800). The fix it implies: keep only
+   relations that survive multinomial resampling at the data's own certified
+   precision (the machinery of
+   [`results/perturbation_sweep.csv`](results/perturbation_sweep.csv) run as a
+   filter), then re-measure split-half stability of the thresholded structures.
+   Only if that passes does the 1000-vs-0111 comparison get a second, decisive
+   run.
+2. **Chase the offset dip's identity dependence at the state level.** The dip
    itself is class-blind, but the *states visited* during the post-offset window
    need not be: ASER's and AWCL's OFF-transients are salt- and odour-specific in
    the raw traces. A per-class occupancy profile of the post-offset window is a
-   two-line analysis on existing tensors.
-4. **A positive control for structure(t).** Same discipline as before: no class
-   test is interpretable until stimulus-present-vs-absent separates in the same
-   quantity. The TPM already passes (*z* = +6.9/+35); the question is whether
-   structure(t) inherits that.
+   two-line analysis on existing tensors — and it lives entirely at the
+   occupancy level the precision convention certifies.
+3. **A positive control for any structure-level quantity.** Same discipline as
+   before: no class test is interpretable until stimulus-present-vs-absent
+   separates in the same quantity. The TPM already passes (*z* = +6.9/+35); the
+   thresholded structures of item 1 must pass it before any identity question.
+4. **The distinction-level distance as the fallback.** If thresholded relations
+   still fail their floor, the distinction level is certified-stable and the
+   gold-standard distance restricted to distinctions is exact and instant at
+   these sizes. It is a weaker instrument (no higher-order content) but an
+   honest one at current data volume.
 
 ## The road here — what we tried and what it taught us
 
@@ -1245,6 +1253,10 @@ of the analysis; the summary table says what each one taught.
 | Better TPM conditioning | Made signal-to-noise *worse*: conditioning concentrates structures rather than separating them |
 | Mid-range 300 s binarization | The threshold tracked slow drift, freezing the core quartet into runs longer than the inter-stimulus interval |
 | Original 60 s high-pass | First stimulus detection at the TPM level — and the discovery that the Φ unfolding, not preprocessing, loses the effect |
+| Scalar Φ(t) on the giant TPM | Detects the delivery event (offset dip) but is a rest-state-occupancy readout — one informative bit, class-blind |
+| Argmax-occupancy state selection | Every early per-condition structure was unfolded at 0000, now shown to be exactly the state the condition never touches |
+| 1000-vs-0111 structure comparison | States settle by statistics; the structures at them fail their noise floor — membership fragility, not absent contrast |
+| Precision audit | The data certify ~2 decimals; the unfolding consumes ~4; the gap is the whole story of the structure-level nulls |
 
 ### The original class comparison
 
@@ -1738,20 +1750,20 @@ data volume it requires — roughly, more than 8 animals × 30 presentations of
 ## Repository layout
 
 ```
-notebooks/     01–10 as both .ipynb (Colab) and .py (paired via jupytext)
+notebooks/     01–15 as both .ipynb (Colab) and .py (paired via jupytext)
 src/
   gold_standard.py    THE DISTANCE — exact min-over-bijections, verified
   ces_hypergraph.py   data loading, TPM construction, PyPhi extraction
-figures/       fig01–fig29 as vector PDF + preview PNG
-results/       TPMs, extracted hypergraphs (JSON), distance matrices and
-               permutation tests (CSV)
+figures/       fig01–fig42 as vector PDF + preview PNG
+results/       TPMs, extracted hypergraphs (JSON), distance matrices,
+               permutation tests, stability/precision audits (CSV)
 data/          downloaded recordings (gitignored)
 ```
 
 ## Reproducibility
 
 * PyPhi is pinned to commit **`b78d0e3`** on the `feature/iit-4.0` branch for
-  notebooks 01–04 and 06; notebook 05 uses the `2.0` branch. Each notebook
+  notebooks 01–04 and 06–15; notebook 05 uses the `2.0` branch. Each notebook
   installs what it needs.
 * Figures are vector PDF with editable text (`pdf.fonttype = 42`).
 * Every numeric claim in this README is recomputed from the committed notebooks
@@ -1767,16 +1779,18 @@ data/          downloaded recordings (gitignored)
 
 | you want to… | go to |
 |---|---|
-| see the result | [The result](#the-original-class-comparison) or [`notebooks/06`](notebooks/06_celegans_pooled.ipynb) |
-| **understand why the result is a methods finding** | [Does the measure detect anything?](#does-the-measure-detect-anything) |
-| see the raw neural responses | [`notebooks/09`](notebooks/09_raw_trace_responses.ipynb) |
-| see the TPMs and how a state is chosen | [The TPM, and how one state is chosen](#the-tpm-and-how-one-state-is-chosen) |
-| compare the TPMs without Φ, or see the global-TPM route | [`notebooks/08`](notebooks/08_tpm_distance_and_global.ipynb) |
+| the current state in one screen | [If you read nothing else](#if-you-read-nothing-else) |
+| the project's decision rule | the guide star, top of this README |
+| see the raw neural responses | [The data: response time courses](#the-data-response-time-courses) / [`notebooks/09`](notebooks/09_raw_trace_responses.ipynb) |
+| the settled preprocessing (20 s high-pass) | [How fast should the high-pass window be?](#how-fast-should-the-high-pass-window-be) / [`notebooks/11`](notebooks/11_timecourses_and_binarization.ipynb) |
+| **the positive Φ-level result** (offset dip) | [Φ as a time series](#φ-as-a-time-series) / [`notebooks/12`](notebooks/12_phi_timeseries.ipynb) |
+| which state is "stimulus", which "no stimulus" | [Naming the states](#naming-the-states-which-is-stimulus-which-is-no-stimulus) / [`notebooks/14`](notebooks/14_state_identification.ipynb) |
+| the structure comparison and the noise floor | [The structure comparison](#the-structure-comparison-and-what-noise-floor-means) / [`notebooks/15`](notebooks/15_structure_comparison.ipynb) |
 | understand the distance | [The distance algorithm](#the-distance-algorithm) |
 | use the distance | [`src/gold_standard.py`](src/gold_standard.py) |
 | see one comparison drawn step by step | [`notebooks/05`](notebooks/05_pyphi2_example.ipynb) |
-| see the distance validated on real structures | [`notebooks/04`](notebooks/04_toy_examples.ipynb) |
-| reproduce every figure | `notebooks/01` → `02` → … → `10` |
+| the original class comparison and every dead end | [The road here](#the-road-here--what-we-tried-and-what-it-taught-us) |
+| reproduce every figure | `notebooks/01` → … → `15` |
 
 ## Sources
 
