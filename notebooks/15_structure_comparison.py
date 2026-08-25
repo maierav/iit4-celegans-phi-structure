@@ -347,3 +347,117 @@ pd.DataFrame([dict(estimation="joint", ratio=0.914, p=0.798),
 #   (0.894 vs 0.914). The instability lives in the unfolding — distinctions
 #   near the φ ≈ 0 boundary winking in and out under tiny TPM perturbations —
 #   not in the parameter count.
+
+# %% [markdown]
+# ## Three objections, tested
+#
+# 1. *"A stable TPM should mean a good statistical description."* True, and
+#    verified — but stability does not propagate through the unfolding.
+# 2. *"Which connectivity would we even use?"* The estimated TPM itself defines
+#    one — mechanism-level effective sensitivity — and its per-edge SNR says
+#    which entries the data actually constrains.
+# 3. *"The average-state and Φ(t) series are robust, so we are not analyzing
+#    noise."* Correct observation, resolved by a stability hierarchy: different
+#    readouts of the same estimate have very different sampling behaviour.
+
+# %%
+# (1) amplification: JSD(TPM_A, TPM_B) vs D(structure_A, structure_B), same splits
+from scipy.spatial.distance import jensenshannon
+rows = []
+half_C = []
+for k, h in enumerate(halves):
+    A = [RECS[i] for i in h]; B = [RECS[i] for i in range(8) if i not in h]
+    CA, CB = giant_C(A), giant_C(B)
+    half_C.append((CA, CB))
+    PA = (CA + 0.5) / (CA + 0.5).sum(1, keepdims=True)
+    PB = (CB + 0.5) / (CB + 0.5).sum(1, keepdims=True)
+    jsd = float(np.mean([jensenshannon(PA[s_], PB[s_], base=2) for s_ in range(16)]))
+    SbA, SbB, SsA, SsB = split_structs[k]
+    rows.append(dict(split=k, jsd_tpm=round(jsd, 5),
+                     D_1000=round(D_id(SbA, SbB), 4), D_0111=round(D_id(SsA, SsB), 4)))
+amp = pd.DataFrame(rows)
+amp.to_csv(os.path.join(REPO_ROOT, "results/tpm_vs_structure_amplification.csv"), index=False)
+print(f"mean JSD(TPM_A, TPM_B) = {amp.jsd_tpm.mean():.4f}  <- TPMs nearly identical")
+print(f"mean D(0111_A, 0111_B) = {amp.D_0111.mean():.3f}   <- structures far apart")
+print("Spearman rho(JSD, D_0111) =",
+      round(float(stats.spearmanr(amp.jsd_tpm, amp.D_0111).statistic), 2),
+      "<- structure error is not even monotone in TPM error")
+
+# %%
+# (2) stability hierarchy: median relative deviation of half estimates from full data
+Pfull = (Cfull + 0.5) / (Cfull + 0.5).sum(1, keepdims=True)
+def phi_s_of(C, si):
+    P = (C + 0.5) / (C + 0.5).sum(1, keepdims=True)
+    net = pyphi.Network(convert.state_by_state2state_by_node(P), node_labels=SENS)
+    return float(pyphi.new_big_phi.sia(
+        pyphi.Subsystem(net, tuple((si >> i) & 1 for i in range(4)))).phi)
+def phi_of_(S): return sum(S[0].values()) + sum(S[1].values())
+tpm_dev, phi0_dev, sf_dev, nr_dev = [], [], [], []
+phi0_full = phi_s_of(Cfull, 0)
+sf_full, nr_full = phi_of_(Ss), len(Ss[1])
+for (CA, CB), (SbA, SbB, SsA, SsB) in zip(half_C, split_structs):
+    for C_ in (CA, CB):
+        P_ = (C_ + 0.5) / (C_ + 0.5).sum(1, keepdims=True)
+        tpm_dev += list((np.abs(P_ - Pfull) / (Pfull + 1e-12)).ravel())
+        phi0_dev.append(abs(phi_s_of(C_, 0) - phi0_full) / abs(phi0_full))
+    for S_ in (SsA, SsB):
+        sf_dev.append(abs(phi_of_(S_) - sf_full) / sf_full)
+        nr_dev.append(abs(len(S_[1]) - nr_full) / nr_full)
+hier = pd.DataFrame([
+    dict(quantity="TPM transition probabilities", median_rel_dev=round(float(np.median(tpm_dev)), 4)),
+    dict(quantity="phi_s of dominant state 0000", median_rel_dev=round(float(np.median(phi0_dev)), 4)),
+    dict(quantity="Sigma-phi of 0111 structure", median_rel_dev=round(float(np.median(sf_dev)), 4)),
+    dict(quantity="relation COUNT of 0111", median_rel_dev=round(float(np.median(nr_dev)), 4)),
+])
+hier.to_csv(os.path.join(REPO_ROOT, "results/stability_hierarchy.csv"), index=False)
+print(hier.to_string(index=False))
+
+# %%
+# (3) the effective connectivity the DATA defines, and its per-edge SNR
+def sensitivity(C):
+    """S[j, i] = mean |dP(node i ON next)| over the 8 state pairs differing only
+    in bit j: mechanism-level effective connectivity of the estimated TPM."""
+    sbn = sbn_from_counts(C)
+    S = np.zeros((4, 4))
+    for j in range(4):
+        pairs = [(s_, s_ | (1 << j)) for s_ in range(16) if not (s_ >> j) & 1]
+        for i in range(4):
+            S[j, i] = np.mean([abs(sbn[b_, i] - sbn[a_, i]) for a_, b_ in pairs])
+    return S
+Sfull = sensitivity(Cfull)
+Shalf = np.array([sensitivity(C_) for CA, CB in half_C for C_ in (CA, CB)])
+SNR = Sfull / np.maximum(Shalf.std(0), 1e-9)
+pd.DataFrame(Sfull, index=SENS, columns=SENS).to_csv(
+    os.path.join(REPO_ROOT, "results/effective_sensitivity_sens.csv"))
+pd.DataFrame(SNR, index=SENS, columns=SENS).to_csv(
+    os.path.join(REPO_ROOT, "results/effective_sensitivity_snr.csv"))
+print("effective sensitivity (rows: source j at t, cols: target i at t+1):")
+print(pd.DataFrame(Sfull, index=SENS, columns=SENS).round(3).to_string())
+print("\nper-edge SNR (full value / split-half SD):")
+print(pd.DataFrame(SNR, index=SENS, columns=SENS).round(1).to_string())
+
+# %% [markdown]
+# ## Reading
+#
+# * **Amplification, quantified.** TPMs from disjoint animal halves agree to
+#   JSD 0.08 — the user's "pretty good statistical description" is real. The
+#   structures unfolded from those near-identical TPMs sit D ≈ 8 apart, and the
+#   structure error does not even correlate with the TPM error across splits
+#   (ρ = +0.03). Stability does not propagate through the unfolding.
+# * **The hierarchy.** Median relative deviation of a half-data estimate from
+#   the full-data value: TPM probabilities 7%, φ_s of the dominant state 43%,
+#   Σφ of the 0111 structure 60%, its relation count 43%. Occupancy-level
+#   readouts (profile r = 0.97 across halves) and windowed Φ(t) statistics
+#   (offset dip negative in 20/24 half-cohorts) inherit the TPM's stability;
+#   the structure inherits the unfolding's fragility. Both of the user's
+#   observations are correct — they sit at different levels of this hierarchy.
+# * **Which connectivity: the data's own.** The estimated TPM defines a
+#   mechanism-level effective connectivity (sensitivity matrix). Self-terms are
+#   strong and reliable (0.07–0.24, SNR 6–12); all 12 cross-terms are weak
+#   (0.009–0.033), 2 with SNR < 2. This measured matrix — not the anatomical,
+#   extrasynaptic, or functional connectomes, which need not agree — is the
+#   principled basis for a sparsity constraint, because it is defined at the
+#   level PyPhi consumes (mechanisms), on these neurons, under this
+#   preprocessing. The near-diagonal answer also explains the structure
+#   fragility: the cross-mechanisms whose φ the unfolding thresholds are
+#   exactly the weak, marginally-estimated entries.

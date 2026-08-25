@@ -664,6 +664,68 @@ split-half ratio unchanged (0.894 vs 0.914,
 The instability lives in the unfolding — distinctions near the φ ≈ 0 boundary
 winking in and out under tiny TPM perturbations — not in the parameter count.
 
+### Stable TPM, unstable structure: the hierarchy that reconciles everything
+
+Two further objections sharpen the picture (tested in
+[`notebooks/15`](notebooks/15_structure_comparison.ipynb)):
+
+*"If the TPM is stable, don't we have a good statistical description?"* Yes —
+and it is verified: TPMs from disjoint animal halves agree to **JSD 0.08**. But
+stability does not propagate through the unfolding. The structures unfolded
+from those near-identical TPMs sit D ≈ 8 apart, and across splits the structure
+error does not even correlate with the TPM error (ρ = +0.03,
+[`results/tpm_vs_structure_amplification.csv`](results/tpm_vs_structure_amplification.csv)).
+The unfolding is a thresholded, discontinuous function: a mechanism whose φ
+crosses zero appears or vanishes wholesale, taking its relations with it.
+
+*"But the average-state and Φ(t) series are robust — surely we are not just
+analyzing noise?"* Correct, and both observations coexist in one measured
+hierarchy — the median relative deviation of a half-data estimate from the
+full-data value
+([`results/stability_hierarchy.csv`](results/stability_hierarchy.csv)):
+
+| readout | half-vs-full deviation |
+|---|---|
+| TPM transition probabilities | **7%** |
+| occupancy profile (r across halves) | **r = 0.97** |
+| offset dip (sign across 24 half-cohorts) | **20/24 negative** |
+| φ_s of the dominant state | 43% |
+| Σφ of the 0111 structure | 60% |
+| relation count of the 0111 structure | 43% |
+
+Everything that excited us — the state rasters, the Φ(t) grand averages, the
+offset dip — lives in the top half of this table and **is** robust. The
+structure comparison lives in the bottom half. Neither observation refutes the
+other; they sit at different levels, separated by the unfolding's
+discontinuity.
+
+### Which connectivity? The one the data defines
+
+On the question of *which* connectome to use as a constraint — synaptic,
+extrasynaptic, functional, effective, which need not agree — there is a
+principled answer available before consulting any atlas: **the estimated TPM
+already defines a mechanism-level effective connectivity.** The sensitivity
+matrix S[j→i] = mean |ΔP(neuron i ON next)| when neuron j's bit flips
+([`results/effective_sensitivity_sens.csv`](results/effective_sensitivity_sens.csv)):
+
+|  | →ASEL | →ASER | →AWAL | →AWCL |
+|---|---|---|---|---|
+| **ASEL** | **0.133** | 0.017 | 0.033 | 0.009 |
+| **ASER** | 0.021 | **0.238** | 0.015 | 0.012 |
+| **AWAL** | 0.030 | 0.014 | **0.073** | 0.009 |
+| **AWCL** | 0.014 | 0.013 | 0.017 | **0.160** |
+
+Self-terms are strong and reliably estimated (SNR 6–12 against split-half SD);
+all twelve cross-terms are weak (0.009–0.033), two with SNR < 2
+([`results/effective_sensitivity_snr.csv`](results/effective_sensitivity_snr.csv)).
+This matrix is defined at exactly the level PyPhi consumes — mechanisms, these
+neurons, this preprocessing — which the anatomical connectomes are not. Its
+near-diagonal shape says two things at once: the sensory quartet behaves as
+four weakly coupled units (consistent with their anatomy — these four are not
+densely synaptically interconnected), and the structure fragility has a
+located cause, since the distinctions the unfolding thresholds in and out are
+built precisely on those weak, marginally-estimated cross-mechanisms.
+
 One door the SCM framing genuinely reopens: the anatomical connectome as a
 *sparsity constraint* (a connectivity matrix pruning which mechanisms PyPhi
 considers). That was set aside early for the interneuron quartet, but for the
