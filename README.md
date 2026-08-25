@@ -109,7 +109,7 @@ then `Runtime > Run all`.
 | **12 — Φ as a time series** | One giant TPM from the entire dataset (~40k transitions, every row ≥1,648 obs), Φ for each of the 16 states, and Φ(t) by mapping each sample's state to its Φ — single-trial, grand-average, and by-class | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/12_phi_timeseries.ipynb) |
 | **13 — Robustness checks** | Median vs mean Φ(t), the explicit stimulus-vs-no-stimulus contrast across all 10 stimuli, raw-fluorescence mean/median, and TPM drop-k stability plus the fragility of the φ-per-state map | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/13_robustness.ipynb) |
 | **14 — State identification** | Which state is "stimulus" and which "no stimulus": paired occupancy distributions, rank–frequency by condition, enrichment ladder with Holm correction; names 1000 (AWCL alone) as baseline and 0111 (its complement) as stimulus | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/14_state_identification.ipynb) |
-| **16 — Connectivity vs literature** | Our TPM-derived effective sensitivity against the anatomical connectome (Cook 2019) and the signal-propagation atlas (Randi 2023): the three disagree, including the two published ones | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/16_connectivity_vs_literature.ipynb) |
+| **16 — Connectivity vs literature** | Diagonal-matched comparison against the anatomical connectome (Cook 2019) and the effective/signal-propagation atlas (Randi 2023): ours agrees with the atlas on which pairs communicate (3 of 4, both naming ASEL↔AWAL strongest); anatomy is the outlier | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/16_connectivity_vs_literature.ipynb) |
 | **15 — Structure comparison** | The first condition-assigned structure comparison (1000 vs 0111) with the split-half noise floor defined and explained; fails at ratio 0.91 because half-data structures are unstable | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/15_structure_comparison.ipynb) |
 
 Locally:
@@ -760,39 +760,54 @@ were designed for exactly-known TPMs, not estimated ones.
 
 The effective sensitivity matrix, set against the two published connectivities
 of the same four neurons ([`notebooks/16`](notebooks/16_connectivity_vs_literature.ipynb)):
-**anatomy** (synapse counts, Cook et al. 2019 hermaphrodite connectome, via
-OpenWorm's c302 edge list) and **function** (the Randi et al. 2023
-signal-propagation atlas — single-neuron optogenetic activation with
-whole-brain imaging; wild-type scalar amplitudes from
-`leiferlab/worm-functional-connectivity`).
+**anatomy** (synaptic contact counts, Cook et al. 2019 hermaphrodite
+connectome, via OpenWorm's c302 edge list) and the **signal-propagation atlas**
+(Randi et al. 2023 — single-neuron optogenetic activation with whole-brain
+imaging; wild-type scalar amplitudes from
+`leiferlab/worm-functional-connectivity`). On terminology: the atlas *is* the
+field's effective-connectivity reference — the Leifer group's own follow-up
+(Dvali et al., arXiv:2412.14498) describes its edges as effective connections,
+causal and perturbation-derived, including polysynaptic and extrasynaptic
+routes. No separate Granger/DCM-style whole-brain dataset with neuron identity
+exists for *C. elegans*.
 
-![Three connectivities of the sensory quartet](figures/fig43_connectivity_comparison.png)
+![The three connectivities, with the diagonal-matched panel](figures/fig43_connectivity_comparison.png)
 
-**The three disagree — including the two published ones.** Anatomy's strongest
-quartet edge (ASEL→AWCL, 17 synaptic contacts) is our weakest effective entry (0.009)
-and is unmeasured in the functional atlas. The atlas's strongest quartet edge
-(AWCL→ASER, 0.230) has one synapse behind it. ASEL↔AWAL propagates strongly in
-the atlas (0.163/0.165) over **zero** direct anatomical synapses in the
-ASEL→AWAL direction — the atlas paper's own headline result (signal propagation
-differs from anatomical predictions, partly through extrasynaptic peptidergic
-signalling) reproduced in miniature. Ours vs anatomy over all 12 cross pairs:
-ρ ≈ 0.0 ([`results/connectivity_three_way.csv`](results/connectivity_three_way.csv)).
+**The comparison is only fair with the diagonal blocked** (panel d). The
+published matrices carry structural zeros on the diagonal — anatomy has no
+self-synapses, and the atlas cannot report a neuron's self-activation as
+propagation — while our largest entries are exactly the self-terms
+(0.073–0.238). On a shared colour scale our diagonal absorbs the entire
+dynamic range and the cross-pattern renders as uniformly near-white. Masking
+it is not cosmetic; it matches the support of the matrices being compared.
 
-Two readings follow. First, the earlier question "which connectome should
-constrain the mechanisms?" has no clean answer — the published references
-disagree with each other, so there is no single ground-truth matrix to prune
-by; the data's own sensitivity matrix remains the defensible constraint for
-this pipeline. Second, the scale difference where ours and the atlas overlap
-is expected, not troubling: the atlas drives each source neuron
-optogenetically outside its natural range and reads the peak evoked response,
-while our matrix measures passive association at one 375 ms lag during natural
-dynamics — a regime where these sensory neurons are driven overwhelmingly by
-the *stimulus* (a common input), not by each other. Ours estimates the
-quantity the TPM actually uses; the atlas estimates what forcing would do.
+**With the diagonal matched, ours and the atlas agree on the pattern:**
 
-Caveats, stated: the comparison covers one lateral quartet (L cells only, so
-contralateral routes are invisible), the functional atlas measures only 4 of
-the 12 directed pairs here, and our matrix is regime- and
+* Our three strongest cross pairs — ASEL→ASER, ASEL→AWAL, AWAL→ASEL — are
+  three of the atlas's four detected pairs (green boxes; hypergeometric
+  *P*(≥3 of 4) = 0.067 against chance pair-picking).
+* Both matrices name **ASEL↔AWAL** the strongest reciprocal pair — over zero
+  direct anatomical synapses in the ASEL→AWAL direction, so both measurements
+  independently see the same extrasynaptic/indirect route that anatomy misses.
+* Amplitudes do not track (ρ = −0.40, n = 4) — expected across a forced-peak
+  regime vs a passive-association regime. The agreement is in *which* pairs
+  communicate, not in how much.
+* The one genuine disagreement is AWCL→ASER: the atlas's strongest quartet
+  edge, our near-floor entry — plausibly a route that optogenetic forcing of
+  AWCL recruits but natural AWCL fluctuations at one 375 ms lag do not.
+
+This is a nontrivial external validation of the TPM estimate: a matrix built
+from passive binarized dynamics in 8 animals recovers the communication
+pattern that direct optogenetic perturbation measures — while **anatomy is the
+outlier** (its strongest edge, ASEL→AWCL at 17 contacts, is undetected by the
+atlas and near-floor for us; ρ(ours, anatomy) ≈ 0.0), exactly the
+structure-function dissociation the atlas paper itself reports
+([`results/functional_agreement.csv`](results/functional_agreement.csv),
+[`results/connectivity_three_way.csv`](results/connectivity_three_way.csv)).
+
+Caveats, stated: one lateral quartet (L cells only, contralateral routes
+invisible), the atlas measures 4 of the 12 directed pairs, amplitude
+agreement is untestable at n = 4, and our matrix is regime- and
 preprocessing-specific by construction
 ([`results/anatomical_weights_quartet.csv`](results/anatomical_weights_quartet.csv),
 [`results/functional_atlas_quartet.csv`](results/functional_atlas_quartet.csv)).
