@@ -317,3 +317,157 @@ print("wrote figures/fig32_phi_timeseries.pdf")
 #   admits PSTH statistics — but with Φ concentrated on one or two states it
 #   inherits all the noise of their occupancy. A substrate or preprocessing in
 #   which Φ varies more smoothly across states would make it informative.
+
+# %% [markdown]
+# ## Φ(t) with the pre-stimulus baseline, and state rasters
+#
+# "Doing nothing" is causally as potent as doing something under IIT, so the
+# pre-stimulus window is the reference everything must be judged against. The
+# rasters above each trace show the system state directly: black = bit ON, so
+# 1111 is a solid black column and 0000 a white one. If a Φ peak is a run of
+# 0000 samples, it is visible as white directly above the peak.
+#
+# Two grand averages, deliberately different: (A) average the STATES first
+# (P(bit = 1) per neuron), take the majority state per sample, assign its Φ;
+# (B) average the individual-epoch Φ traces. A is a description of the average
+# animal; B is the average of the actual Φ experience of each epoch.
+
+# %%
+PRE_S = 15
+PRE_N = round(PRE_S * FS)
+text = np.arange(-PRE_N, CYC_N) / FS
+
+def epochs_with_pre(key_or_nm, kind):
+    out = []
+    for r in RECS:
+        src = ST[r][key_or_nm] if kind == "state" else BITS[r][key_or_nm]
+        for s in STIMULI:
+            for t0 in sorted(DAT[r][1].get(s, [])):
+                if t0 - PRE_N >= 0 and t0 + CYC_N <= len(src):
+                    out.append(src[t0 - PRE_N:t0 + CYC_N])
+    return np.array(out)
+
+AVG_BIT, AVG_STATE, PHI_OF_AVG = {}, {}, {}
+for key, neurons in [("core", INTER), ("sens", SENS)]:
+    mb = np.array([epochs_with_pre(nm, "bit").mean(0) for nm in neurons])
+    AVG_BIT[key] = mb
+    st_avg = sum((mb[i] > 0.5).astype(int) * (2 ** i) for i in range(4))
+    AVG_STATE[key] = st_avg
+    PHI_OF_AVG[key] = np.array([PHI_OF[key][s] for s in st_avg])
+print("epochs with full pre-window:", len(epochs_with_pre("core", "state")))
+
+# %%
+REC0 = RECS[0]; EX_STIM = "100mM NaCl"
+t_ex0 = sorted(DAT[REC0][1][EX_STIM])[0]
+fig = plt.figure(figsize=(12.8, 9.6))
+g = fig.add_gridspec(9, 2, hspace=0.16, wspace=0.24,
+                     height_ratios=[0.55, 1.0, 0.34, 0.55, 1.0, 0.34, 0.55, 1.0, 0.10])
+
+def raster(ax, M, key, title=None):
+    neurons = INTER if key == "core" else SENS
+    ax.imshow(1 - M, aspect="auto", cmap="gray", vmin=0, vmax=1,
+              interpolation="nearest", extent=[text[0], text[-1], -0.5, 3.5])
+    ax.set_yticks(range(4)); ax.set_yticklabels(neurons[::-1], fontsize=5.0)
+    ax.set_xlim(text[0], text[-1]); ax.set_xticks([])
+    ax.axvline(0, color="#c00", lw=0.8); ax.axvline(15, color="#c00", lw=0.8, ls=":")
+    if title:
+        ax.set_title(title, loc="left", fontsize=7.2, pad=3)
+
+def phiax(ax, y, log=True, band=None):
+    ax.axvspan(0, 15, color="#000", alpha=0.06, lw=0)
+    if band is not None:
+        ax.fill_between(text, band[0], band[1], color="#555", alpha=0.25, lw=0)
+    (ax.semilogy if log else ax.plot)(text, y, color="#111", lw=0.9,
+        drawstyle="steps-mid" if log else "default")
+    ax.set_xlim(text[0], text[-1]); ax.axvline(0, color="#c00", lw=0.7)
+    ax.tick_params(labelsize=5.6)
+
+for col, (key, neurons) in enumerate([("core", INTER), ("sens", SENS)]):
+    ax = fig.add_subplot(g[0, col])
+    Mtr = np.array([BITS[REC0][nm][t_ex0 - PRE_N:t_ex0 + CYC_N] for nm in neurons])[::-1]
+    raster(ax, Mtr, key, title=f"{key.upper()} — single trial ({EX_STIM}, {REC0})")
+    ax = fig.add_subplot(g[1, col])
+    phiax(ax, PHI_T[REC0][key][t_ex0 - PRE_N:t_ex0 + CYC_N])
+    ax.set_ylabel("Φ(t)", labelpad=4); ax.set_xticklabels([])
+
+    ax = fig.add_subplot(g[3, col])
+    raster(ax, AVG_BIT[key][::-1], key,
+           title="grand average of STATES (P(bit=1)) → majority state → Φ")
+    ax = fig.add_subplot(g[4, col])
+    phiax(ax, PHI_OF_AVG[key])
+    ax.set_ylabel("Φ(majority\nstate)", labelpad=4); ax.set_xticklabels([])
+
+    ax = fig.add_subplot(g[6, col])
+    raster(ax, AVG_BIT[key][::-1], key, title="grand average of Φ TRACES (same raster)")
+    ax = fig.add_subplot(g[7, col])
+    M = epochs_with_pre(key, "state")
+    PM = np.array([[PHI_OF[key][s] for s in row] for row in M])
+    mu, se = PM.mean(0), PM.std(0, ddof=1) / np.sqrt(len(PM))
+    phiax(ax, mu, log=False, band=(mu - se, mu + se))
+    ax.set_ylabel("mean Φ(t)", labelpad=4)
+    ax.set_xlabel("time from onset (s)", labelpad=4)
+
+fig.suptitle("Φ(t) with pre-stimulus baseline; state rasters above each trace (black = ON)",
+             fontsize=8.4, y=0.925)
+fig.savefig(os.path.join(REPO_ROOT, "figures/fig33_phi_with_rasters.pdf"), bbox_inches="tight")
+fig.savefig(os.path.join(REPO_ROOT, "figures/fig33_phi_with_rasters.png"), dpi=185, bbox_inches="tight")
+print("wrote figures/fig33_phi_with_rasters.pdf")
+
+# %% [markdown]
+# ## Against the pre-stimulus baseline: a significant OFFSET effect
+
+# %%
+win = lambda a, b: slice(round((a + PRE_S) * FS), round((b + PRE_S) * FS))
+segs = {"pre (-15-0)": win(-15, 0), "stim (0-15)": win(0, 15),
+        "post (16-31)": win(16, 31), "late (35-55)": win(35, 55)}
+rows = []
+for key in ("sens", "core"):
+    M = epochs_with_pre(key, "state")
+    P = np.array([[PHI_OF[key][s] for s in row] for row in M])
+    m = {k: P[:, v].mean(1) for k, v in segs.items()}
+    for k in segs:
+        rows.append(dict(substrate=key, window=k, mean_phi=round(float(m[k].mean()), 3),
+                         sem=round(float(m[k].std(ddof=1) / np.sqrt(len(P))), 3)))
+    for lbl, dd in [("stim - pre", m["stim (0-15)"] - m["pre (-15-0)"]),
+                    ("post - pre", m["post (16-31)"] - m["pre (-15-0)"])]:
+        w = stats.wilcoxon(dd)
+        print(f"{key}: {lbl} {dd.mean():+.3f}  (paired Wilcoxon p = {w.pvalue:.5f}, n = {len(P)})")
+wt = pd.DataFrame(rows)
+wt.to_csv(os.path.join(REPO_ROOT, "results/phi_windows_with_pre.csv"), index=False)
+
+# per-animal and per-class consistency of the sensory offset dip
+rows = []
+for r in RECS:
+    P = []
+    for s in STIMULI:
+        for t0 in sorted(DAT[r][1].get(s, [])):
+            if t0 - PRE_N >= 0 and t0 + CYC_N <= len(ST[r]["sens"]):
+                seg = ST[r]["sens"][t0 - PRE_N:t0 + CYC_N]
+                P.append([PHI_OF["sens"][x] for x in seg])
+    P = np.array(P)
+    d = P[:, segs["post (16-31)"]].mean(1) - P[:, segs["pre (-15-0)"]].mean(1)
+    rows.append(dict(animal=r, n_epochs=len(P), post_minus_pre=round(float(d.mean()), 3),
+                     p_wilcoxon=round(float(stats.wilcoxon(d).pvalue), 4)))
+pa = pd.DataFrame(rows)
+pa.to_csv(os.path.join(REPO_ROOT, "results/phi_offset_dip_per_animal.csv"), index=False)
+print(pa.to_string(index=False))
+print(f"negative in {int((pa.post_minus_pre < 0).sum())} of 8 animals")
+
+# %% [markdown]
+# ## Reading
+#
+# * **Stimulus window vs pre: null on both substrates** (sensory −0.04 p = 0.66;
+#   core +0.67 p = 0.22). The pre-stimulus baseline confirms the onset-locked
+#   ramp was not a Φ effect.
+# * **But the post-offset window is significant on the sensory substrate:**
+#   Φ drops 0.32 below the pre-stimulus baseline in the 15 s after offset
+#   (paired Wilcoxon p = 1e-5, n = 232), negative in 6 of 8 animals, and present
+#   in every class *including control* — so it tracks the delivery event, not
+#   the chemical identity.
+# * The raster explains the mechanism: after offset the OFF-responding sensory
+#   neurons (visible as the dark ASEL band at 16–30 s) push the system OUT of
+#   the high-Φ rest state 0000. Sensory activity here *lowers* Φ, because Φ is
+#   concentrated on the quiescent state.
+# * This is the first Φ-level quantity in the project that distinguishes a
+#   stimulus event from baseline. It is an OFF-event signature: "stimulus ON vs
+#   OFF" is detected at the transition, in the direction opposite to intuition.

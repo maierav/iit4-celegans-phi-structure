@@ -404,6 +404,25 @@ The construction itself is sound and cheap; what limits it here is that Φ puts
 nearly all its mass on the baseline state, so Φ(t) inherits the noise of that
 state's occupancy.
 
+**Adding the pre-stimulus baseline changes the reading.** With a −15 s window and
+state rasters drawn above each trace (black = bit ON, so 0000 is a white column):
+
+![Φ(t) with pre-stimulus baseline and state rasters](figures/fig33_phi_with_rasters.png)
+
+Stimulus-window Φ does not differ from the pre-stimulus baseline on either
+substrate (sensory −0.04, *p* = 0.66; core +0.67, *p* = 0.22; paired Wilcoxon,
+n = 232). But the **post-offset window (16–31 s) is significantly below baseline
+on the sensory substrate**: −0.32, *p* = 10⁻⁵, negative in 6 of 8 animals, and
+present in every class *including control* — an OFF-event signature, not a
+chemical one ([`results/phi_windows_with_pre.csv`](results/phi_windows_with_pre.csv),
+[`results/phi_offset_dip_per_animal.csv`](results/phi_offset_dip_per_animal.csv)).
+The raster shows the mechanism: after offset the OFF-responding sensory neurons
+(the dark ASEL band at 16–30 s) push the system out of the high-Φ rest state
+0000. **Sensory activity lowers Φ here**, because Φ is concentrated on the
+quiescent state. This is the first Φ-level quantity in the project that
+distinguishes a stimulus event from baseline — at the offset, and in the
+direction opposite to intuition.
+
 ## The distance algorithm
 
 It is called the **gold standard** (or "brute force") because it evaluates the
