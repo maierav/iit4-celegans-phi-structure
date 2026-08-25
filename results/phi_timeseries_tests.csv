@@ -1,0 +1,5 @@
+substrate,contrast,diff,z,p
+core,stim - base,0.6439,0.91,0.3627
+core,att - rep (stim Phi),-0.0903,-0.01,0.2958
+sens,stim - base,0.0757,0.6,0.5553
+sens,att - rep (stim Phi),-0.0247,-0.02,0.3281

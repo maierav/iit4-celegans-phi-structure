@@ -69,6 +69,7 @@ then `Runtime > Run all`.
 | **07 — Binarization and τ** | Verifies binarization against the reference notebook bit-for-bit; tests whether τ can be chosen by argmax φ_s | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/07_binarization_and_tau.ipynb) |
 | **08 — TPMs and the global route** | Compares the TPMs directly (no Φ); audits how much of each TPM the prior invents; runs 2- and 3-neuron substrates; builds the one-global-TPM alternative with enrichment-selected states | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/08_tpm_distance_and_global.ipynb) |
 | **09 — Response time courses** | PSTH-style ΔF/F₀ for all eight neurons, by stimulus and by class, one animal and all animals; the 60 s cycle-triggered average; the early/late window split | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/09_raw_trace_responses.ipynb) |
+| **12 — Φ as a time series** | One giant TPM from the entire dataset (~40k transitions, every row ≥1,648 obs), Φ for each of the 16 states, and Φ(t) by mapping each sample's state to its Φ — single-trial, grand-average, and by-class | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/12_phi_timeseries.ipynb) |
 | **11 — Time courses and binarization** | Reproduces figures 26–29: each flattening method on single traces and on the 60 s cycle average, the response-latency measurement, the early/late window split, and the binarized PSTH | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/11_timecourses_and_binarization.ipynb) |
 | **10 — Positive control** | Noise floors for the global pipelines, the stimulus-vs-baseline positive control, the 3-neuron global TPM, and the flattening-method comparison that recovers the effect | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/10_positive_control.ipynb) |
 
@@ -379,6 +380,29 @@ structures are dominated by thousands of relations of similar φ — 4829 agains
 5159 for the core quartet at 20 s — so a distance summed over all of them is
 mostly summing near-identical terms. Third, normalising each structure to unit Φ
 discards precisely the amplitude difference the TPM test detects.
+
+### Φ as a time series
+
+A different use of the same machinery
+([`notebooks/12`](notebooks/12_phi_timeseries.ipynb)): build **one TPM from the
+entire dataset**, compute Φ for **each of the 16 states**, and map every sample
+of the binarized recording to the Φ of its state — a Φ(t) that can be
+epoch-averaged like a PSTH, with no structure distance needed.
+
+![Φ as a time series](figures/fig32_phi_timeseries.png)
+
+What it shows ([`results/phi_by_state_giant_tpm.csv`](results/phi_by_state_giant_tpm.csv)):
+Φ is concentrated on one or two states — 0000 at 66.1 and 1111 at 35.8 (core),
+0000 at 19.8 and 0111 at 4.1 (sensory) — with everything else at 0.4–2. Φ(t)
+correlates at 0.97 (core) / 0.87 (sensory) with a plain indicator of being in the
+top-2 states, so it is effectively a state-occupancy readout passed through the
+Φ values. The apparent stimulus-locked ramp in the sensory grand average does not
+survive an epoch-label permutation (stim − base: core z = +0.91, p = 0.36;
+sensory z = +0.60, p = 0.56), and the class contrast on stimulus-window Φ is
+null as well ([`results/phi_timeseries_tests.csv`](results/phi_timeseries_tests.csv)).
+The construction itself is sound and cheap; what limits it here is that Φ puts
+nearly all its mass on the baseline state, so Φ(t) inherits the noise of that
+state's occupancy.
 
 ## The distance algorithm
 
