@@ -81,6 +81,7 @@ then `Runtime > Run all`.
 | **07 — Binarization and τ** | Verifies binarization against the reference notebook bit-for-bit; tests whether τ can be chosen by argmax φ_s | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/07_binarization_and_tau.ipynb) |
 | **08 — TPMs and the global route** | Compares the TPMs directly (no Φ); audits how much of each TPM the prior invents; runs 2- and 3-neuron substrates; builds the one-global-TPM alternative with enrichment-selected states | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/08_tpm_distance_and_global.ipynb) |
 | **09 — Response time courses** | PSTH-style ΔF/F₀ for all eight neurons, by stimulus and by class, one animal and all animals; the 60 s cycle-triggered average; the early/late window split | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/09_raw_trace_responses.ipynb) |
+| **14 — State identification** | Which state is "stimulus" and which "no stimulus": paired occupancy distributions, rank–frequency by condition, enrichment ladder with Holm correction; names 1000 (AWCL alone) as baseline and 0111 (its complement) as stimulus | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/14_state_identification.ipynb) |
 | **13 — Robustness checks** | Median vs mean Φ(t), the explicit stimulus-vs-no-stimulus contrast across all 10 stimuli, raw-fluorescence mean/median, and TPM drop-k stability plus the fragility of the φ-per-state map | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/13_robustness.ipynb) |
 | **12 — Φ as a time series** | One giant TPM from the entire dataset (~40k transitions, every row ≥1,648 obs), Φ for each of the 16 states, and Φ(t) by mapping each sample's state to its Φ — single-trial, grand-average, and by-class | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/12_phi_timeseries.ipynb) |
 | **11 — Time courses and binarization** | Reproduces figures 26–29: each flattening method on single traces and on the 60 s cycle average, the response-latency measurement, the early/late window split, and the binarized PSTH | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/11_timecourses_and_binarization.ipynb) |
@@ -515,6 +516,45 @@ full-data map, and at one-stimulus scale (~1,000 transitions) ρ = 0.30 / 0.13
 none of the TPM's √k robustness — it is a highly nonlinear readout that
 amplifies small row perturbations. Any per-stimulus or per-condition Φ
 comparison must budget for this instability, not the TPM's.
+
+## Naming the states: which is "stimulus", which is "no stimulus"?
+
+The Φ(t) thread ends by answering its own selection problem
+([`notebooks/14`](notebooks/14_state_identification.ipynb)): compare the
+occupancy distribution over the 16 states between the stimulus window and each
+epoch's own pre-stimulus window, paired per epoch (n = 232), medians as well as
+means, Holm-corrected across states.
+
+![Which state is stimulus, which is baseline](figures/fig39_state_identification.png)
+
+The distributions differ decisively on the sensory substrate (JSD permutation
+*z* = +18.2) and mildly on the core (*z* = +2.4)
+([`results/state_distribution_test.csv`](results/state_distribution_test.csv)).
+And the winners are bit-interpretable
+([`results/state_enrichment.csv`](results/state_enrichment.csv)):
+
+| condition | state | composition | occupancy shift | Holm *p* |
+|---|---|---|---|---|
+| **no stimulus** | 1000 | **AWCL alone ON** | 0.107 → 0.047 (log₂ −1.20) | 3 × 10⁻²² |
+| **stimulus** | 0111 | **ASEL+ASER+AWAL ON, AWCL OFF** | 0.036 → 0.081 (log₂ +1.15) | 4 × 10⁻¹³ |
+
+The two named states are exact complements, and the whole enrichment ladder
+follows the same rule: every baseline-enriched state has AWCL ON; every
+stimulus-enriched state has AWCL OFF with ON cells among ASEL/ASER/AWAL. AWCL
+is an OFF cell — odour removal activates it — so the ladder reads as
+chemosensory biology straight off the state labels. Twelve of sixteen sensory
+states shift significantly; medians agree with means throughout.
+
+**The consequential row is the one that does not move.** 0000 — the
+argmax-occupancy state at which *every* earlier per-condition Φ-structure was
+unfolded — shows no condition shift at all (sensory *p* = 0.50, core
+*p* = 0.33), and core 1111 does not either. The states that carry the condition
+(1000, 0111) have Φ of only 0.97 and 4.08 under the giant TPM. So the earlier
+null results were computed at precisely the state the condition never touches,
+while the informative states were invisible to a scalar dominated by 0000's
+Φ = 66. The next step writes itself: compare the **Φ-structures of 1000 and
+0111** — condition-assigned, well-estimated (both rows have >1,600
+observations), and small enough that the gold-standard distance is exact.
 
 ## The distance algorithm
 
