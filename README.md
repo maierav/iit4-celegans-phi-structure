@@ -637,6 +637,40 @@ states are not — which cleanly separates what this dataset can support
 (structure-level inference), and says the binding constraint is per-condition
 data volume, not the contrast itself.
 
+### Is the floor inter-animal variability? No — and the isogenic argument makes this sharper
+
+A fair objection: the animals are isogenic clones with one shared anatomical
+connectome, so if that connectome is the causal model, why should the TPM's
+robustness *between animals* matter at all? The premise is testable, and it
+**passes**: splitting the same animals' recording *time* in half (every animal
+on both sides, ~20k transitions per side) produces the same noise as splitting
+by *animal* — ratio between/within = 1.07 (state 1000) and 1.22 (state 0111),
+neither significant
+([`results/within_vs_between_animal_noise.csv`](results/within_vs_between_animal_noise.csv)).
+Animal identity contributes essentially nothing; pooling across clones is fully
+justified.
+
+But this makes the noise floor *more* binding, not less. The floor was never
+inter-individual variability to be argued away — it is **finite-sample error in
+the mechanism probabilities**, and it would be present for a single animal
+measured twice. A shared causal graph fixes *which* mechanisms exist; it does
+not supply their conditional probabilities, which must still be estimated from
+finite transitions and then pass through a thresholded, nonlinear unfolding.
+The SCM-licensed factorization was also tested — estimating node-wise
+mechanisms P(nodeᵢ | joint state), 64 parameters instead of 240 — and it
+reproduces the full-data structures almost exactly while leaving the
+split-half ratio unchanged (0.894 vs 0.914,
+[`results/scm_nodewise_comparison.csv`](results/scm_nodewise_comparison.csv)).
+The instability lives in the unfolding — distinctions near the φ ≈ 0 boundary
+winking in and out under tiny TPM perturbations — not in the parameter count.
+
+One door the SCM framing genuinely reopens: the anatomical connectome as a
+*sparsity constraint* (a connectivity matrix pruning which mechanisms PyPhi
+considers). That was set aside early for the interneuron quartet, but for the
+sensory quartet — whose members are not densely interconnected — an anatomy-
+derived CM would zero exactly the flickering spurious mechanisms. It is the
+one use of connectivity this project has not yet tried.
+
 ## The distance algorithm
 
 It is called the **gold standard** (or "brute force") because it evaluates the

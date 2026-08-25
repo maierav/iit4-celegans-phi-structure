@@ -238,3 +238,112 @@ ax.set_title("c  Why: half-data structures of 0111\n   swing wildly in size", lo
 fig.savefig(os.path.join(REPO_ROOT, "figures/fig40_structure_comparison.pdf"), bbox_inches="tight")
 fig.savefig(os.path.join(REPO_ROOT, "figures/fig40_structure_comparison.png"), dpi=200, bbox_inches="tight")
 print("wrote figures/fig40")
+
+# %% [markdown]
+# ## Is the noise floor inter-animal variability, or just finite sampling?
+#
+# The animals are isogenic clones sharing one anatomical connectome. If that
+# shared structure is taken as the causal model, animal identity should
+# contribute nothing beyond finite sampling — and then splitting by ANIMAL
+# should produce the same noise as splitting the SAME animals' recording TIME
+# in half at matched data volume. Directly testable.
+
+# %%
+BLK = CYC_N
+blocks = {}
+for r in RECS:
+    st = ST[r]["sens"]
+    blocks[r] = [st[i * BLK:(i + 1) * BLK] for i in range(len(st) // BLK)]
+nblk = sum(len(v) for v in blocks.values())
+
+def C_from_blocks(assign, side):
+    C = np.zeros((16, 16)); k = 0
+    for r in RECS:
+        for b in blocks[r]:
+            if assign[k] == side:
+                for a, b_ in zip(b[:-1], b[1:]):
+                    C[a, b_] += 1
+            k += 1
+    return C
+
+rng = np.random.default_rng(7)
+within = {"1000": [], "0111": []}
+for rep in range(35):
+    assign = rng.integers(0, 2, nblk)
+    C1, C2 = C_from_blocks(assign, 0), C_from_blocks(assign, 1)
+    S1b = struct_at(C1, S_BASE)[0]; S2b = struct_at(C2, S_BASE)[0]
+    S1s = struct_at(C1, S_STIM)[0]; S2s = struct_at(C2, S_STIM)[0]
+    within["1000"].append(D_id(S1b, S2b)); within["0111"].append(D_id(S1s, S2s))
+between = {"1000": [D_id(a, b) for a, b, _, _ in split_structs],
+           "0111": [D_id(c, d) for _, _, c, d in split_structs]}
+rows = []
+for st_ in ("1000", "0111"):
+    w, b = np.array(within[st_]), np.array(between[st_])
+    u = stats.mannwhitneyu(b, w, alternative="greater")
+    rows.append(dict(state=st_, within_mean=round(float(w.mean()), 4),
+                     between_mean=round(float(b.mean()), 4),
+                     ratio=round(float(b.mean() / w.mean()), 3),
+                     p_between_gt_within=round(float(u.pvalue), 5)))
+    print(f"{st_}: within-animal {w.mean():.3f}  between-animal {b.mean():.3f}  "
+          f"ratio {b.mean()/w.mean():.2f}  p = {u.pvalue:.4f}")
+pd.DataFrame(rows).to_csv(os.path.join(REPO_ROOT, "results/within_vs_between_animal_noise.csv"), index=False)
+
+# %% [markdown]
+# ## The SCM-licensed factorization: node-wise mechanisms (64 vs 240 parameters)
+
+# %%
+def sbn_from_counts(C):
+    """P(node_i ON at t+1 | joint state s at t), Beta(0.5, 0.5)-smoothed per
+    (state, node): the factorization a shared causal model licenses, and the
+    exact state-by-node object PyPhi consumes."""
+    sbn = np.zeros((16, 4))
+    for s_ in range(16):
+        tot = C[s_].sum()
+        for i in range(4):
+            on = C[s_, [t_ for t_ in range(16) if (t_ >> i) & 1]].sum()
+            sbn[s_, i] = (on + 0.5) / (tot + 1.0)
+    return sbn
+
+def struct_at_sbn(C, si):
+    net = pyphi.Network(sbn_from_counts(C), node_labels=SENS)
+    ps = pyphi.new_big_phi.phi_structure(
+        pyphi.Subsystem(net, tuple((si >> i) & 1 for i in range(4))))
+    return canon(ps), float(ps.big_phi), len(ps.distinctions), len(ps.relations)
+
+nz2, sg2 = [], []
+for h in halves:
+    A = [RECS[i] for i in h]; B = [RECS[i] for i in range(8) if i not in h]
+    CA, CB = giant_C(A), giant_C(B)
+    SbA = struct_at_sbn(CA, S_BASE)[0]; SbB = struct_at_sbn(CB, S_BASE)[0]
+    SsA = struct_at_sbn(CA, S_STIM)[0]; SsB = struct_at_sbn(CB, S_STIM)[0]
+    nz2 += [D_id(SbA, SbB), D_id(SsA, SsB)]
+    sg2 += [D_id(SbA, SsA), D_id(SbB, SsB)]
+nz2, sg2 = np.array(nz2), np.array(sg2)
+u = stats.mannwhitneyu(sg2, nz2, alternative="greater")
+print(f"node-wise: ratio {sg2.mean()/nz2.mean():.3f}  p = {u.pvalue:.2e}  "
+      f"(joint was 0.914, p = 0.80)")
+pd.DataFrame([dict(estimation="joint", ratio=0.914, p=0.798),
+              dict(estimation="node-wise", ratio=round(float(sg2.mean()/nz2.mean()), 3),
+                   p=round(float(u.pvalue), 5))]).to_csv(
+    os.path.join(REPO_ROOT, "results/scm_nodewise_comparison.csv"), index=False)
+
+# %% [markdown]
+# ## Reading
+#
+# * **The isogenic premise survives its test.** Between-animal noise equals
+#   within-animal noise at matched data volume (ratio 1.07 for 1000, 1.22 for
+#   0111, neither significant). Animal identity contributes essentially nothing;
+#   pooling across clones is fully justified, exactly as the shared-connectome
+#   argument says.
+# * **But this makes the noise floor MORE binding, not less.** The floor was
+#   never inter-individual variability to be argued away — it is finite-sample
+#   error in the mechanism probabilities, present even for one animal measured
+#   twice. A shared causal graph fixes WHICH mechanisms exist; it does not
+#   supply their conditional probabilities, which must still be estimated from
+#   ~20k transitions and then pass through a thresholded, nonlinear unfolding.
+# * **The SCM-licensed factorization does not rescue it either:** node-wise
+#   estimation (64 parameters instead of 240) reproduces the full-data
+#   structures almost exactly and leaves the split-half ratio unchanged
+#   (0.894 vs 0.914). The instability lives in the unfolding — distinctions
+#   near the φ ≈ 0 boundary winking in and out under tiny TPM perturbations —
+#   not in the parameter count.
