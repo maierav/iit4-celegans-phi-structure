@@ -1,0 +1,13 @@
+axis,value,overlap_top4,recip_is_ASEL_AWAL,p_hyp
+window_s,5.0,1,False,0.8586
+window_s,10.0,1,False,0.8586
+window_s,20.0,3,True,0.0667
+window_s,30.0,3,True,0.0667
+window_s,60.0,2,True,0.4061
+window_s,120.0,2,True,0.4061
+window_s,300.0,2,True,0.4061
+tau_s,0.37,3,True,0.0667
+tau_s,0.75,3,True,0.0667
+tau_s,1.5,1,False,0.8586
+tau_s,3.0,2,True,0.4061
+tau_s,6.0,1,False,0.8586

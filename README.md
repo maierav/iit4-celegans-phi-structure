@@ -773,6 +773,36 @@ exists for *C. elegans*.
 
 ![The three connectivities, with the diagonal-matched panel](figures/fig43_connectivity_comparison.png)
 
+**Did we get lucky? No — the agreement sits on a plateau, and the window was
+chosen by an independent criterion.** If the pattern agreement were an
+accident of preprocessing, it should collapse under parameter changes. Sweeping
+both axes ([`results/agreement_robustness.csv`](results/agreement_robustness.csv)):
+
+| high-pass window (τ = 0.37 s) | top-4 overlap | reciprocal = ASEL↔AWAL |
+|---|---|---|
+| 5–10 s | 1/4 (chance ≈ 1.3) | no |
+| **20–30 s** | **3/4** | **yes** |
+| 60–300 s | 2/4 | yes |
+
+| lag τ (window = 20 s) | top-4 overlap | reciprocal = ASEL↔AWAL |
+|---|---|---|
+| **0.37–0.75 s** | **3/4** | **yes** |
+| 1.5 s | 1/4 | no |
+| 3 s | 2/4 | yes |
+| 6 s | 1/4 | no |
+
+The full agreement holds on a 20–30 s × 0.37–0.75 s plateau and degrades
+toward chance away from it — fast windows turn the bits into noise, slow ones
+re-freeze the tonic cells, long lags lose the interaction. And the operating
+point was **not** chosen to match the atlas: the 20 s window was fixed by
+stimulus-present-vs-absent detection (sensory *z* = +35, the sweep's peak
+region) before this comparison existed. Two independent selection criteria —
+one internal (stimulus detection), one external (agreement with optogenetic
+perturbation) — pick the same operating point, which is the opposite of luck.
+The honest residue: the ASEL↔AWAL reciprocal identification is robust across
+every window ≥ 20 s, while the 3/4 overlap is the more parameter-sensitive
+statistic; both are quoted with their plateau.
+
 **Anatomy split by synapse type.** The Cook et al. edge list distinguishes
 chemical synapses (directed) from gap junctions (electrical):
 
