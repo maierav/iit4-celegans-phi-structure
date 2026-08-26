@@ -773,6 +773,35 @@ exists for *C. elegans*.
 
 ![The three connectivities, with the diagonal-matched panel](figures/fig43_connectivity_comparison.png)
 
+**Anatomy split by synapse type.** The Cook et al. edge list distinguishes
+chemical synapses (directed) from gap junctions (electrical):
+
+![Anatomy by synapse type](figures/fig44_anatomy_by_type.png)
+
+Within the quartet the wiring is almost entirely chemical (30 of 32 contacts);
+the only gap junction is **ASEL–AWCL** (1 contact each way), sitting inside the
+quartet's heaviest chemical pathway. AWAL receives **no** anatomical input
+within the quartet in *either* synapse class — yet ASEL↔AWAL is the strongest
+reciprocal pair in both the effective atlas and our matrix, so whatever
+carries that communication (contralateral routes, extrasynaptic signalling, or
+common drive) is invisible to the quartet's own anatomy entirely
+([`results/anatomy_chemical_quartet.csv`](results/anatomy_chemical_quartet.csv),
+[`results/anatomy_electrical_quartet.csv`](results/anatomy_electrical_quartet.csv)).
+
+**On timescale.** The lag at which "an effect follows" is not ~20 ms anywhere
+in this comparison — that figure belongs to electrophysiology (spike
+transmission at chemical synapses; gap junctions are faster still). Everything
+here is calcium imaging, where the reporter itself sets the clock: GCaMP
+rise/decay is on the order of hundreds of milliseconds to seconds, so
+imaging-based functional/effective connectivity works at lags of **~0.5–2 s**
+(the Randi atlas reads evoked responses over ~30 s windows after stimulation;
+cross-correlation studies of calcium dynamics report peak lags of ~0.6–1.5 s;
+fast two-photon work resolves ~100 ms at best). Our τ = one sampling interval
+= **375 ms** sits squarely in this imaging regime — comparable by
+construction, since we and the atlas read the same reporter. All of these are
+upper bounds on the underlying synaptic delays (~ms), which calcium imaging
+cannot resolve.
+
 **The comparison is only fair with the diagonal blocked** (panel d). The
 published matrices carry structural zeros on the diagonal — anatomy has no
 self-synapses, and the atlas cannot report a neuron's self-activation as

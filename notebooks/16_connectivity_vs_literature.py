@@ -165,6 +165,64 @@ pd.DataFrame([dict(test="set overlap top4 vs detected", value=len(ov), p=round(p
 #   with the atlas paper's finding that propagation deviates from anatomy.
 # * **Caveats.** One lateral quartet (L cells only); the atlas measures 4 of
 #   12 directed pairs; our matrix is regime- and preprocessing-specific.
+
+# %% [markdown]
+# ## Anatomy split by synapse type
+#
+# The Cook et al. edge list distinguishes chemical synapses (directed) from
+# gap junctions (electrical, listed reciprocally). For the quartet:
+
+# %%
+Cq = np.zeros((4, 4)); Eq = np.zeros((4, 4))
+for _, r_ in sub.iterrows():
+    M = Cq if r_.Type.strip() == "chemical" else Eq
+    M[idx[r_.Source], idx[r_.Target]] += float(r_.Weight)
+Tq = Cq + Eq
+pd.DataFrame(Cq, index=Q, columns=Q).to_csv(
+    os.path.join(REPO_ROOT, "results/anatomy_chemical_quartet.csv"))
+pd.DataFrame(Eq, index=Q, columns=Q).to_csv(
+    os.path.join(REPO_ROOT, "results/anatomy_electrical_quartet.csv"))
+print("chemical:\n", pd.DataFrame(Cq, index=Q, columns=Q).astype(int).to_string())
+print("electrical:\n", pd.DataFrame(Eq, index=Q, columns=Q).astype(int).to_string())
+assert np.array_equal(Tq, A), "combined must equal the matrix used in fig43"
+
+# %%
+fig, axes = plt.subplots(1, 3, figsize=(11.4, 3.6), constrained_layout=True)
+for k, (ax, (M, title, cmap)) in enumerate(zip(axes, [
+        (Cq, "a  Chemical synapses (directed)", "Blues"),
+        (Eq, "b  Gap junctions (electrical, symmetric)", "Greens"),
+        (Tq, "c  Combined", "Purples")])):
+    V = M.astype(float)
+    ax.imshow(V, cmap=cmap, aspect="equal", vmin=0)
+    ax.set_xticks(range(4)); ax.set_xticklabels([f"→{n_}" for n_ in Q], fontsize=6.4)
+    ax.set_yticks(range(4)); ax.set_yticklabels(Q, fontsize=6.4)
+    vmax = V.max() if V.max() > 0 else 1
+    for i in range(4):
+        for j in range(4):
+            ax.text(j, i, f"{V[i, j]:.0f}", ha="center", va="center", fontsize=6.2,
+                    color="#fff" if V[i, j] > 0.55 * vmax else "#222")
+    ax.set_title(title, loc="left")
+    ax.set_xlabel("target", labelpad=4, fontsize=6.6)
+    if k == 0:
+        ax.set_ylabel("source", labelpad=4, fontsize=6.6)
+fig.savefig(os.path.join(REPO_ROOT, "figures/fig44_anatomy_by_type.pdf"), bbox_inches="tight")
+fig.savefig(os.path.join(REPO_ROOT, "figures/fig44_anatomy_by_type.png"), dpi=200, bbox_inches="tight")
+print("wrote figures/fig44")
+
+# %% [markdown]
+# ### Reading
+#
+# * Within the quartet the wiring is almost entirely **chemical** (30 of 32
+#   contacts). Exactly one gap junction exists: **ASEL–AWCL** (1 contact each
+#   way) — so the quartet's only electrical coupling sits inside its heaviest
+#   chemical pathway (ASEL→AWCL, 16).
+# * AWAL is purely presynaptic within the quartet (7 chemical contacts onto
+#   ASEL, none incoming), and no anatomical edge touches AWAL as a target —
+#   yet ASEL↔AWAL is the strongest reciprocal pair in both the effective atlas
+#   and our matrix. Whatever carries it (contralateral partners via the AWCR/
+#   ASER route, extrasynaptic peptidergic signalling, or common drive), it is
+#   invisible to the quartet's own anatomy in BOTH synapse classes.
+
 # %% [markdown]
 # ## Figure 43 — the three connectivities, with the diagonal-matched panel
 
