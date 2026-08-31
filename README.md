@@ -1,48 +1,78 @@
 # Comparing IIT 4.0 Φ-structures across chemosensory stimuli in *C. elegans*
 
-**The question.** *C. elegans* approaches some chemicals (attractants) and
-avoids others (repellents). Computing the IIT 4.0 **Φ-structure** of a small
+**Motivation.** *C. elegans* approaches some chemicals (attractants) and
+avoids others (repellents). If we compute the IIT 4.0 **Φ-structure** of a core
 neural circuit during each response: are the attractant Φ-structures more
 similar to each other than the repellent ones?
 
-**The obstacle.** A Φ-structure is not a graph. It is a **weighted hypergraph**:
+**One obstacle.** A Φ-structure is not a graph. It is a **weighted hypergraph**:
 its "edges" (relations) can bind three, four, or more distinctions at once.
-Standard graph-similarity measures cannot see that higher-order content, so
-*measuring the distance between two Φ-structures* is the core methodological
-problem — and the reason this repository exists.
+Standard graph-similarity measures may not see that higher-order content, so
+*measuring the distance between two Φ-structures* is a core methodological
+problem.
 
-**The method.** An exact, brute-force distance: try every way of matching the
+**One solution.** An exact, brute-force distance: try every way of matching the
 distinctions of one structure onto the other, score each matching, keep the
 smallest. Defined in full under [The distance algorithm](#the-distance-algorithm),
 implemented in [`src/gold_standard.py`](src/gold_standard.py). **Note that the
-headline 4-neuron analysis does *not* run the minimisation** — 15 distinctions
-means 15! ≈ 1.3 × 10¹² bijections. It uses the identity correspondence, which is
-an upper bound. Three of the six pipelines are small enough to brute-force, and
-were; see [Exact vs. identity](#exact-vs-identity-what-the-minimisation-buys).
+headline 4-neuron analysis does *not* use this approach** — 15 distinctions
+means 15! ≈ 1.3 × 10¹² bijections to test. We thus use identity correspondence, which is
+an upper bound. However, three of the six pipelines are small enough to brute-force; 
+see [Exact vs. identity](#exact-vs-identity-what-the-minimisation-buys).
 
-**The answer, and what kind of answer it is.** *Not supported* — but the
-informative finding is one level up. **The pipeline as originally specified fails
-a positive control**, and the cause is the binarization rule rather than the
-theory (see [From fluorescence to discrete states](#from-fluorescence-to-discrete-states)).
-Chemical present vs chemical absent — a far larger contrast than attractant vs
-repellent — is invisible to the Φ-structure distance (ratio 0.95, p = 0.75),
-while the *raw fluorescence* resolves the harder attractant/repellent contrast at
-Cohen's *d* = 0.72 in AWAL. So the class information is present in the data and
-lost by the pipeline. **This repository is therefore best read as a methods
-result**: a working Φ-structure distance with verified metric properties, plus a
-quantified account of the data volume it needs — which these recordings do not
-supply. See [The result](#the-original-class-comparison) and
-[Does the measure detect anything?](#does-the-measure-detect-anything).
+**Where things stand so far**. We are aiming at first establishing a positive control:
+Chemical present vs chemical absent.
 
 ---
 
-## If you read nothing else
+## SUMMARY (so far)
 
-**The question.** Do chemically similar stimuli evoke similar cause–effect
-structures in *C. elegans* chemosensory circuits? IIT 4.0 predicts that
-phenomenologically similar experiences should have similar Φ-structures; this
-repository asks the operational version of that question in a small nervous
-system, and builds the tools the question needs.
+**Rationale.** IIT 4.0 predicts that phenomenologically similar experiences 
+have similar Φ-structures. However, computing Φ-structures from neural data
+is problematic since 
+(1) the full set of causal neural connections that IIT requires
+are beyond measurement (**limited sample/measurement problem**), and 
+(2) the IIT computations required exceed current capabilities.
+We thus aim to test this approach in a (very) small nervous system
+where (1) connectivity is known and (2) IIT calculations are doable.
+
+**Debable Issues.**
+*(1) IIT 4.0 requires a complete interventional causal model over system states.
+But here transition probability matrices (TPMs) are inferred from passive observations.*
+We _do_ have [a complete interventional causal model of _C elegans_](https://pmc.ncbi.nlm.nih.gov/articles/PMC10632145/).
+However, this model is based on pairwise data, and thus of limited use.
+We thus follow a different approach in that we rely on the fact that,
+given sufficiently large sampling, a passively observed TPM of a system will
+converge toward the underlying "ground truth" TPM up to a certain
+(floating point) precision. We validate sufficient sampling by randomly
+dropping samples from our data, recomputing the TPM, and then comparing our 
+original TPM with the TPM derived for a smaller sample size. This process then
+gets repeated, dropping more and more samples in the process. As a result,
+we can quantify convergence towards a "stable" TPM (given a fixed numerical precision).
+Encouragingly, **the TPM we identified largely reproduces known effective connectivity.**
+in our first pass so far largely reproduce the prediction from effective connectivity.
+Note that while this approach suffers the general problem of limited (finite) samples
+that all real-world data are characterized by, the same would be true for the
+proper derivation of an interventional TPM (i.e., how many repeated interventions
+do suffice?).
+
+*(2) The candidate neuron sets are assumed rather than identified as IIT core complexes.*
+While _C elegans_ has few neurons, these neurons are still too many to execute all
+computations required by IIT. However, there are several proposals in the literature
+that aim to **approximate** some of these computations instead, including how to
+identify the core. The 4-neuron set that serves as a starting point here were derived 
+in this fashion. Obviously, our analysis can be re-run in the future for all possible
+alternative core candidates, or the entire _C elegans_ brain once feasible.
+The important justification is that picking the _wrong_ core also likely will _fail_
+to produce the predicted effect.
+
+*(3) The other measured and unmeasured neurons are not causally marginalized as background.*
+Doing so likely will remain challenging for most real-world neural observations.
+However, since _C elegans_ connectivity (synaptic, extra-synaptic, functional, effective) is 
+known. One could thus identify all inputs to the neurons under study and test whether their
+activity states resembles a random probability distribution for each of the system states
+under study. We have not done so, but it is encouraging that the TPM values we identified 
+in our first pass so far largely reproduce the prediction from effective connectivity.
 
 **The guide star.** One principle governs every analysis in this repository,
 because the pipeline is estimation stacked on estimation (binarization, TPM,
