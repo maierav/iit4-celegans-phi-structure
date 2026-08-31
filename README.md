@@ -52,42 +52,43 @@ where (1) connectivity is known and (2) IIT calculations are doable.
 
 *(1) IIT 4.0 requires a complete interventional causal model over system states.
 But here transition probability matrices (TPMs) are inferred from passive observations.*
-We _do_ have [an extensive interventional causal dataset for _C elegans_](https://pmc.ncbi.nlm.nih.gov/articles/PMC10632145/).
+
+- We _do_ have [an extensive interventional causal dataset for _C elegans_](https://pmc.ncbi.nlm.nih.gov/articles/PMC10632145/).
 However, it is pairwise (single-neuron stimulation, pairwise readout) and
 incomplete — in our quartet it covers 4 of 12 directed pairs — and thus of
 limited use for building a joint TPM.
-We thus follow a different approach in that we rely on the fact that,
+
+- We thus follow a different approach in that we rely on the fact that,
 given sufficiently large sampling, a passively observed TPM of a system will
 converge toward the underlying "ground truth" TPM up to a certain
-(floating point) precision. We validate sufficient sampling by randomly
-dropping samples from our data, recomputing the TPM, and then comparing our 
-original TPM with the TPM derived for a smaller sample size. This process then
-gets repeated, dropping more and more samples in the process. As a result,
-we can quantify convergence towards a "stable" TPM (given a fixed numerical precision).
-One caveat is kept explicit: passive observation converges to the
-*observational* TPM, and with a time-varying input this is a **mixture**:
-P(next | s) = Σ_c P(next | s, context c) · P(c | s), the context-conditioned
-mechanisms averaged with weights set by the stimulation protocol, not by the
-neurons. This is not hypothetical here — it is the positive control read in
-the other direction: at matched sampling, the stimulus-present and
-stimulus-absent TPMs differ in their *rows* (0.202 vs null 0.072, *z* = 35),
-so the stimulus sits inside the transition probabilities, not just the state
-frequencies. More samples sharpen the estimate *of the mixture*; they never
-converge it to a context's mechanism — that gap sampling cannot close.
-Strictly, IIT 4.0 defines Φ for a system with *frozen* background, which an
-open sensory boundary cannot satisfy; our declared reading is that the giant
-TPM is the **ecological (marginal) TPM** — the system averaged over its
-natural stimulus regime — and the conditioned alternative (stim-on / stim-off
-TPMs) exists in the positive-control analysis. Two things bound the gap
-empirically: the guide star below (confounding at worst dilutes a
-label-symmetric contrast), and the agreement of our matrix with the
-interventional atlas, which suggests it is small at this grain.
-Encouragingly, **the TPM we identified largely reproduces the measured effective
-connectivity** ([see the comparison](#our-connectivity-vs-the-literature)).
-Note that while this approach suffers the general problem of limited (finite) samples
-that all real-world data are characterized by, the same would be true for the
-proper derivation of an interventional TPM (i.e., how many repeated interventions
-do suffice?).
+(decimal point) precision.
+
+- We validate sufficient sampling by randomly dropping samples from our data,
+recomputing the TPM, and then comparing our  original TPM with the TPM derived for a smaller
+sample size. This process then gets repeated, dropping more and more samples in the process.
+This way, we can quantify convergence towards a "stable" TPM (given a fixed numerical precision).
+
+- IIT 4.0 defines Φ for a system with *frozen* (constant) background. Comparing the system 
+under effect of one or another stimulus breaks that assumption.
+That is, the attractant and repellent stimuli causally affect the _C elegans_ nervous system.
+
+Freezing the background thus is achieved by creating **conditioned TPMs**, 
+such as a "no stimulus present TPM" or an "attractant present TPM". 
+
+We also compute an  **ecological (marginal) TPM**, which
+describes the system averaged over the entire experiment, regardless of what
+the worms' environment was like at each moment in time.
+
+— Three empirical arguments justify this approach: 
+
+_i._ The guide star principle outlined below: Confounding at worst dilutes a
+label-symmetric contrast, and 
+
+_ii._ ([Agreement of our TPM(s) with the interventional atlas](#our-connectivity-vs-the-literature)).
+
+_iii._ While our observational approach suffers the general problem of limited sample size, 
+the same would be true for any derivation of an interventional TPM 
+(i.e., how many repeated interventions suffice to establish an interventional TPM?).
 
 *(2) The candidate neuron sets are assumed rather than identified as IIT core complexes.*
 While _C elegans_ has few neurons, these neurons are still too many to execute all
