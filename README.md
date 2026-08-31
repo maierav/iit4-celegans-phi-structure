@@ -65,12 +65,23 @@ original TPM with the TPM derived for a smaller sample size. This process then
 gets repeated, dropping more and more samples in the process. As a result,
 we can quantify convergence towards a "stable" TPM (given a fixed numerical precision).
 One caveat is kept explicit: passive observation converges to the
-*observational* TPM. It coincides with the interventional one only to the
-extent that common inputs — above all the stimulus itself — are accounted
-for, and that gap is one more samples cannot close. Two things bound it
-empirically here: the guide star below (confounding at worst dilutes a
+*observational* TPM, and with a time-varying input this is a **mixture**:
+P(next | s) = Σ_c P(next | s, context c) · P(c | s), the context-conditioned
+mechanisms averaged with weights set by the stimulation protocol, not by the
+neurons. This is not hypothetical here — it is the positive control read in
+the other direction: at matched sampling, the stimulus-present and
+stimulus-absent TPMs differ in their *rows* (0.202 vs null 0.072, *z* = 35),
+so the stimulus sits inside the transition probabilities, not just the state
+frequencies. More samples sharpen the estimate *of the mixture*; they never
+converge it to a context's mechanism — that gap sampling cannot close.
+Strictly, IIT 4.0 defines Φ for a system with *frozen* background, which an
+open sensory boundary cannot satisfy; our declared reading is that the giant
+TPM is the **ecological (marginal) TPM** — the system averaged over its
+natural stimulus regime — and the conditioned alternative (stim-on / stim-off
+TPMs) exists in the positive-control analysis. Two things bound the gap
+empirically: the guide star below (confounding at worst dilutes a
 label-symmetric contrast), and the agreement of our matrix with the
-interventional atlas, which suggests the gap is small at this grain.
+interventional atlas, which suggests it is small at this grain.
 Encouragingly, **the TPM we identified largely reproduces the measured effective
 connectivity** ([see the comparison](#our-connectivity-vs-the-literature)).
 Note that while this approach suffers the general problem of limited (finite) samples
