@@ -22,26 +22,31 @@ means 15! ≈ 1.3 × 10¹² bijections to test. We thus use identity corresponde
 an upper bound. However, three of the six pipelines are small enough to brute-force; 
 see [Exact vs. identity](#exact-vs-identity-what-the-minimisation-buys).
 
-**Along the way.** Several decisions had to be made on how to preprocess the data.
-Results are encouraging in that _despite estimated and potentially erroneous 
-assumptions, we found expected patterns in the data_.
+**Along the way.** Several decisions had to be made on how to preprocess the
+data. Results are encouraging in that _despite the stack of estimation steps
+and potentially erroneous auxiliary assumptions, we found expected patterns in
+the data_.
 
-(1) High-pass filtering was found to be most effective in enhancing stimulus response
-contrast (stimulus vs. baseline response amplitudes) for the imaging data. 
+1. **High-pass filtering** was found to be most effective in enhancing
+   stimulus-response contrast (stimulus vs. baseline response amplitudes) for
+   the imaging data.
 
-(2) Binarization using moving average window that roughly matches known _C elegans_
-neural dynamics resulted in a series of system states and their transition probabilities
-that retained information about both stimulus responses (i.e., system states averaged 
-across trials and animals resulted in a stimulus response) and previously published
-effective connectivity (i.e., TPM-derived connectivity largely matches the 
-optogenetically established atlas of connectivity).
+2. **Binarization** by thresholding against a moving-window (median-subtraction)
+   baseline whose length roughly matches known _C. elegans_ neural dynamics
+   resulted in a series of system states and transition probabilities that
+   retained information about both stimulus responses (system states averaged
+   across trials and animals reproduce a stimulus response) and previously
+   published effective connectivity (TPM-derived connectivity largely matches
+   the optogenetically established atlas).
 
 **Where things stand so far.** The positive control — chemical present vs
 chemical absent — is **established at the TPM level** (permutation *z* = +6.9
 core / +35 sensory) and at the Φ(t) level (the offset dip). It is **not yet
 passed by any Φ-structure-level quantity**: the condition-assigned structure
 comparison fails its noise floor at current data volume, which is the open
-task. We have yet to decide exactly which states to compare, for example.
+task. We have yet to decide exactly which states to compare, for example — and
+the stimulus-state structure itself (15 distinctions, ~1800 relations) is not
+yet stable at current data volume, whichever state is chosen as its partner.
 
 ---
 
@@ -68,68 +73,84 @@ where (1) connectivity is known and (2) IIT calculations are doable.
 But here transition probability matrices (TPMs) are inferred from passive observations.*
 
 - We _do_ have [an extensive interventional causal dataset for _C elegans_](https://pmc.ncbi.nlm.nih.gov/articles/PMC10632145/).
-However, it is pairwise (single-neuron stimulation, pairwise readout) and
-incomplete — in our quartet it covers 4 of 12 directed pairs — and thus of
-limited use for building a joint TPM.
+  However, it is pairwise (single-neuron stimulation, pairwise readout) and
+  incomplete — in our quartet it covers 4 of 12 directed pairs — and thus of
+  limited use for building a joint TPM.
 
-- We thus follow a different approach in that we rely on the fact that,
-given sufficiently large sampling, a passively observed TPM of a system will
-converge toward the underlying "ground truth" TPM up to a certain
-(decimal point) precision.
+- We thus follow a different approach in that we rely on the fact that, given
+  sufficiently large sampling, a passively observed TPM of a system will
+  converge toward the underlying "ground truth" TPM up to a certain (decimal
+  point) precision.
 
 - We validate sufficient sampling by randomly dropping samples from our data,
-recomputing the TPM, and then comparing our  original TPM with the TPM derived for a smaller
-sample size. This process then gets repeated, dropping more and more samples in the process.
-This way, we can quantify convergence towards a "stable" TPM (given a fixed numerical precision).
+  recomputing the TPM, and comparing the original TPM with the TPM derived
+  from the smaller sample. Repeating this while dropping more and more samples
+  quantifies convergence towards a "stable" TPM (at a fixed numerical
+  precision).
 
-- IIT 4.0 defines Φ for a system with *frozen* (constant) background. Comparing the system 
-under effect of one or another stimulus breaks that assumption.
-That is, the attractant and repellent stimuli causally affect the _C elegans_ nervous system.
+- IIT 4.0 defines Φ for a system with *frozen* (constant) background.
+  Comparing the system under one or another stimulus breaks that assumption:
+  the attractant and repellent stimuli causally affect the _C. elegans_
+  nervous system. This is measurable, not hypothetical — at matched sampling,
+  the stimulus-present and stimulus-absent TPMs differ in their *rows*
+  (*z* = 35), so the stimulus sits inside the transition probabilities, not
+  just the state frequencies.
 
-Freezing the background thus is achieved by creating **conditioned TPMs**, 
-such as a "no stimulus present TPM" or an "attractant present TPM". 
+- Freezing the background is therefore **approximated** by conditioned TPMs —
+  a "no-stimulus TPM", an "attractant-present TPM" — which fix the stimulus
+  variable coarsely (present/absent) while other unmeasured inputs remain
+  marginalized.
 
-We also compute an  **ecological (marginal) TPM**, which
-describes the system averaged over the entire experiment, regardless of what
-the worms' environment was like at each moment in time.
+- We also compute an **ecological (marginal) TPM**, which describes the system
+  averaged over the entire experiment, regardless of what the worm's
+  environment was like at each moment in time.
 
-— Three empirical arguments justify this approach: 
+- Three empirical arguments justify this approach:
 
-_i._ The guide star principle outlined below: Confounding at worst dilutes a
-label-symmetric contrast, and 
-
-_ii._ ([Agreement of our TPM(s) with the interventional atlas](#our-connectivity-vs-the-literature)).
-
-_iii._ While our observational approach suffers the general problem of limited sample size, 
-the same would be true for any derivation of an interventional TPM 
-(i.e., how many repeated interventions suffice to establish an interventional TPM?).
+  1. the guide-star principle outlined below — confounding at worst *dilutes*
+     a label-symmetric contrast;
+  2. the [agreement of our TPM with the interventional atlas](#our-connectivity-vs-the-literature);
+  3. while the observational approach suffers the general problem of limited
+     sample size, the same holds for any derivation of an interventional TPM
+     (how many repeated interventions suffice?).
 
 *(2) The candidate neuron sets are assumed rather than identified as IIT core complexes.*
-While _C elegans_ has few neurons, these neurons are still too many to execute all
-computations required by IIT. However, there are several proposals in the literature
-that aim to **approximate** some of these computations instead, including how to
-identify the core. One of our two 4-neuron sets — the interneuron quartet — was proposed in
-exactly this fashion (a published approximation identifying it as a tentative
-main complex); the sensory quartet was instead chosen for chemosensory
-relevance, so it carries no core-identification claim. Obviously, our analysis can be re-run in the future for all possible
-alternative core candidates, or the entire _C elegans_ brain once feasible.
-The important justification is that picking the _wrong_ core also likely will _fail_
-to produce the predicted effect.
+
+- While _C. elegans_ has few neurons, they are still too many to execute all
+  computations IIT requires. Several proposals in the literature aim to
+  **approximate** some of these computations instead, including how to
+  identify the core.
+
+- One of our two 4-neuron sets — the interneuron quartet — was proposed in
+  exactly this fashion (a published approximation identifying it as a
+  tentative main complex); the sensory quartet was instead chosen for
+  chemosensory relevance, so it carries no core-identification claim.
+
+- Our analysis can be re-run for alternative core candidates, or the entire
+  _C. elegans_ brain once feasible. The important justification meanwhile:
+  picking the _wrong_ core will likely _fail_ to produce the predicted effect.
 
 *(3) The other measured and unmeasured neurons are not causally marginalized as background.*
-Doing so likely will remain challenging for most real-world neural observations.
-However, _C. elegans_ connectivity (synaptic, extrasynaptic, functional,
-effective) is known, so one could identify all inputs to the neurons under
-study and test whether their activity distribution is the same regardless of
-the system's state — the condition under which marginalizing over them is
-harmless. (Strictly, IIT 4.0 prescribes *conditioning* on background units —
-freezing them at their state — whereas pooling all transitions regardless of
-context, as we do, *marginalizes* over them. The two coincide exactly when the
-input-distribution check just described passes: if the inputs' statistics do
-not depend on the system's state, the averaged TPM equals the conditioned one,
-and the degree to which the check fails is the degree to which our TPM
-deviates from the one IIT prescribes.) We have not done so, but it is encouraging that the TPM values we identified 
-in our first pass so far largely reproduce the prediction from effective connectivity.
+
+- Doing so will likely remain challenging for most real-world neural
+  observations.
+
+- However, _C. elegans_ connectivity (synaptic, extrasynaptic, functional,
+  effective) is known, so one could identify all inputs to the neurons under
+  study and test whether their activity distribution is the same regardless of
+  the system's state — the condition under which marginalizing over them is
+  harmless.
+
+- Strictly, IIT 4.0 prescribes *conditioning* on background units — freezing
+  them at their state — whereas pooling all transitions regardless of context,
+  as we do, *marginalizes* over them. The two coincide exactly when the
+  input-distribution check just described passes: the degree to which the
+  check fails is the degree to which our TPM deviates from the one IIT
+  prescribes.
+
+- We have not run that check yet, but it is encouraging that the TPM values
+  identified in our first pass largely reproduce the prediction from effective
+  connectivity.
 
 **The guide star.** One principle governs every analysis in this repository,
 because the pipeline is estimation stacked on estimation (binarization, TPM,
