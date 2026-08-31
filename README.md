@@ -181,7 +181,7 @@ then `Runtime > Run all`.
 | **12 — Φ as a time series** | One giant TPM from the entire dataset (~40k transitions, every row ≥1,648 obs), Φ for each of the 16 states, and Φ(t) by mapping each sample's state to its Φ — single-trial, grand-average, and by-class | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/12_phi_timeseries.ipynb) |
 | **13 — Robustness checks** | Median vs mean Φ(t), the explicit stimulus-vs-no-stimulus contrast across all 10 stimuli, raw-fluorescence mean/median, and TPM drop-k stability plus the fragility of the φ-per-state map | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/13_robustness.ipynb) |
 | **14 — State identification** | Which state is "stimulus" and which "no stimulus": paired occupancy distributions, rank–frequency by condition, enrichment ladder with Holm correction; names 1000 (AWCL alone) as baseline and 0111 (its complement) as stimulus | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/14_state_identification.ipynb) |
-| **17 — Static vs dynamic TPMs** | The Φ landscape is regime-dependent: quiescence carries Φ at baseline, active states gain it under stimulation; the static TPM is the majority regime in disguise | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/17_static_vs_dynamic_tpm.ipynb) |
+| **17 — Static vs dynamic TPMs** | The regimes differ at the TPM level (z = 35) and the static TPM is the majority regime in disguise; their Φ landscapes cannot be distinguished above sampling noise at current volume | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/17_static_vs_dynamic_tpm.ipynb) |
 | **16 — Connectivity vs literature** | Diagonal-matched comparison against the anatomical connectome (Cook 2019) and the effective/signal-propagation atlas (Randi 2023): ours agrees with the atlas on which pairs communicate (3 of 4, both naming ASEL↔AWAL strongest); anatomy is the outlier | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/16_connectivity_vs_literature.ipynb) |
 | **15 — Structure comparison** | The first condition-assigned structure comparison (1000 vs 0111) with the split-half noise floor defined and explained; fails at ratio 0.91 because half-data structures are unstable | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/15_structure_comparison.ipynb) |
 
@@ -969,31 +969,40 @@ the 15 s stimulus windows vs baseline; 9.6k vs 30.2k transitions).
 
 ![Static vs condition-dependent TPMs](figures/fig45_static_vs_dynamic_tpm.png)
 
-**The Φ landscape is regime-dependent
-([`results/phi_by_state_three_tpms.csv`](results/phi_by_state_three_tpms.csv)):**
+**What the comparison establishes — and what it does not
+([`results/phi_by_state_three_tpms.csv`](results/phi_by_state_three_tpms.csv),
+[`results/regime_split_design.csv`](results/regime_split_design.csv)):**
 
-* Stim-off: Φ concentrated on quiescence — Σφ(0000) = 36.2, all other states
-  ≤ 2.9.
-* Stim-on: 0000 deflates to 6.9 and the peak **moves to active states**
-  (0001 = AWCL-only: 7.5; 1111: 6.2).
-* The two regime maps barely agree on which states carry Φ (ρ = +0.19,
-  p = 0.49).
-* The static TPM is **the majority regime in disguise**: ρ = +0.71 with the
-  off-map vs +0.44 with the on-map, and 3× closer in JSD — matching the 76%
-  baseline share of transitions. The Φ(t) results and the offset dip are
-  therefore predominantly baseline-regime results.
-* Not a volume artifact: subsampling the off-pool to the on-volume (8 draws),
-  the off-regime still peaks at 0000 in 8/8 with Σφ(0000) = 28 ± 16, and still
-  fails to correlate with the on-map (ρ ≈ +0.27)
-  ([`results/tpm_regime_volume_control.csv`](results/tpm_regime_volume_control.csv)).
+* **At the TPM level the regimes differ beyond doubt.** Stim-on vs stim-off
+  rows differ at *z* = 35 under epoch relabelling (the positive control), and
+  their row JSD is 0.197 against same-regime noise of ~0.08. The static TPM
+  is **the majority regime in disguise**: ρ = +0.71 with the off-map vs +0.44
+  with the on-map, 3× closer in JSD — matching the 76% baseline share of
+  transitions. And at the Φ level, static and stim-off are indistinguishable:
+  their Σφ(0000) gap (16.4) sits inside the off-regime's own half-sample
+  scatter (23 ± 20). The Φ(t) results and the offset dip are therefore
+  predominantly baseline-regime results.
+* **At the Φ-landscape level the regime difference is NOT resolvable at
+  current volume.** The undersampling check (disjoint-halves split design):
+  same-regime reproducibility is as low as cross-regime agreement — off/off
+  halves ρ = +0.48 ± 0.11 (15.1k) and +0.62 ± 0.08 (9.6k), on/on halves
+  +0.47 ± 0.09, on/off at matched volume +0.42 ± 0.15. The full-data
+  observations (Σφ(0000) deflating 36.2 → 6.9 under stim-on; the peak sitting
+  at an active state, 0001 = 7.5; ρ = +0.19 between regime maps) were carried
+  by margins far inside the half-sample scatter — the argmax flipped on
+  6.9 vs 7.5 in a quantity that scatters by ±16 — so they cannot be
+  attributed to regime rather than sampling. The suggestive pattern (on-halves'
+  Σφ(0000) sitting low) is volume-confounded and stays unclaimed.
+* **This is the stability hierarchy again, not an exception to it**: the
+  regimes demonstrably differ where estimation is stable (TPM rows) and
+  cannot yet be distinguished where it is not (the unfolded Φ landscape).
 
 The declared default remains the ecological (marginal) TPM — it is the object
 the precision convention certifies, and the right one for "the worm in its
-stimulus ecology." The conditioned TPMs are the IIT-stricter objects, and the
-regime-dependence found here says any future condition-assigned structure
-comparison should be run under them as well: under stimulation, maximal Φ
-sits at an active state, which no static-TPM analysis in this repository
-could have shown.
+stimulus ecology." The conditioned TPMs are the IIT-stricter objects;
+condition-dependent Φ comparisons would need per-regime data volumes the
+current recordings do not provide (the stim-on pool is 9.6k transitions —
+a quarter of the dataset).
 
 ### The precision convention: certify the TPM, treat it as ground truth
 

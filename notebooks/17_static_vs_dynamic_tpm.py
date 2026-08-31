@@ -135,36 +135,87 @@ print(f"matched-volume off maps: Phi(0000) {ss.phi0.mean():.1f}±{ss.phi0.std():
       f"argmax {ss.argmax.value_counts().to_dict()}, rho_vs_on {ss.rho_vs_on.mean():+.2f}")
 
 # %% [markdown]
-# ## Reading
+# ## Is the stim-on map just undersampled? The split design
 #
-# * **The Φ landscape is regime-dependent.** Under the stim-off TPM, Φ is
-#   concentrated on quiescence (0000: 36.2, everything else ≤ 2.9). Under the
-#   stim-on TPM, 0000 deflates to 6.9 and the peak MOVES to active states
-#   (0001 = AWCL-only: 7.5; 1111: 6.2). The two regime maps barely correlate
-#   (ρ = +0.19, p = 0.49).
-# * **The static TPM is not neutral — it is the majority regime in disguise.**
-#   It correlates ρ = +0.71 with the off-map vs +0.44 with the on-map, and its
-#   JSD sits 3× closer to off than to on — matching the 76% baseline share of
-#   transitions. Every static-TPM result in this repo (the Φ(t) traces, the
-#   offset dip, the 0000-concentration) is therefore predominantly a
-#   baseline-regime result.
-# * **Not a volume artifact.** Subsampling the off-pool to the on-volume
-#   (9,600 transitions, 8 draws): argmax stays 0000 in 8/8, Phi(0000) = 28 ± 16
-#   >> the on-map's 6.9, and the subsampled off-maps still fail to correlate
-#   with the on-map (ρ ≈ +0.27).
-# * **Both views retained, per the project's position.** Static-across-ANIMALS
-#   is supported (isogenic clones, within-vs-between test) and matches the
-#   engram-architecture reading of long-term connectivity; static-across-
-#   CONTEXTS is refuted in this data (z = 35; JSD 0.197 vs noise 0.08). The
-#   ecological (marginal) TPM remains the declared default; the conditioned
-#   TPMs are the IIT-stricter objects, and any future condition-assigned
-#   structure comparison should use them.
-
-# %% [markdown]
-# ## Figure 45 — the two regimes side by side
+# The decisive test: if the on-map's distinctiveness were undersampling noise,
+# the on-pool's own disjoint halves should disagree with each other as much as
+# they disagree with the off-map. Compare same-regime reproducibility against
+# cross-regime agreement at matched volumes.
 
 # %%
-fig, axes = plt.subplots(1, 2, figsize=(11.0, 3.7), constrained_layout=True)
+on_pairs = []
+for r in RECS:
+    st = ST[r]; on_mask = np.zeros(len(st), bool)
+    for t0 in ONS[r]:
+        on_mask[t0:t0 + EPOCH_N] = True
+    on_pairs += [(st[t], st[t + TAU]) for t in range(len(st) - TAU) if on_mask[t]]
+on_pairs = np.array(on_pairs)
+
+def map_of(pairs, idx):
+    C = np.zeros((16, 16)); np.add.at(C, (pairs[idx, 0], pairs[idx, 1]), 1)
+    return bigphi_map(C)[0]
+
+rng = np.random.default_rng(1)
+rows = []
+for rep in range(4):
+    pm = rng.permutation(len(off_pairs)); h = len(off_pairs) // 2
+    offA, offB = map_of(off_pairs, pm[:h]), map_of(off_pairs, pm[h:2 * h])
+    pm2 = rng.permutation(len(off_pairs)); n_ = len(on_pairs)
+    off1, off2 = map_of(off_pairs, pm2[:n_]), map_of(off_pairs, pm2[n_:2 * n_])
+    pmo = rng.permutation(len(on_pairs)); ho = len(on_pairs) // 2
+    onA, onB = map_of(on_pairs, pmo[:ho]), map_of(on_pairs, pmo[ho:2 * ho])
+    off48 = map_of(off_pairs, rng.permutation(len(off_pairs))[:ho])
+    sp = lambda a, b: float(stats.spearmanr(a, b).statistic)
+    rows.append(dict(rep=rep,
+        rho_offA_offB_15k=sp(offA, offB), dphi0_off15k=abs(offA[0] - offB[0]),
+        rho_off_off_9k6=sp(off1, off2),
+        rho_onA_onB_4k8=sp(onA, onB),
+        rho_onA_off_4k8=sp(onA, off48), rho_onB_off_4k8=sp(onB, off48),
+        phi0_onA=onA[0], phi0_onB=onB[0],
+        phi_0001_onA=onA[8], phi_0001_onB=onB[8],
+        phi0_offA=offA[0], phi0_offB=offB[0]))
+sd = pd.DataFrame(rows)
+sd.to_csv(os.path.join(REPO_ROOT, "results/regime_split_design.csv"), index=False)
+print(f"off/off @15.1k rho {sd.rho_offA_offB_15k.mean():+.2f}±{sd.rho_offA_offB_15k.std():.2f} | "
+      f"off/off @9.6k {sd.rho_off_off_9k6.mean():+.2f}±{sd.rho_off_off_9k6.std():.2f} | "
+      f"on/on @4.8k {sd.rho_onA_onB_4k8.mean():+.2f}±{sd.rho_onA_onB_4k8.std():.2f} | "
+      f"on/off @4.8k {pd.concat([sd.rho_onA_off_4k8, sd.rho_onB_off_4k8]).mean():+.2f}")
+print(f"|dPhi(0000)| between off 15k halves: {sd.dphi0_off15k.mean():.1f}±{sd.dphi0_off15k.std():.1f} "
+      f"(static-vs-off gap: 16.4)")
+
+
+# %% [markdown]
+# ## Reading (corrected by the split design)
+#
+# * **At the TPM level the regimes differ beyond doubt.** Stim-on vs stim-off
+#   rows differ at z = 35 under epoch relabelling (the positive control), and
+#   row JSD 0.197 vs same-regime noise ~0.08. The static TPM is the majority
+#   regime in disguise: 3x closer to off in JSD, rho = +0.71 vs +0.44.
+# * **At the Φ-landscape level the difference is NOT resolvable at current
+#   volume.** Same-regime reproducibility is as low as cross-regime agreement:
+#   off/off halves rho ~ +0.48-0.62, on/on halves +0.47, on/off at matched
+#   volume +0.42. And Σφ(0000) scatters by 23 ± 20 between off-halves — which
+#   swallows both the apparent on-deflation (36.2 → 6.9) and the static-off
+#   gap (16.4). The full-data observations (peak at 0001 under stim-on,
+#   rho = +0.19 between regime maps) were carried by margins far inside that
+#   scatter (argmax flipped on 6.9 vs 7.5) and cannot be attributed to regime
+#   rather than sampling.
+# * **This is the stability hierarchy again, not an exception to it.** The
+#   regimes demonstrably differ where estimation is stable (TPM rows) and
+#   cannot yet be distinguished where it is not (the unfolded Φ landscape).
+#   The suggestive pattern — on-halves' Σφ(0000) sitting low — is
+#   volume-confounded (4.8k vs 15.1k halves) and stays unclaimed.
+# * **Both TPM views retained.** Static-across-animals holds (isogenic
+#   design; engram-architecture reading). Static-across-contexts is refuted
+#   at the TPM level. The ecological (marginal) TPM remains the declared
+#   default; condition-dependent Φ comparisons need per-regime volumes the
+#   current recordings do not provide.
+
+# %% [markdown]
+# ## Figure 45 — regimes, and what survives the noise check
+
+# %%
+fig, axes = plt.subplots(1, 3, figsize=(12.6, 3.7), constrained_layout=True)
 BLUE, ORANGE, GREY = "#1f6fb4", "#c2571a", "#8a8a8a"
 ax = axes[0]
 x = np.arange(16); w = 0.27
@@ -172,25 +223,39 @@ ax.bar(x - w, B["static"], w, color=GREY, label="static (pooled, 39.8k)")
 ax.bar(x, B["stim_off"], w, color=BLUE, label="stim-off (30.2k)")
 ax.bar(x + w, B["stim_on"], w, color=ORANGE, label="stim-on (9.6k)")
 ax.set_yscale("log"); ax.set_ylim(0.4, 60)
-ax.set_xticks(x); ax.set_xticklabels(lab, rotation=90, fontsize=5.6)
+ax.set_xticks(x); ax.set_xticklabels(lab, rotation=90, fontsize=5.4)
 ax.set_xlabel("state (ASEL, ASER, AWAL, AWCL)", labelpad=5, fontsize=7)
 ax.set_ylabel("Σφ of the unfolded structure", labelpad=5, fontsize=7)
-ax.legend(frameon=False, fontsize=6, loc="upper right")
-ax.set_title("a  The Φ landscape is regime-dependent", loc="left", fontsize=8.5)
+ax.legend(frameon=False, fontsize=5.6, loc="upper right")
+ax.set_title("a  Σφ per state under each TPM (full data)", loc="left", fontsize=8)
 ax = axes[1]
-ax.scatter(B["stim_off"], B["stim_on"], s=22, color="#444", zorder=3, lw=0)
-for si in (0, 8, 15):
-    ax.annotate(lab[si], (B["stim_off"][si], B["stim_on"][si]),
-                xytext=(4, 3), textcoords="offset points", fontsize=6)
-lim = max(B["stim_off"].max(), B["stim_on"].max()) * 1.15
-ax.plot([0.4, lim], [0.4, lim], ls=":", lw=0.9, color="#888")
-ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlim(0.4, lim); ax.set_ylim(0.4, lim)
-ax.set_xlabel("Σφ under the stim-off TPM", labelpad=5, fontsize=7)
-ax.set_ylabel("Σφ under the stim-on TPM", labelpad=5, fontsize=7)
-r_ = stats.spearmanr(B["stim_on"], B["stim_off"])
-ax.text(0.05, 0.92, f"ρ = {r_.statistic:+.2f} (p = {r_.pvalue:.2f})",
-        transform=ax.transAxes, fontsize=7)
-ax.set_title("b  The two regimes barely agree on which\n   states carry Φ", loc="left", fontsize=8.5)
+cats = [("off / off\n@15.1k", sd.rho_offA_offB_15k, BLUE),
+        ("off / off\n@9.6k", sd.rho_off_off_9k6, BLUE),
+        ("on / on\n@4.8k", sd.rho_onA_onB_4k8, ORANGE),
+        ("on / off\n@4.8k", pd.concat([sd.rho_onA_off_4k8, sd.rho_onB_off_4k8]), "#7a4a8a")]
+for i_, (nm, v, c) in enumerate(cats):
+    ax.bar(i_, v.mean(), 0.6, color=c, alpha=0.35, lw=0)
+    ax.scatter(np.full(len(v), i_) + np.linspace(-0.13, 0.13, len(v)), v, s=14, color=c, zorder=3, lw=0)
+ax.axhline(0, color="#333", lw=0.7)
+ax.set_xticks(range(4)); ax.set_xticklabels([c[0] for c in cats], fontsize=6)
+ax.set_ylabel("ρ between Φ-maps (disjoint samples)", labelpad=5, fontsize=7)
+ax.set_ylim(-0.05, 1.0)
+ax.set_title("b  Same-regime reproducibility ≈\n   cross-regime agreement", loc="left", fontsize=8)
+ax = axes[2]
+offh = np.concatenate([sd.phi0_offA, sd.phi0_offB])
+onh = np.concatenate([sd.phi0_onA, sd.phi0_onB])
+ax.scatter(np.full(len(offh), 0) + np.linspace(-0.1, 0.1, len(offh)), offh, s=16, color=BLUE, lw=0, label="off halves (15.1k)")
+ax.scatter(np.full(len(onh), 1) + np.linspace(-0.1, 0.1, len(onh)), onh, s=16, color=ORANGE, lw=0, label="on halves (4.8k)")
+ax.scatter([0.5], [B["static"][0]], marker="D", s=30, color=GREY, zorder=4, label="static full (19.8)")
+ax.scatter([0], [B["stim_off"][0]], marker="D", s=30, color=BLUE, zorder=4)
+ax.scatter([1], [B["stim_on"][0]], marker="D", s=30, color=ORANGE, zorder=4)
+ax.set_xticks([0, 1]); ax.set_xticklabels(["stim-off", "stim-on"], fontsize=7)
+ax.set_xlim(-0.5, 1.5)
+ax.set_ylabel("Σφ(0000)", labelpad=5, fontsize=7)
+ax.legend(frameon=False, fontsize=5.6, loc="upper right")
+ax.set_title("c  Σφ(0000): half-sample scatter swallows\n   the regime gaps (dots = halves, ◆ = full)", loc="left", fontsize=8)
+fig.suptitle("The regimes differ at the TPM level (z = 35); their Φ landscapes cannot be distinguished above sampling noise at current volume",
+             fontsize=8.2)
 fig.savefig(os.path.join(REPO_ROOT, "figures/fig45_static_vs_dynamic_tpm.pdf"), bbox_inches="tight")
 fig.savefig(os.path.join(REPO_ROOT, "figures/fig45_static_vs_dynamic_tpm.png"), dpi=200, bbox_inches="tight")
 print("wrote figures/fig45")
