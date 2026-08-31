@@ -97,12 +97,14 @@ def bigphi_map(C):
         out[si] = float(ps.big_phi); nd[si] = len(ps.distinctions); nr[si] = len(ps.relations)
     return out, nd, nr
 
-lab = ["".join(str((si >> i) & 1) for i in range(4)) for si in range(16)]
+# state labels in the REPO convention (notebooks 14-15): format(int, "04b") —
+# leftmost bit = AWCL … rightmost = ASEL; "1000" = AWCL only, "0111" = ASEL+ASER+AWAL
+lab = [format(si, "04b") for si in range(16)]
 B, ND, NR = {}, {}, {}
 for k, C in [("static", C_pool), ("stim_on", C_on), ("stim_off", C_off)]:
     B[k], ND[k], NR[k] = bigphi_map(C)
 tb = pd.DataFrame({("Phi_" + k): np.round(B[k], 6) for k in B}, index=lab)
-tb.index.name = "state (ASEL,ASER,AWAL,AWCL)"
+tb.index.name = "state (bits: AWCL,AWAL,ASER,ASEL — as notebooks 14-15)"
 for k in B:
     tb["ndist_" + k] = ND[k]; tb["nrel_" + k] = NR[k]
 tb.to_csv(os.path.join(REPO_ROOT, "results/phi_by_state_three_tpms.csv"))
@@ -238,11 +240,11 @@ print(f"cross on/off: {np.mean(cross_on_off):+.2f} | cross static/off: {np.mean(
 
 on0 = np.array([b[0] for b in BOOT["stim_on"]]); off0 = np.array([b[0] for b in BOOT["stim_off"]])
 st0 = np.array([b[0] for b in BOOT["static"]])
-on8 = np.array([b[8] for b in BOOT["stim_on"]]); off8 = np.array([b[8] for b in BOOT["stim_off"]])
+on8 = np.array([b[8] for b in BOOT["stim_on"]]); off8 = np.array([b[8] for b in BOOT["stim_off"]])  # int 8 = state "1000" (AWCL only)
 on15 = np.array([b[15] for b in BOOT["stim_on"]]); off15 = np.array([b[15] for b in BOOT["stim_off"]])
 print(f"Phi(0000) on {on0.mean():.1f}±{on0.std():.1f} vs off {off0.mean():.1f}±{off0.std():.1f} "
       f"p={stats.mannwhitneyu(on0, off0).pvalue:.5f}")
-print(f"Phi(0001) on {on8.mean():.1f}±{on8.std():.1f} vs off {off8.mean():.2f}±{off8.std():.2f} "
+print(f"Phi(1000) on {on8.mean():.1f}±{on8.std():.1f} vs off {off8.mean():.2f}±{off8.std():.2f} "
       f"p={stats.mannwhitneyu(on8, off8).pvalue:.6f}")
 print(f"Phi(1111) on {on15.mean():.1f}±{on15.std():.1f} vs off {off15.mean():.1f}±{off15.std():.1f} "
       f"p={stats.mannwhitneyu(on15, off15).pvalue:.4f}")
@@ -253,7 +255,7 @@ print("argmax under stim-on boots:", dict(Counter(lab[int(np.argmax(b))] for b i
 out = []
 for k in BOOT:
     for i, b in enumerate(BOOT[k]):
-        out.append(dict(regime=k, rep=i, phi_0000=b[0], phi_0001=b[8], phi_1111=b[15],
+        out.append(dict(regime=k, rep=i, phi_0000=b[0], phi_1000=b[8], phi_1111=b[15],
                         argmax=lab[int(np.argmax(b))], rho_vs_full=sp(b, B[k])))
 pd.DataFrame(out).to_csv(os.path.join(REPO_ROOT, "results/regime_bootstrap_fullvolume.csv"), index=False)
 
@@ -280,10 +282,10 @@ print(tso.to_string(index=False))
 #   "certify at 3dp" is not available even for the full pool.
 # * **Φ level, at full-volume noise (the split-half was too harsh): specific
 #   regime differences ARE resolvable.** Σφ(0000): on 13.3 ± 7.5 vs off
-#   32.0 ± 12.7 (p = 0.005); Σφ(0001): 5.9 ± 4.1 vs 0.83 ± 0.13 (p = 0.0002);
+#   32.0 ± 12.7 (p = 0.005); Σφ(1000): 5.9 ± 4.1 vs 0.83 ± 0.13 (p = 0.0002; 1000 = AWCL only);
 #   Σφ(1111): 11.7 ± 7.7 vs 2.8 ± 1.9 (p = 0.001). Under stim-on the
 #   0000-argmax monopoly breaks (0000 in only 5/10 boots) — but WHICH active
-#   state peaks is contested, so "the peak moves to 0001" stays retracted.
+#   state peaks is contested, so "the peak moves to a specific active state" stays retracted.
 #   Within-regime map reproducibility 0.62-0.68 vs cross on/off 0.40.
 # * **Static vs stim-off (the requested comparison): inseparable where Φ
 #   lives.** Φ(0000) p = 0.10; cross ρ 0.53 vs within 0.62; only floor states
@@ -311,7 +313,7 @@ ax.bar(x, B["stim_off"], w, color=BLUE, label="stim-off (30.2k)")
 ax.bar(x + w, B["stim_on"], w, color=ORANGE, label="stim-on (9.6k)")
 ax.set_yscale("log"); ax.set_ylim(0.4, 60)
 ax.set_xticks(x); ax.set_xticklabels(lab, rotation=90, fontsize=5.4)
-ax.set_xlabel("state (ASEL, ASER, AWAL, AWCL)", labelpad=5, fontsize=7)
+ax.set_xlabel("state — format(int,'04b'); bits AWCL,AWAL,ASER,ASEL (as nb14–15)", labelpad=5, fontsize=6.5)
 ax.set_ylabel("Σφ of the unfolded structure", labelpad=5, fontsize=7)
 ax.legend(frameon=False, fontsize=5.6, loc="upper right")
 ax.set_title("a  Σφ per state under each TPM (full data)", loc="left", fontsize=8)
@@ -340,8 +342,101 @@ ax.set_xlim(-0.5, 2.5); ax.set_ylabel("Σφ(0000), full-volume bootstrap", label
 ax.text(0.5, 0.955, "static vs off: p = 0.10", transform=ax.transAxes, ha="center", fontsize=6.2, color="#333")
 ax.text(0.5, 0.885, "on vs off: p = 0.005", transform=ax.transAxes, ha="center", fontsize=6.2, color=ORANGE)
 ax.set_title("c  Quiescence-Φ deflation under stim-on IS\n   resolvable at full volume; static ≈ off", loc="left", fontsize=8)
-fig.suptitle("Regimes differ at the TPM level (z = 35) and — at full-volume noise — at specific Φ states (0000↓, 0001↑, 1111↑ under stim-on); static ≈ stim-off",
+fig.suptitle("Regimes differ at the TPM level (z = 35) and — at full-volume noise — at specific Φ states (0000↓, 1000↑, 1111↑ under stim-on); static ≈ stim-off",
              fontsize=7.8)
 fig.savefig(os.path.join(REPO_ROOT, "figures/fig45_static_vs_dynamic_tpm.pdf"), bbox_inches="tight")
 fig.savefig(os.path.join(REPO_ROOT, "figures/fig45_static_vs_dynamic_tpm.png"), dpi=200, bbox_inches="tight")
 print("wrote figures/fig45")
+
+# %% [markdown]
+# ## The structure noise floor, revisited at full volume
+#
+# Notebook 15's headline null — the condition-assigned structure comparison
+# (1000 vs 0111) fails its noise floor — was built on ANIMAL-HALF splits.
+# By the instrument policy above, the within-dataset version of the question
+# should use the full-volume bootstrap. Both floors shrink ~2.5x; but the
+# matched-volume signal (D computed WITHIN each replicate) shrinks in
+# proportion, because the old signal was itself measured within halves.
+
+# %%
+S_BASE_i, S_STIM_i = int("1000", 2), int("0111", 2)
+def struct_of(C, si):
+    P = P_(C)
+    net = pyphi.Network(convert.state_by_state2state_by_node(P), node_labels=Q)
+    ps = pyphi.new_big_phi.phi_structure(
+        pyphi.Subsystem(net, tuple((si >> i) & 1 for i in range(4))))
+    nm = lambda m: "·".join(Q[u] for u in m)
+    return ({nm(tuple(d.mechanism)): float(d.phi) for d in ps.distinctions},
+            {frozenset(nm(tuple(m)) for m in r.mechanisms): float(r.phi) for r in ps.relations})
+
+def D_id(S1, S2):
+    d1, r1 = S1; d2, r2 = S2
+    return (sum(abs(d1.get(k, 0.0) - d2.get(k, 0.0)) for k in set(d1) | set(d2))
+            + sum(abs(r1.get(k, 0.0) - r2.get(k, 0.0)) for k in set(r1) | set(r2)))
+
+S1000 = struct_of(C_pool, S_BASE_i); S0111 = struct_of(C_pool, S_STIM_i)
+print(f"full-data contrast D(1000,0111) = {D_id(S1000, S0111):.4f} "
+      f"({len(S1000[0])}d/{len(S1000[1])}r vs {len(S0111[0])}d/{len(S0111[1])}r)")
+
+rng = np.random.default_rng(3)
+Sb_1000, Sb_0111 = [], []
+for rep in range(8):
+    Cb = boot_C(C_pool, rng)
+    Sb_1000.append(struct_of(Cb, S_BASE_i))
+    Sb_0111.append(struct_of(Cb, S_STIM_i))
+n10 = np.array([D_id(Sb_1000[i], Sb_1000[j]) for i, j in _comb(range(8), 2)])
+n01 = np.array([D_id(Sb_0111[i], Sb_0111[j]) for i, j in _comb(range(8), 2)])
+sg = np.array([D_id(Sb_1000[i], Sb_0111[i]) for i in range(8)])
+print(f"noise floor 1000: {n10.mean():.3f}±{n10.std():.3f} (halves: 1.863)")
+print(f"noise floor 0111: {n01.mean():.3f}±{n01.std():.3f} (halves: 8.142)")
+print(f"signal within-replicate: {sg.mean():.3f}±{sg.std():.3f} (halves: 4.572)")
+print(f"signal > 0111 floor in {int((sg > n01.mean()).sum())}/8 replicates; "
+      f"MW p(signal>noise_0111) = {stats.mannwhitneyu(sg, n01, alternative='greater').pvalue:.4f}")
+pd.DataFrame(dict(kind=["noise_1000"] * len(n10) + ["noise_0111"] * len(n01) + ["signal"] * len(sg),
+                  D=np.concatenate([n10, n01, sg]))).to_csv(
+    os.path.join(REPO_ROOT, "results/structure_floor_bootstrap.csv"), index=False)
+
+# %% [markdown]
+# **Verdict: the nb15 null SURVIVES the lenient instrument.** The floors were
+# too harsh in absolute terms (they halve the data), but the contrast still
+# does not clear the 0111 floor (1/8 replicates; MW p = 0.97). The binding
+# constraint is the stimulus-state structure itself — 15 distinctions and
+# ~1800 relations sitting squarely in the amplification zone. The signal does
+# clear the 1000 floor (p = 0.0002): the baseline structure is stable enough;
+# the stimulus structure is not.
+
+# %% [markdown]
+# ## Figure 46 — the regime scatters (with bootstrap error bars)
+
+# %%
+on_sd = np.std([b for b in BOOT["stim_on"]], axis=0)
+st_sd = np.std([b for b in BOOT["static"]], axis=0)
+off_sd = np.std([b for b in BOOT["stim_off"]], axis=0)
+fig46, axes = plt.subplots(1, 2, figsize=(9.6, 4.0), constrained_layout=True)
+KEY = {0: "0000", 8: "1000", 15: "1111", 7: "0111"}
+def scat(ax, X, Xsd, Y, Ysd, xl, yl, title, rho_note):
+    ax.errorbar(X, Y, xerr=Xsd, yerr=Ysd, fmt="o", ms=4, color="#444",
+                ecolor="#bbb", elinewidth=0.7, capsize=0, zorder=3)
+    for si, name in KEY.items():
+        ax.annotate(name, (X[si], Y[si]), xytext=(5, 4), textcoords="offset points", fontsize=6.5)
+    lim_lo = 0.4; lim_hi = max(X.max() + Xsd.max(), Y.max() + Ysd.max()) * 1.2
+    ax.plot([lim_lo, lim_hi], [lim_lo, lim_hi], ls=":", lw=0.9, color="#888")
+    ax.set_xscale("log"); ax.set_yscale("log")
+    ax.set_xlim(lim_lo, lim_hi); ax.set_ylim(lim_lo, lim_hi)
+    ax.set_xlabel(xl, labelpad=5, fontsize=7.5); ax.set_ylabel(yl, labelpad=5, fontsize=7.5)
+    ax.text(0.04, 0.94, rho_note, transform=ax.transAxes, fontsize=7)
+    ax.set_title(title, loc="left", fontsize=8.5)
+r1 = stats.spearmanr(B["stim_on"], B["stim_off"]); r2 = stats.spearmanr(B["static"], B["stim_off"])
+scat(axes[0], B["stim_off"], off_sd, B["stim_on"], on_sd,
+     "Σφ under the stim-off TPM", "Σφ under the stim-on TPM",
+     "a  stim-on vs stim-off: key states leave the diagonal",
+     f"ρ = {r1.statistic:+.2f} (p = {r1.pvalue:.2f})")
+scat(axes[1], B["stim_off"], off_sd, B["static"], st_sd,
+     "Σφ under the stim-off TPM", "Σφ under the static (pooled) TPM",
+     "b  static vs stim-off: states hug the diagonal",
+     f"ρ = {r2.statistic:+.2f} (p = {r2.pvalue:.4f})")
+fig46.suptitle("Σφ per state, regime vs regime — error bars are full-volume bootstrap SDs; state labels as in notebooks 14–15\n"
+               "(format(int,'04b'): leftmost bit = AWCL … rightmost = ASEL; 1000 = AWCL only, 0111 = ASEL+ASER+AWAL)", fontsize=7.4)
+fig46.savefig(os.path.join(REPO_ROOT, "figures/fig46_regime_scatters.pdf"), bbox_inches="tight")
+fig46.savefig(os.path.join(REPO_ROOT, "figures/fig46_regime_scatters.png"), dpi=200, bbox_inches="tight")
+print("wrote figures/fig46")

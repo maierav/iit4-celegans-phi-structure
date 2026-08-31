@@ -1,3 +1,3 @@
-estimation,ratio,p,noise_1000,noise_0111,signal
-joint 16x16 (240 params),0.914,0.798,1.8626,8.1421,4.5717
-node-wise SCM (64 params),0.894,0.828,2.04,8.2303,4.5901
+estimation,ratio,p
+joint,0.914,0.798
+node-wise,0.894,0.82847

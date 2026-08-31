@@ -64,6 +64,7 @@ ALL8 = INTER + SENS
 STIMULI = list(ch.STIMULUS_CLASS)
 FS = ch.SAMPLING_RATE_HZ
 W_HP = 20
+CYC_N = round(60 * FS)   # one 60 s stimulus cycle, in samples
 BLUE, ORANGE, GREY = "#1f6fb4", "#c2571a", "#8a8a8a"
 
 def load(rec):

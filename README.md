@@ -181,7 +181,7 @@ then `Runtime > Run all`.
 | **12 — Φ as a time series** | One giant TPM from the entire dataset (~40k transitions, every row ≥1,648 obs), Φ for each of the 16 states, and Φ(t) by mapping each sample's state to its Φ — single-trial, grand-average, and by-class | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/12_phi_timeseries.ipynb) |
 | **13 — Robustness checks** | Median vs mean Φ(t), the explicit stimulus-vs-no-stimulus contrast across all 10 stimuli, raw-fluorescence mean/median, and TPM drop-k stability plus the fragility of the φ-per-state map | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/13_robustness.ipynb) |
 | **14 — State identification** | Which state is "stimulus" and which "no stimulus": paired occupancy distributions, rank–frequency by condition, enrichment ladder with Holm correction; names 1000 (AWCL alone) as baseline and 0111 (its complement) as stimulus | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/14_state_identification.ipynb) |
-| **17 — Static vs dynamic TPMs** | Regimes differ at the TPM level (z = 35) and, under full-volume bootstrap, at specific Φ states (0000↓, 0001↑, 1111↑ under stim-on); static ≈ stim-off; the stim-on TPM is itself a stable (~2-dp) estimate | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/17_static_vs_dynamic_tpm.ipynb) |
+| **17 — Static vs dynamic TPMs** | Regimes differ at the TPM level (z = 35) and, under full-volume bootstrap, at specific Φ states (0000↓, 1000↑, 1111↑ under stim-on); static ≈ stim-off; the stim-on TPM is itself a stable (~2-dp) estimate | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/17_static_vs_dynamic_tpm.ipynb) |
 | **16 — Connectivity vs literature** | Diagonal-matched comparison against the anatomical connectome (Cook 2019) and the effective/signal-propagation atlas (Randi 2023): ours agrees with the atlas on which pairs communicate (3 of 4, both naming ASEL↔AWAL strongest); anatomy is the outlier | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/16_connectivity_vs_literature.ipynb) |
 | **15 — Structure comparison** | The first condition-assigned structure comparison (1000 vs 0111) with the split-half noise floor defined and explained; fails at ratio 0.91 because half-data structures are unstable | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/15_structure_comparison.ipynb) |
 
@@ -367,6 +367,9 @@ Three flattenings are compared throughout:
 | **high-pass, 60 s median** | `x − median` | yes (48%) | **9.5** |
 
 ![Flattening methods compared](figures/fig25_binarization_schemes.png)
+
+*Panels c–d are computed on the **core quartet only** (the sensory quartet's
+values differ; see `results/binarization_diagnostics.csv`).*
 
 *Reading note: the state-dynamics panels of this figure (states per epoch,
 self-transition fraction) are computed on the **core quartet only**; sensory
@@ -761,6 +764,19 @@ split-half ratio unchanged (0.894 vs 0.914,
 The instability lives in the unfolding — distinctions near the φ ≈ 0 boundary
 winking in and out under tiny TPM perturbations — not in the parameter count.
 
+**The floor itself, re-tested at full volume (2026-08-31).** The original
+floor was built on animal-half splits, which measure noise at half volume. At
+the full-volume bootstrap
+([`results/structure_floor_bootstrap.csv`](results/structure_floor_bootstrap.csv),
+notebook 17), both floors shrink ~2.5× (0111: 8.14 → 3.27 ± 1.48;
+1000: 1.86 → 0.67 ± 0.51) — but the matched-volume signal shrinks in
+proportion (4.57 → 2.28 ± 1.48, computed within each replicate), and the
+contrast still fails the 0111 floor (exceeds it in 1/8 replicates, one-sided
+*p* = 0.97). **The null survives the lenient instrument.** The signal does
+clear the 1000 floor (*p* = 0.0002): the baseline-state structure is stable
+enough to compare — the stimulus-state structure (15 distinctions, ~1800
+relations, squarely in the amplification zone) is the binding constraint.
+
 ### Stable TPM, unstable structure: the hierarchy that reconciles everything
 
 Two further objections sharpen the picture (tested in
@@ -969,6 +985,12 @@ the 15 s stimulus windows vs baseline; 9.6k vs 30.2k transitions).
 
 ![Static vs condition-dependent TPMs](figures/fig45_static_vs_dynamic_tpm.png)
 
+![Regime scatters with bootstrap error bars](figures/fig46_regime_scatters.png)
+
+The two scatters carry the whole verdict visually: stim-on vs stim-off (a),
+the key states leave the diagonal by more than their error bars; static vs
+stim-off (b), every state hugs it.
+
 **What the comparison establishes — and what it does not
 ([`results/phi_by_state_three_tpms.csv`](results/phi_by_state_three_tpms.csv),
 [`results/regime_split_design.csv`](results/regime_split_design.csv)):**
@@ -995,16 +1017,27 @@ the 15 s stimulus windows vs baseline; 9.6k vs 30.2k transitions).
   (each TPM row resampled at its actual count;
   [`results/regime_bootstrap_fullvolume.csv`](results/regime_bootstrap_fullvolume.csv)),
   and under it: Σφ(0000) = 13.3 ± 7.5 (on) vs 32.0 ± 12.7 (off), *p* = 0.005;
-  Σφ(0001) = 5.9 ± 4.1 vs 0.83 ± 0.13, *p* = 0.0002; Σφ(1111) = 11.7 ± 7.7 vs
-  2.8 ± 1.9, *p* = 0.001. Under stim-on the 0000-argmax monopoly breaks
-  (0000 wins in only 5/10 bootstrap maps) — but *which* active state peaks is
-  contested, so "the peak moves to 0001" remains unclaimed. Caveat: iid
+  Σφ(**1000**) = 5.9 ± 4.1 vs 0.83 ± 0.13, *p* = 0.0002; Σφ(1111) = 11.7 ± 7.7
+  vs 2.8 ± 1.9, *p* = 0.001 (state labels in the notebooks-14/15 convention:
+  `format(int,'04b')`, leftmost bit = AWCL — so **1000 = AWCL only**, the
+  no-stimulus marker state, and 0111 = ASEL+ASER+AWAL). Under stim-on the
+  0000-argmax monopoly breaks (0000 wins in only 5/10 bootstrap maps) — but
+  *which* active state peaks is contested, so "the peak moves to a specific
+  active state" remains unclaimed. Notably, the state gaining Φ most reliably
+  under the stimulus-regime TPM is the *baseline-marker* state 1000: Φ(state)
+  under a regime measures that state's causal leverage under that regime's
+  mechanism, not how often it occurs. Caveat: iid
   resampling understates noise under temporal dependence, so these p-values
   are anti-conservative; the p ≤ 0.005 results survive the split-half /
   bootstrap bracket, marginal ones may not.
 * **Static vs stim-off: inseparable where Φ lives**
   ([`results/static_vs_stimoff_phi.csv`](results/static_vs_stimoff_phi.csv)).
-  Φ(0000) *p* = 0.10; cross ρ = 0.53 vs within ≈ 0.62; only floor states
+  Full-data point estimates Σφ(0000) = 19.8 (static) vs 36.2 (off); the
+  Mann-Whitney *p* = 0.10 is computed on the bootstrap distributions
+  (22.3 ± 6.7 vs 32.0 ± 12.7,
+  [`results/regime_bootstrap_fullvolume.csv`](results/regime_bootstrap_fullvolume.csv))
+  — two views of the same comparison, quoted separately so neither is
+  attributed to the other's file. Cross ρ = 0.53 vs within ≈ 0.62; only floor states
   (Σφ ≈ 0.7–1.0) show a small systematic mixture uplift (4/16 states > 2
   combined SDs, deltas ≤ 0.3). Within resolution, the static TPM *is* the
   baseline regime.
