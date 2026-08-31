@@ -101,7 +101,7 @@ lab = ["".join(str((si >> i) & 1) for i in range(4)) for si in range(16)]
 B, ND, NR = {}, {}, {}
 for k, C in [("static", C_pool), ("stim_on", C_on), ("stim_off", C_off)]:
     B[k], ND[k], NR[k] = bigphi_map(C)
-tb = pd.DataFrame({("Phi_" + k): np.round(B[k], 2) for k in B}, index=lab)
+tb = pd.DataFrame({("Phi_" + k): np.round(B[k], 6) for k in B}, index=lab)
 tb.index.name = "state (ASEL,ASER,AWAL,AWCL)"
 for k in B:
     tb["ndist_" + k] = ND[k]; tb["nrel_" + k] = NR[k]
