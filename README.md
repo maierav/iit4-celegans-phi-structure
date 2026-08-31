@@ -181,6 +181,7 @@ then `Runtime > Run all`.
 | **12 — Φ as a time series** | One giant TPM from the entire dataset (~40k transitions, every row ≥1,648 obs), Φ for each of the 16 states, and Φ(t) by mapping each sample's state to its Φ — single-trial, grand-average, and by-class | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/12_phi_timeseries.ipynb) |
 | **13 — Robustness checks** | Median vs mean Φ(t), the explicit stimulus-vs-no-stimulus contrast across all 10 stimuli, raw-fluorescence mean/median, and TPM drop-k stability plus the fragility of the φ-per-state map | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/13_robustness.ipynb) |
 | **14 — State identification** | Which state is "stimulus" and which "no stimulus": paired occupancy distributions, rank–frequency by condition, enrichment ladder with Holm correction; names 1000 (AWCL alone) as baseline and 0111 (its complement) as stimulus | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/14_state_identification.ipynb) |
+| **17 — Static vs dynamic TPMs** | The Φ landscape is regime-dependent: quiescence carries Φ at baseline, active states gain it under stimulation; the static TPM is the majority regime in disguise | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/17_static_vs_dynamic_tpm.ipynb) |
 | **16 — Connectivity vs literature** | Diagonal-matched comparison against the anatomical connectome (Cook 2019) and the effective/signal-propagation atlas (Randi 2023): ours agrees with the atlas on which pairs communicate (3 of 4, both naming ASEL↔AWAL strongest); anatomy is the outlier | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/16_connectivity_vs_literature.ipynb) |
 | **15 — Structure comparison** | The first condition-assigned structure comparison (1000 vs 0111) with the split-half noise floor defined and explained; fails at ratio 0.91 because half-data structures are unstable | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/15_structure_comparison.ipynb) |
 
@@ -942,6 +943,57 @@ agreement is untestable at n = 4, and our matrix is regime- and
 preprocessing-specific by construction
 ([`results/anatomical_weights_quartet.csv`](results/anatomical_weights_quartet.csv),
 [`results/functional_atlas_quartet.csv`](results/functional_atlas_quartet.csv)).
+
+### Static vs condition-dependent TPMs: both, deliberately
+
+The IIT formalism assumes a **time-invariant TPM** — the canonical
+probabilistic formulation models the system as a first-order time-invariant
+Markov process (Krohn & Ostwald 2017), the original framework defines
+integrated information for stationary systems (Balduzzi & Tononi 2008), and
+in PyPhi a single fixed TPM is the fundamental representation. Published IIT
+analyses are almost exclusively static logic-gate networks. For a nervous
+system with time-varying input this is a modelling choice, and both
+alternatives have support: **static-across-animals** matches the isogenic
+design (verified by the within-vs-between-animal test) and the finding that
+long-term connectivity survives wholesale synaptic remodeling (artificial
+hibernation eliminates spines en masse yet memory and its representations
+persist via a resilient "synaptic engram architecture" — Science,
+[10.1126/science.aee7004](https://doi.org/10.1126/science.aee7004)); while
+**condition-dependent** TPMs are what neuroscience expects of effective
+connectivity, and our own positive control already shows the stimulus sits
+inside the transition probabilities (z = 35).
+
+So we built both ([`notebooks/17`](notebooks/17_static_vs_dynamic_tpm.ipynb)):
+the pooled static TPM, and stim-on / stim-off conditioned TPMs (sources inside
+the 15 s stimulus windows vs baseline; 9.6k vs 30.2k transitions).
+
+![Static vs condition-dependent TPMs](figures/fig45_static_vs_dynamic_tpm.png)
+
+**The Φ landscape is regime-dependent
+([`results/phi_by_state_three_tpms.csv`](results/phi_by_state_three_tpms.csv)):**
+
+* Stim-off: Φ concentrated on quiescence — Σφ(0000) = 36.2, all other states
+  ≤ 2.9.
+* Stim-on: 0000 deflates to 6.9 and the peak **moves to active states**
+  (0001 = AWCL-only: 7.5; 1111: 6.2).
+* The two regime maps barely agree on which states carry Φ (ρ = +0.19,
+  p = 0.49).
+* The static TPM is **the majority regime in disguise**: ρ = +0.71 with the
+  off-map vs +0.44 with the on-map, and 3× closer in JSD — matching the 76%
+  baseline share of transitions. The Φ(t) results and the offset dip are
+  therefore predominantly baseline-regime results.
+* Not a volume artifact: subsampling the off-pool to the on-volume (8 draws),
+  the off-regime still peaks at 0000 in 8/8 with Σφ(0000) = 28 ± 16, and still
+  fails to correlate with the on-map (ρ ≈ +0.27)
+  ([`results/tpm_regime_volume_control.csv`](results/tpm_regime_volume_control.csv)).
+
+The declared default remains the ecological (marginal) TPM — it is the object
+the precision convention certifies, and the right one for "the worm in its
+stimulus ecology." The conditioned TPMs are the IIT-stricter objects, and the
+regime-dependence found here says any future condition-assigned structure
+comparison should be run under them as well: under stimulation, maximal Φ
+sits at an active state, which no static-TPM analysis in this repository
+could have shown.
 
 ### The precision convention: certify the TPM, treat it as ground truth
 
@@ -1997,3 +2049,9 @@ data/          downloaded recordings (gitignored)
   propagation atlas of *Caenorhabditis elegans*. *Nature* 623, 406–414. (Scalar
   functional amplitudes from `leiferlab/worm-functional-connectivity`,
   wild-type atlas.)
+* Krohn, S. & Ostwald, D. (2017). Computing integrated information.
+  *Neuroscience of Consciousness* 2017(1), nix017. (The system as a
+  first-order time-invariant Markov process.)
+* (2026). Artificial hibernation reveals synaptic engram architecture
+  associated with memory retention. *Science*,
+  [10.1126/science.aee7004](https://doi.org/10.1126/science.aee7004).
