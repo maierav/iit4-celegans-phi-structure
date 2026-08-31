@@ -33,16 +33,23 @@ task.
 
 ## SUMMARY (so far)
 
-**Rationale.** IIT 4.0 predicts that phenomenologically similar experiences 
+**Rationale.** 
+
+IIT 4.0 predicts that phenomenologically similar experiences 
 have similar Φ-structures. However, computing Φ-structures from neural data
 is problematic since 
+
 (1) the full set of causal neural connections that IIT requires
 are beyond measurement (**limited sample/measurement problem**), and 
-(2) the IIT computations required exceed current capabilities.
+
+(2) the IIT computations required exceed current capabilities 
+(**limited computations problem**).
+
 We thus aim to test this approach in a (very) small nervous system
 where (1) connectivity is known and (2) IIT calculations are doable.
 
 **Debatable issues.**
+
 *(1) IIT 4.0 requires a complete interventional causal model over system states.
 But here transition probability matrices (TPMs) are inferred from passive observations.*
 We _do_ have [an extensive interventional causal dataset for _C elegans_](https://pmc.ncbi.nlm.nih.gov/articles/PMC10632145/).
