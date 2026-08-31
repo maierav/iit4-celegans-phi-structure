@@ -22,12 +22,26 @@ means 15! ≈ 1.3 × 10¹² bijections to test. We thus use identity corresponde
 an upper bound. However, three of the six pipelines are small enough to brute-force; 
 see [Exact vs. identity](#exact-vs-identity-what-the-minimisation-buys).
 
+**Along the way.** Several decisions had to be made on how to preprocess the data.
+Results are encouraging in that _despite estimated and potentially erroneous 
+assumptions, we found expected patterns in the data_.
+
+(1) High-pass filtering was found to be most effective in enhancing stimulus response
+contrast (stimulus vs. baseline response amplitudes) for the imaging data. 
+
+(2) Binarization using moving average window that roughly matches known _C elegans_
+neural dynamics resulted in a series of system states and their transition probabilities
+that retained information about both stimulus responses (i.e., system states averaged 
+across trials and animals resulted in a stimulus response) and previously published
+effective connectivity (i.e., TPM-derived connectivity largely matches the 
+optogenetically established atlas of connectivity).
+
 **Where things stand so far.** The positive control — chemical present vs
 chemical absent — is **established at the TPM level** (permutation *z* = +6.9
 core / +35 sensory) and at the Φ(t) level (the offset dip). It is **not yet
 passed by any Φ-structure-level quantity**: the condition-assigned structure
 comparison fails its noise floor at current data volume, which is the open
-task.
+task. We have yet to decide exactly which states to compare, for example.
 
 ---
 
