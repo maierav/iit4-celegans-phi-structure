@@ -183,40 +183,127 @@ print(f"off/off @15.1k rho {sd.rho_offA_offB_15k.mean():+.2f}±{sd.rho_offA_offB
 print(f"|dPhi(0000)| between off 15k halves: {sd.dphi0_off15k.mean():.1f}±{sd.dphi0_off15k.std():.1f} "
       f"(static-vs-off gap: 16.4)")
 
-
 # %% [markdown]
-# ## Reading (corrected by the split design)
+# ## Is halving too harsh? The full-volume bootstrap
 #
-# * **At the TPM level the regimes differ beyond doubt.** Stim-on vs stim-off
-#   rows differ at z = 35 under epoch relabelling (the positive control), and
-#   row JSD 0.197 vs same-regime noise ~0.08. The static TPM is the majority
-#   regime in disguise: 3x closer to off in JSD, rho = +0.71 vs +0.44.
-# * **At the Φ-landscape level the difference is NOT resolvable at current
-#   volume.** Same-regime reproducibility is as low as cross-regime agreement:
-#   off/off halves rho ~ +0.48-0.62, on/on halves +0.47, on/off at matched
-#   volume +0.42. And Σφ(0000) scatters by 23 ± 20 between off-halves — which
-#   swallows both the apparent on-deflation (36.2 → 6.9) and the static-off
-#   gap (16.4). The full-data observations (peak at 0001 under stim-on,
-#   rho = +0.19 between regime maps) were carried by margins far inside that
-#   scatter (argmax flipped on 6.9 vs 7.5) and cannot be attributed to regime
-#   rather than sampling.
-# * **This is the stability hierarchy again, not an exception to it.** The
-#   regimes demonstrably differ where estimation is stable (TPM rows) and
-#   cannot yet be distinguished where it is not (the unfolded Φ landscape).
-#   The suggestive pattern — on-halves' Σφ(0000) sitting low — is
-#   volume-confounded (4.8k vs 15.1k halves) and stays unclaimed.
-# * **Both TPM views retained.** Static-across-animals holds (isogenic
-#   design; engram-architecture reading). Static-across-contexts is refuted
-#   at the TPM level. The ecological (marginal) TPM remains the declared
-#   default; condition-dependent Φ comparisons need per-regime volumes the
-#   current recordings do not provide.
+# Split-half comparisons measure noise at n/2, overstating the full-data
+# estimate's noise by ~2x in SD terms. The matched instrument for "is the
+# stim-on map genuinely different in THIS dataset" is the parametric bootstrap
+# at FULL volume: resample each TPM row from its own multinomial at its actual
+# row count (this is the notebook-15 perturbation machinery at scale 1).
+# Caveat kept in view: transitions are temporally dependent (consecutive
+# transitions share a frame; the 60 s cycle), so an iid bootstrap can
+# UNDERSTATE noise — p-values here are anti-conservative. The truth sits
+# between the split-half (too harsh) and this (too lenient); claims at
+# p ~ 1e-4 survive that bracket, marginal ones may not.
+
+# %%
+def boot_C(C, rng):
+    Cb = np.zeros_like(C)
+    for s_ in range(16):
+        n_ = int(C[s_].sum())
+        if n_ > 0:
+            Cb[s_] = rng.multinomial(n_, C[s_] / C[s_].sum())
+    return Cb
+
+rng = np.random.default_rng(2)
+# TPM-level certification (the drop-k question, at full volume)
+for k, C in [("static", C_pool), ("stim_off", C_off), ("stim_on", C_on)]:
+    P = C / np.maximum(C.sum(1, keepdims=True), 1)
+    n_row = C.sum(1)
+    SE = np.sqrt(P * (1 - P) / np.maximum(n_row[:, None], 1))
+    ag = {d: [] for d in (2, 3)}
+    for rep in range(20):
+        Pb = boot_C(C, rng); Pb = Pb / np.maximum(Pb.sum(1, keepdims=True), 1)
+        for d in (2, 3):
+            ag[d].append(np.mean(np.round(Pb, d) == np.round(P, d)))
+    print(f"{k:>9}: n={int(C.sum()):>6} | median SE {np.median(SE[n_row > 0]):.4f} | "
+          f"stable at 2dp {100 * np.mean(ag[2]):.0f}% | 3dp {100 * np.mean(ag[3]):.0f}%")
+
+# %%
+# Phi-map noise at FULL volume
+R = 10
+BOOT = {}
+for k, C in [("static", C_pool), ("stim_on", C_on), ("stim_off", C_off)]:
+    BOOT[k] = [bigphi_map(boot_C(C, rng))[0] for _ in range(R)]
+
+from itertools import combinations as _comb
+sp = lambda a, b: float(stats.spearmanr(a, b).statistic)
+within = {k: [sp(BOOT[k][i], BOOT[k][j]) for i, j in _comb(range(R), 2)] for k in BOOT}
+cross_on_off = [sp(BOOT["stim_on"][i], BOOT["stim_off"][i]) for i in range(R)]
+cross_st_off = [sp(BOOT["static"][i], BOOT["stim_off"][i]) for i in range(R)]
+for k in BOOT:
+    print(f"within {k:>9}: {np.mean(within[k]):+.2f} ± {np.std(within[k]):.2f}")
+print(f"cross on/off: {np.mean(cross_on_off):+.2f} | cross static/off: {np.mean(cross_st_off):+.2f}")
+
+on0 = np.array([b[0] for b in BOOT["stim_on"]]); off0 = np.array([b[0] for b in BOOT["stim_off"]])
+st0 = np.array([b[0] for b in BOOT["static"]])
+on8 = np.array([b[8] for b in BOOT["stim_on"]]); off8 = np.array([b[8] for b in BOOT["stim_off"]])
+on15 = np.array([b[15] for b in BOOT["stim_on"]]); off15 = np.array([b[15] for b in BOOT["stim_off"]])
+print(f"Phi(0000) on {on0.mean():.1f}±{on0.std():.1f} vs off {off0.mean():.1f}±{off0.std():.1f} "
+      f"p={stats.mannwhitneyu(on0, off0).pvalue:.5f}")
+print(f"Phi(0001) on {on8.mean():.1f}±{on8.std():.1f} vs off {off8.mean():.2f}±{off8.std():.2f} "
+      f"p={stats.mannwhitneyu(on8, off8).pvalue:.6f}")
+print(f"Phi(1111) on {on15.mean():.1f}±{on15.std():.1f} vs off {off15.mean():.1f}±{off15.std():.1f} "
+      f"p={stats.mannwhitneyu(on15, off15).pvalue:.4f}")
+print(f"Phi(0000) static vs off p={stats.mannwhitneyu(st0, off0).pvalue:.5f}")
+from collections import Counter
+print("argmax under stim-on boots:", dict(Counter(lab[int(np.argmax(b))] for b in BOOT["stim_on"])))
+
+out = []
+for k in BOOT:
+    for i, b in enumerate(BOOT[k]):
+        out.append(dict(regime=k, rep=i, phi_0000=b[0], phi_0001=b[8], phi_1111=b[15],
+                        argmax=lab[int(np.argmax(b))], rho_vs_full=sp(b, B[k])))
+pd.DataFrame(out).to_csv(os.path.join(REPO_ROOT, "results/regime_bootstrap_fullvolume.csv"), index=False)
+
+# the requested static-vs-off table with full-volume bootstrap SDs
+st_sd = np.std([b for b in BOOT["static"]], axis=0)
+off_sd = np.std([b for b in BOOT["stim_off"]], axis=0)
+tso = pd.DataFrame(dict(state=lab,
+    Phi_static=np.round(B["static"], 2), sd_static=np.round(st_sd, 2),
+    Phi_stim_off=np.round(B["stim_off"], 2), sd_off=np.round(off_sd, 2),
+    delta=np.round(B["static"] - B["stim_off"], 2)))
+tso["delta_in_sd"] = np.round(tso.delta.abs() / np.maximum(np.sqrt(st_sd**2 + off_sd**2), 1e-9), 2)
+tso.to_csv(os.path.join(REPO_ROOT, "results/static_vs_stimoff_phi.csv"), index=False)
+print(tso.to_string(index=False))
+
+
 
 # %% [markdown]
-# ## Figure 45 — regimes, and what survives the noise check
+# ## Reading (graded verdict, after split design AND full-volume bootstrap)
+#
+# * **TPM level: the regimes differ beyond doubt, and the stim-on TPM is
+#   itself a stable estimate.** Rows differ at z = 35 (positive control);
+#   stim-on median binomial SE 0.0094 (~2-decimal certification, vs 0.0048
+#   static). NOTHING is stable at 3 decimals — 8-10% for every regime — so
+#   "certify at 3dp" is not available even for the full pool.
+# * **Φ level, at full-volume noise (the split-half was too harsh): specific
+#   regime differences ARE resolvable.** Σφ(0000): on 13.3 ± 7.5 vs off
+#   32.0 ± 12.7 (p = 0.005); Σφ(0001): 5.9 ± 4.1 vs 0.83 ± 0.13 (p = 0.0002);
+#   Σφ(1111): 11.7 ± 7.7 vs 2.8 ± 1.9 (p = 0.001). Under stim-on the
+#   0000-argmax monopoly breaks (0000 in only 5/10 boots) — but WHICH active
+#   state peaks is contested, so "the peak moves to 0001" stays retracted.
+#   Within-regime map reproducibility 0.62-0.68 vs cross on/off 0.40.
+# * **Static vs stim-off (the requested comparison): inseparable where Φ
+#   lives.** Φ(0000) p = 0.10; cross ρ 0.53 vs within 0.62; only floor states
+#   (Σφ ≈ 0.7-1.0) show a small systematic mixture uplift (4/16 states >2
+#   combined SDs, deltas ≤ 0.3). The static TPM is, within resolution, the
+#   baseline regime.
+# * **Instrument choice, stated as policy.** Split-half noise floors remain
+#   correct for BETWEEN-COHORT questions (do two sets of animals agree?). For
+#   "is A different from B in this dataset's estimate", the full-volume
+#   parametric bootstrap is the matched instrument — with the caveat that iid
+#   resampling understates noise under temporal dependence, so p-values are
+#   anti-conservative; the strong results (p <= 0.005) survive that bracket,
+#   marginal ones may not. A block bootstrap would tighten this.
+
+# %% [markdown]
+# ## Figure 45 — regimes, at the right noise instrument
 
 # %%
 fig, axes = plt.subplots(1, 3, figsize=(12.6, 3.7), constrained_layout=True)
-BLUE, ORANGE, GREY = "#1f6fb4", "#c2571a", "#8a8a8a"
+BLUE, ORANGE, GREY, PURPLE = "#1f6fb4", "#c2571a", "#8a8a8a", "#7a4a8a"
 ax = axes[0]
 x = np.arange(16); w = 0.27
 ax.bar(x - w, B["static"], w, color=GREY, label="static (pooled, 39.8k)")
@@ -229,33 +316,32 @@ ax.set_ylabel("Σφ of the unfolded structure", labelpad=5, fontsize=7)
 ax.legend(frameon=False, fontsize=5.6, loc="upper right")
 ax.set_title("a  Σφ per state under each TPM (full data)", loc="left", fontsize=8)
 ax = axes[1]
-cats = [("off / off\n@15.1k", sd.rho_offA_offB_15k, BLUE),
-        ("off / off\n@9.6k", sd.rho_off_off_9k6, BLUE),
-        ("on / on\n@4.8k", sd.rho_onA_onB_4k8, ORANGE),
-        ("on / off\n@4.8k", pd.concat([sd.rho_onA_off_4k8, sd.rho_onB_off_4k8]), "#7a4a8a")]
+cats = [("within\nstatic", within["static"], GREY), ("within\nstim-on", within["stim_on"], ORANGE),
+        ("within\nstim-off", within["stim_off"], BLUE),
+        ("cross\non / off", cross_on_off, PURPLE), ("cross\nstatic / off", cross_st_off, "#4a7a4a")]
 for i_, (nm, v, c) in enumerate(cats):
+    v = np.asarray(v)
     ax.bar(i_, v.mean(), 0.6, color=c, alpha=0.35, lw=0)
-    ax.scatter(np.full(len(v), i_) + np.linspace(-0.13, 0.13, len(v)), v, s=14, color=c, zorder=3, lw=0)
+    ax.scatter(np.full(len(v), i_) + np.linspace(-0.16, 0.16, len(v)), v, s=9, color=c, zorder=3, lw=0)
 ax.axhline(0, color="#333", lw=0.7)
-ax.set_xticks(range(4)); ax.set_xticklabels([c[0] for c in cats], fontsize=6)
-ax.set_ylabel("ρ between Φ-maps (disjoint samples)", labelpad=5, fontsize=7)
+ax.set_xticks(range(5)); ax.set_xticklabels([c[0] for c in cats], fontsize=6)
+ax.set_ylabel("ρ between Φ-maps", labelpad=5, fontsize=7)
 ax.set_ylim(-0.05, 1.0)
-ax.set_title("b  Same-regime reproducibility ≈\n   cross-regime agreement", loc="left", fontsize=8)
+ax.set_title("b  Full-volume bootstrap: on/off agreement\n   falls below within-regime reproducibility", loc="left", fontsize=8)
 ax = axes[2]
-offh = np.concatenate([sd.phi0_offA, sd.phi0_offB])
-onh = np.concatenate([sd.phi0_onA, sd.phi0_onB])
-ax.scatter(np.full(len(offh), 0) + np.linspace(-0.1, 0.1, len(offh)), offh, s=16, color=BLUE, lw=0, label="off halves (15.1k)")
-ax.scatter(np.full(len(onh), 1) + np.linspace(-0.1, 0.1, len(onh)), onh, s=16, color=ORANGE, lw=0, label="on halves (4.8k)")
-ax.scatter([0.5], [B["static"][0]], marker="D", s=30, color=GREY, zorder=4, label="static full (19.8)")
-ax.scatter([0], [B["stim_off"][0]], marker="D", s=30, color=BLUE, zorder=4)
-ax.scatter([1], [B["stim_on"][0]], marker="D", s=30, color=ORANGE, zorder=4)
-ax.set_xticks([0, 1]); ax.set_xticklabels(["stim-off", "stim-on"], fontsize=7)
-ax.set_xlim(-0.5, 1.5)
-ax.set_ylabel("Σφ(0000)", labelpad=5, fontsize=7)
-ax.legend(frameon=False, fontsize=5.6, loc="upper right")
-ax.set_title("c  Σφ(0000): half-sample scatter swallows\n   the regime gaps (dots = halves, ◆ = full)", loc="left", fontsize=8)
-fig.suptitle("The regimes differ at the TPM level (z = 35); their Φ landscapes cannot be distinguished above sampling noise at current volume",
-             fontsize=8.2)
+pos = {"stim_off": 0, "static": 1, "stim_on": 2}
+col = {"stim_off": BLUE, "static": GREY, "stim_on": ORANGE}
+for k in pos:
+    v = np.array([b[0] for b in BOOT[k]])
+    ax.scatter(np.full(len(v), pos[k]) + np.linspace(-0.12, 0.12, len(v)), v, s=14, color=col[k], lw=0)
+    ax.scatter([pos[k]], [B[k][0]], marker="D", s=32, color=col[k], zorder=4, edgecolor="#222", lw=0.5)
+ax.set_xticks(range(3)); ax.set_xticklabels(["stim-off", "static", "stim-on"], fontsize=7)
+ax.set_xlim(-0.5, 2.5); ax.set_ylabel("Σφ(0000), full-volume bootstrap", labelpad=5, fontsize=7)
+ax.text(0.5, 0.955, "static vs off: p = 0.10", transform=ax.transAxes, ha="center", fontsize=6.2, color="#333")
+ax.text(0.5, 0.885, "on vs off: p = 0.005", transform=ax.transAxes, ha="center", fontsize=6.2, color=ORANGE)
+ax.set_title("c  Quiescence-Φ deflation under stim-on IS\n   resolvable at full volume; static ≈ off", loc="left", fontsize=8)
+fig.suptitle("Regimes differ at the TPM level (z = 35) and — at full-volume noise — at specific Φ states (0000↓, 0001↑, 1111↑ under stim-on); static ≈ stim-off",
+             fontsize=7.8)
 fig.savefig(os.path.join(REPO_ROOT, "figures/fig45_static_vs_dynamic_tpm.pdf"), bbox_inches="tight")
 fig.savefig(os.path.join(REPO_ROOT, "figures/fig45_static_vs_dynamic_tpm.png"), dpi=200, bbox_inches="tight")
 print("wrote figures/fig45")

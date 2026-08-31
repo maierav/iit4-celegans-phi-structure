@@ -181,7 +181,7 @@ then `Runtime > Run all`.
 | **12 — Φ as a time series** | One giant TPM from the entire dataset (~40k transitions, every row ≥1,648 obs), Φ for each of the 16 states, and Φ(t) by mapping each sample's state to its Φ — single-trial, grand-average, and by-class | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/12_phi_timeseries.ipynb) |
 | **13 — Robustness checks** | Median vs mean Φ(t), the explicit stimulus-vs-no-stimulus contrast across all 10 stimuli, raw-fluorescence mean/median, and TPM drop-k stability plus the fragility of the φ-per-state map | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/13_robustness.ipynb) |
 | **14 — State identification** | Which state is "stimulus" and which "no stimulus": paired occupancy distributions, rank–frequency by condition, enrichment ladder with Holm correction; names 1000 (AWCL alone) as baseline and 0111 (its complement) as stimulus | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/14_state_identification.ipynb) |
-| **17 — Static vs dynamic TPMs** | The regimes differ at the TPM level (z = 35) and the static TPM is the majority regime in disguise; their Φ landscapes cannot be distinguished above sampling noise at current volume | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/17_static_vs_dynamic_tpm.ipynb) |
+| **17 — Static vs dynamic TPMs** | Regimes differ at the TPM level (z = 35) and, under full-volume bootstrap, at specific Φ states (0000↓, 0001↑, 1111↑ under stim-on); static ≈ stim-off; the stim-on TPM is itself a stable (~2-dp) estimate | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/17_static_vs_dynamic_tpm.ipynb) |
 | **16 — Connectivity vs literature** | Diagonal-matched comparison against the anatomical connectome (Cook 2019) and the effective/signal-propagation atlas (Randi 2023): ours agrees with the atlas on which pairs communicate (3 of 4, both naming ASEL↔AWAL strongest); anatomy is the outlier | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/16_connectivity_vs_literature.ipynb) |
 | **15 — Structure comparison** | The first condition-assigned structure comparison (1000 vs 0111) with the split-half noise floor defined and explained; fails at ratio 0.91 because half-data structures are unstable | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/15_structure_comparison.ipynb) |
 
@@ -982,20 +982,38 @@ the 15 s stimulus windows vs baseline; 9.6k vs 30.2k transitions).
   their Σφ(0000) gap (16.4) sits inside the off-regime's own half-sample
   scatter (23 ± 20). The Φ(t) results and the offset dip are therefore
   predominantly baseline-regime results.
-* **At the Φ-landscape level the regime difference is NOT resolvable at
-  current volume.** The undersampling check (disjoint-halves split design):
-  same-regime reproducibility is as low as cross-regime agreement — off/off
-  halves ρ = +0.48 ± 0.11 (15.1k) and +0.62 ± 0.08 (9.6k), on/on halves
-  +0.47 ± 0.09, on/off at matched volume +0.42 ± 0.15. The full-data
-  observations (Σφ(0000) deflating 36.2 → 6.9 under stim-on; the peak sitting
-  at an active state, 0001 = 7.5; ρ = +0.19 between regime maps) were carried
-  by margins far inside the half-sample scatter — the argmax flipped on
-  6.9 vs 7.5 in a quantity that scatters by ±16 — so they cannot be
-  attributed to regime rather than sampling. The suggestive pattern (on-halves'
-  Σφ(0000) sitting low) is volume-confounded and stays unclaimed.
-* **This is the stability hierarchy again, not an exception to it**: the
-  regimes demonstrably differ where estimation is stable (TPM rows) and
-  cannot yet be distinguished where it is not (the unfolded Φ landscape).
+* **The stim-on TPM is itself a stable estimate.** Its median binomial SE is
+  0.0094 (~2-decimal certification, vs 0.0048 for static); under a
+  full-volume bootstrap 40% of its entries are rounding-stable at 2 decimals
+  (static: 63%). Nothing is stable at 3 decimals — 8–10% for *every* regime,
+  including the full pool — so 3-dp certification is not available at any
+  volume here.
+* **At the Φ level, judged at the right noise scale, specific regime
+  differences ARE resolvable.** A first split-half check buried them — but
+  halves measure noise at n/2, overstating the full-data estimate's noise
+  ~2×. The matched instrument is the **full-volume parametric bootstrap**
+  (each TPM row resampled at its actual count;
+  [`results/regime_bootstrap_fullvolume.csv`](results/regime_bootstrap_fullvolume.csv)),
+  and under it: Σφ(0000) = 13.3 ± 7.5 (on) vs 32.0 ± 12.7 (off), *p* = 0.005;
+  Σφ(0001) = 5.9 ± 4.1 vs 0.83 ± 0.13, *p* = 0.0002; Σφ(1111) = 11.7 ± 7.7 vs
+  2.8 ± 1.9, *p* = 0.001. Under stim-on the 0000-argmax monopoly breaks
+  (0000 wins in only 5/10 bootstrap maps) — but *which* active state peaks is
+  contested, so "the peak moves to 0001" remains unclaimed. Caveat: iid
+  resampling understates noise under temporal dependence, so these p-values
+  are anti-conservative; the p ≤ 0.005 results survive the split-half /
+  bootstrap bracket, marginal ones may not.
+* **Static vs stim-off: inseparable where Φ lives**
+  ([`results/static_vs_stimoff_phi.csv`](results/static_vs_stimoff_phi.csv)).
+  Φ(0000) *p* = 0.10; cross ρ = 0.53 vs within ≈ 0.62; only floor states
+  (Σφ ≈ 0.7–1.0) show a small systematic mixture uplift (4/16 states > 2
+  combined SDs, deltas ≤ 0.3). Within resolution, the static TPM *is* the
+  baseline regime.
+* **Instrument policy, stated once:** split-half noise floors answer
+  between-cohort questions (do two sets of animals agree?); the full-volume
+  bootstrap answers within-dataset questions (is A different from B in this
+  estimate?), erring lenient as the split errs harsh. Φ-level claims should
+  be gated by the bootstrap and, where decisive, tightened with a block
+  bootstrap.
 
 The declared default remains the ecological (marginal) TPM — it is the object
 the precision convention certifies, and the right one for "the worm in its
