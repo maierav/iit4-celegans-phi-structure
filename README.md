@@ -90,8 +90,12 @@ effective) is known, so one could identify all inputs to the neurons under
 study and test whether their activity distribution is the same regardless of
 the system's state — the condition under which marginalizing over them is
 harmless. (Strictly, IIT 4.0 prescribes *conditioning* on background units —
-freezing them at their state — rather than marginalizing over them; the test
-above is exactly the test of how much that distinction costs here.) We have not done so, but it is encouraging that the TPM values we identified 
+freezing them at their state — whereas pooling all transitions regardless of
+context, as we do, *marginalizes* over them. The two coincide exactly when the
+input-distribution check just described passes: if the inputs' statistics do
+not depend on the system's state, the averaged TPM equals the conditioned one,
+and the degree to which the check fails is the degree to which our TPM
+deviates from the one IIT prescribes.) We have not done so, but it is encouraging that the TPM values we identified 
 in our first pass so far largely reproduce the prediction from effective connectivity.
 
 **The guide star.** One principle governs every analysis in this repository,
