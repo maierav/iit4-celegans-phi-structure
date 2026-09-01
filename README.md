@@ -1,26 +1,33 @@
 # Comparing Φ-structures across chemosensory stimuli in *C. elegans*
 
-**Motivation.** *C. elegans* approaches some chemicals (attractants) and
+**Motivation.** 
+
+*C. elegans* approaches some chemicals (attractants) and
 avoids others (repellents). If we compute the IIT 4.0 **Φ-structure** of a core
 neural circuit during each response: are the attractant Φ-structures more
 similar to each other than the repellent ones?
 
-**One obstacle.** A Φ-structure is not a graph. It is a **weighted hypergraph**:
+**Φ-structure differences are a relatively novel problem** 
+
+A Φ-structure is not a graph. It is a **weighted hypergraph** of sorts:
 its "edges" (relations) can bind three, four, or more distinctions at once.
-Standard graph-similarity measures cannot see that higher-order content (two
-structures differing only in one degree-3 relation score distance 0 under any
-pairwise measure — demonstrated in notebook 03), so
-*measuring the distance between two Φ-structures* is a core methodological
+Standard graph-similarity measures cannot see that higher-order content, so
+*measuring the distance between two Φ-structures* is a novel methodological
 problem.
 
-**One solution.** An exact, brute-force distance: try every way of matching the
+**Two solutions.** 
+
+(1) An exact, brute-force distance: try every way of matching the
 distinctions of one structure onto the other, score each matching, keep the
 smallest. Defined in full under [The distance algorithm](#the-distance-algorithm),
-implemented in [`src/gold_standard.py`](src/gold_standard.py). **Note that the
-headline 4-neuron analysis does *not* use this approach** — 15 distinctions
-means 15! ≈ 1.3 × 10¹² bijections to test. We thus use identity correspondence, which is
-an upper bound. However, three of the six pipelines are small enough to brute-force; 
+implemented in [`src/gold_standard.py`](src/gold_standard.py). 
+**Note that our 4-neuron analysis does *not* use this approach**. 
+Even with just 4 neurons, there are too many computations involved.
+We instead use identity correspondence for now, which is an upper bound. 
+However, three of the six pipelines are small enough to brute-force; 
 see [Exact vs. identity](#exact-vs-identity-what-the-minimisation-buys).
+
+(2) In the future, we will also try GWOT, as proposed by Yu, Marshall et al.
 
 **Along the way.** Several decisions had to be made on how to preprocess the
 data. Results are encouraging in that _despite the stack of estimation steps
@@ -39,14 +46,17 @@ the data_.
    published effective connectivity (TPM-derived connectivity largely matches
    the optogenetically established atlas).
 
-**Where things stand so far.** The positive control — chemical present vs
-chemical absent — is **established at the TPM level** (permutation *z* = +6.9
-core / +35 sensory) and at the Φ(t) level (the offset dip). It is **not yet
-passed by any Φ-structure-level quantity**: the condition-assigned structure
-comparison fails its noise floor at current data volume, which is the open
-task. We have yet to decide exactly which states to compare, for example — and
-the stimulus-state structure itself (15 distinctions, ~1800 relations) is not
-yet stable at current data volume, whichever state is chosen as its partner.
+**Where things stand so far.** 
+
+The positive control (chemical present chemical absent) is **established at the TPM level**.
+
+We also explored a novel, somewhat unusual Φ(t) level, and that worked, too.
+
+We are currently still exploring how to best compute TPMs, but these
+results are encouraging.
+
+Work on the actual Φ-structures is in flux. We will need to decide on how
+to pick a candidate state and then take things from there.
 
 ---
 
