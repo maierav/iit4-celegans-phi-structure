@@ -1,4 +1,4 @@
-# Comparing IIT 4.0 Φ-structures across chemosensory stimuli in *C. elegans*
+# Comparing Φ-structures across chemosensory stimuli in *C. elegans*
 
 **Motivation.** *C. elegans* approaches some chemicals (attractants) and
 avoids others (repellents). If we compute the IIT 4.0 **Φ-structure** of a core
