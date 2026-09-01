@@ -73,7 +73,7 @@ have similar Φ-structures. However, computing Φ-structures from neural data
 is problematic since 
 
 (1) the full set of causal neural connections that IIT requires
-are beyond measurement (**limited sample/measurement problem**), and 
+are beyond measurement (**limited sample problem**), and 
 
 (2) the IIT computations required exceed current capabilities 
 (**limited computations problem**).
