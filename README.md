@@ -21,13 +21,17 @@ problem.
 distinctions of one structure onto the other, score each matching, keep the
 smallest. Defined in full under [The distance algorithm](#the-distance-algorithm),
 implemented in [`src/gold_standard.py`](src/gold_standard.py). 
-**Note that our 4-neuron analysis does *not* use this approach**. 
-Even with just 4 neurons, there are too many computations involved.
+**Note that our 4-neuron analysis does *not* use this approach**.
+Even with just 4 neurons, a structure can carry up to 15 distinctions, and
+15! ≈ 1.3 × 10¹² candidate matchings is out of reach.
 We instead use identity correspondence for now, which is an upper bound. 
 However, three of the six pipelines are small enough to brute-force; 
 see [Exact vs. identity](#exact-vs-identity-what-the-minimisation-buys).
 
-(2) In the future, we will also try GWOT, as proposed by Yu, Marshall et al.
+(2) In the future, we will also try Gromov–Wasserstein optimal transport
+(GWOT), as proposed by Yu, Marshall et al. — the per-degree fold already
+provides tight bounds for it (see
+[Scaling beyond the exact distance](#scaling-beyond-the-exact-distance)).
 
 **Along the way.** Several decisions had to be made on how to preprocess the
 data. Results are encouraging in that _despite the stack of estimation steps
@@ -48,7 +52,7 @@ the data_.
 
 **Where things stand so far.** 
 
-The positive control (chemical present chemical absent) is **established at the TPM level**.
+The positive control (chemical present vs chemical absent) is **established at the TPM level**.
 
 We also explored a novel, somewhat unusual Φ(t) level, and that worked, too.
 
