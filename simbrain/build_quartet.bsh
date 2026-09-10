@@ -1,0 +1,39 @@
+// build_quartet.bsh — construct one 4-neuron quartet in Simbrain from the
+// effective-sensitivity weights (CSV in this folder).
+//
+// WRITTEN FOR SIMBRAIN 3.x AND NOT EXECUTED HERE — verify class names against
+// your Simbrain version (Simbrain 4 renamed several packages). Run from
+// Simbrain: Scripting > Run script. Note the semantics: these weights are the
+// mean |dP(target ON at t+1)| for a source bit-flip (range 0-0.24), i.e. a
+// coupling STRENGTH, not a signed synaptic weight — the sign is not identified
+// by the sensitivity measure. Simbrain's continuous dynamics are also not the
+// binarized Markov chain; for the faithful simulation use
+// interactive/quartet_simulator.html, which runs the conditioned TPMs directly.
+
+import org.simbrain.network.NetworkComponent;
+import org.simbrain.network.core.Network;
+import org.simbrain.network.core.Neuron;
+import org.simbrain.network.core.Synapse;
+import org.simbrain.network.neuron_update_rules.SigmoidalRule;
+
+String[] names = {"ASEL", "ASER", "AWAL", "AWCL"};   // or the core quartet
+double[][] W = {   // sens_effective_weights.csv, rows = source
+  {0.133, 0.017, 0.033, 0.009},
+  {0.021, 0.238, 0.015, 0.012},
+  {0.030, 0.014, 0.073, 0.009},
+  {0.014, 0.013, 0.017, 0.160}};
+
+NetworkComponent nc = new NetworkComponent("Chemosensory quartet");
+workspace.addWorkspaceComponent(nc);
+Network net = nc.getNetwork();
+Neuron[] nrn = new Neuron[4];
+double[][] pos = {{100, 0}, {200, 100}, {100, 200}, {0, 100}};
+for (int i = 0; i < 4; i++) {
+    nrn[i] = new Neuron(net, new SigmoidalRule());
+    nrn[i].setLabel(names[i]);
+    nrn[i].setLocation(pos[i][0], pos[i][1]);
+    net.addNeuron(nrn[i]);
+}
+for (int j = 0; j < 4; j++)
+    for (int i = 0; i < 4; i++)
+        if (W[j][i] > 0.01) net.addSynapse(new Synapse(nrn[j], nrn[i], W[j][i] * 10));

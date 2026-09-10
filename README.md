@@ -895,6 +895,33 @@ level, which is demonstrably stable. And the fragility is not IIT failing — it
 is the analysis inheriting the theory's own sharp existence conditions, which
 were designed for exactly-known TPMs, not estimated ones.
 
+### Interactive simulator: stimulate the quartet, compare to the data
+
+[`interactive/quartet_simulator.html`](interactive/quartet_simulator.html)
+(self-contained; download and open in any browser). Pick a quartet and a
+chemical, press **Stimulate**: a Markov chain runs on the estimated TPMs —
+baseline TPM → the chemical's *class* TPM for the 15 s stimulus window →
+baseline — while the network view animates one trial's joint state and the
+plots overlay 400 simulated trials' P(neuron ON) on the *recorded* binarized
+PSTH of that chemical (24 epochs, 8 animals).
+
+![Simulator validation](figures/fig47_simulator_validation.png)
+
+Validation ([`results/simulator_validation.csv`](results/simulator_validation.csv)):
+across all 24 neuron × class combinations, the simulated stimulus-window shift
+ΔP(ON) matches the recorded one at **r = 0.97** (b) — the conditioned TPMs
+carry the level-shift response. Trace-by-trace, the simulation tracks the
+sensory quartet (r ≈ 0.4–0.5) but not the core quartet (r ≈ 0.1) (c): a
+first-order chain reaches its conditioned distribution within a few lags and
+holds it, so it reproduces level shifts but not the core quartet's post-offset
+latencies — the memoryless-ness of the TPM made visible. Per-chemical TPMs are
+undersampled (~960 transitions), so the simulation is class-conditioned;
+the gap between two same-class chemicals' real overlays is within-class
+identity the TPM cannot carry. [`simbrain/`](simbrain/) has the weight
+matrices, conditioned TPMs, and a Simbrain 3.x build-script template
+(untested; the HTML simulator is the faithful one — it runs the TPMs
+directly). [Vector PDF](figures/fig47_simulator_validation.pdf)
+
 ### Our connectivity vs the literature
 
 The effective sensitivity matrix, set against the two published connectivities
