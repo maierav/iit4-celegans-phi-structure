@@ -2169,6 +2169,7 @@ data/          downloaded recordings (gitignored)
 | see one comparison drawn step by step | [`notebooks/05`](notebooks/05_pyphi2_example.ipynb) |
 | the original class comparison and every dead end | [The road here](#the-road-here--what-we-tried-and-what-it-taught-us) |
 | reproduce every figure | `notebooks/01` → … → `15` |
+| find more data for replication or interventions | [Additional datasets worth exploring](#additional-datasets-worth-exploring) / [`docs/external_datasets.csv`](docs/external_datasets.csv) |
 
 ## Sources
 
@@ -2192,3 +2193,58 @@ data/          downloaded recordings (gitignored)
 * (2026). Artificial hibernation reveals synaptic engram architecture
   associated with memory retention. *Science*,
   [10.1126/science.aee7004](https://doi.org/10.1126/science.aee7004).
+
+## Additional datasets worth exploring
+
+This repository currently uses the whole-brain chemosensory NeuroPAL recordings from
+[chemosensory-data.worm.world](https://chemosensory-data.worm.world/index.html)
+([DANDI 000981](https://dandiarchive.org/dandiset/000981)), so that dataset is not listed here. The datasets below could
+increase the number of attractive and aversive samples, test replication or generalisation, or provide **interventional**
+data. Interventional data are closer to the do()-based TPMs that IIT requires.
+
+The list merges two sources: a curated hand-off list, and an independent search done on 2026-10-07.
+Every landing page below was confirmed to exist via the repository API or an HTTP check. The repository contents
+themselves have **not** been downloaded or audited. Animal counts, rates and stimulus details are as reported by the
+papers or repositories, so verify them in the raw files before analysis. Full details (31 resolvable records plus
+5 leads that could not be verified or are not public) are in [`docs/external_datasets.csv`](docs/external_datasets.csv).
+
+### A. Chemical (and other) valence contrasts
+
+| Dataset | Conditions / valence | Preparation · neurons · N | Why useful | Data |
+|---|---|---|---|---|
+| Yemini et al. 2021, *Cell* — original NeuroPAL | 2-butanone, 2,3-pentanedione (attractive) vs. NaCl 160 mM (repellent); 10 s pulses | immobilised · NeuroPAL whole head · 21 heads + 21 tails (OH16230), 7 heads (OH15500, separate protocol) · ~4 Hz, 4 min | same strain, platform and lab lineage as the data used here; the most direct replication | [Zenodo 3906530](https://zenodo.org/records/3906530) · [DANDI 000541 (NWB)](https://dandiarchive.org/dandiset/000541) · [paper](https://doi.org/10.1016/j.cell.2020.12.012) |
+| How, Navlakha & Chalasani 2021, *PLoS CB* | benzaldehyde, diacetyl, isoamyl alcohol vs. 2-nonanone; NaCl 200 vs. 600 mM; 30–180 s pulses | immobilised · whole brain, no cross-animal IDs · 30 animals · ~1.1–1.6 Hz | long exposures; identity-independent (permutation-invariant) comparisons only | [OSF z4aq3](https://osf.io/z4aq3/) · [paper](https://doi.org/10.1371/journal.pcbi.1009591) |
+| Lin et al. 2023, *Sci. Adv.* | 23 odorants × 3 concentrations + 5 ascarosides | immobilised · 11 amphid sensory pairs (22 neurons) · many trials · 2.5 Hz | dense stimulus panel for small sensory sub-networks (3–6 neuron TPMs) | [Zenodo 7563053](https://zenodo.org/records/7563053) · [paper](https://doi.org/10.1126/sciadv.ade1249) |
+| Bokman et al. 2024, *BMC Biol.* (Zaslaver lab) | ON/OFF steps of isoamyl alcohol, diacetyl, NaCl (attractive) vs. glycerol, quinine, SDS (repellent) | immobilised · amphid sensory neurons · 2 Hz | **balanced 3-vs-3 valence design**, which separates valence from chemical identity better than the current data | [OSF 36ny5](https://osf.io/36ny5/) · [paper](https://doi.org/10.1186/s12915-024-01977-z) |
+| Toyoshima et al. 2024, *PLoS CB* | periodic switching between two NaCl concentrations | immobilised · ~140 identified head neurons · 24 animals · ~4 Hz · YC2.60 indicator | independent lab and indicator; gustatory up/down steps | [figshare 21968078](https://doi.org/10.6084/m9.figshare.21968078) · [paper](https://doi.org/10.1371/journal.pcbi.1011848) |
+| Kramer et al. 2026, *Nat. Neurosci.* | navigation of a 1-octanol gradient (aversive), WT vs. tdc-1; a diacetyl (attractive) file is listed in the hand-off but was not verified | freely moving · NeuroPAL whole brain · ~1.67 Hz | naturalistic odour encounters with behaviour | [Dryad 8sf7m0cz2](https://doi.org/10.5061/dryad.8sf7m0cz2) · [paper](https://doi.org/10.1038/s41593-026-02257-5) |
+| Copper-boundary encounters (Flavell lab, 2026) | aversive Cu²⁺ boundary vs. open arena (aversive arm only) | freely moving · NeuroPAL, ~148 neurons/animal · 27 animals · 1.67 Hz | generalisation across aversive chemicals | [Dryad w9ghx3g4v](https://doi.org/10.5061/dryad.w9ghx3g4v) |
+| Atanas, Kim et al. 2023, *Cell* | baseline foraging (35) vs. aversive heat pulses (30) | freely moving · NeuroPAL in 40/68 datasets (heat-pulse recordings unlabelled), median 75 labelled · 1.67 Hz | non-chemical aversive arm; large N, but identity-independent analyses only for the heat arm | [WormWideWeb](https://wormwideweb.org/) · [Zenodo 19388374](https://zenodo.org/records/19388374) · [DANDI 000776 (raw, ~1 TB)](https://dandiarchive.org/dandiset/000776) |
+| Dag, Nwabudike, Kang et al. 2023, *Cell* | food-patch encounter (7), re-feeding after starvation (8) | freely moving · NeuroPAL in 8/15 · 1.67 Hz | appetitive (food) transitions | [Zenodo 19414639](https://zenodo.org/records/19414639) · [paper](https://doi.org/10.1016/j.cell.2023.04.023) |
+
+### B. Replication, generalisation and brain-state contrasts
+
+| Dataset | Conditions | Preparation · neurons · N | Why useful | Data |
+|---|---|---|---|---|
+| Kato et al. 2015, *Cell* | constant conditions vs. O₂ shifts (21 % ↔ 4 %); AVA silencing | immobilised · ~100–130 neurons, ~40 identified · 12 WT · ~2.9 Hz | O₂ upshift as an arousing/aversive cue; classic whole-brain reference | [OSF 2395t](https://osf.io/2395t/) · [paper](https://doi.org/10.1016/j.cell.2015.09.034) |
+| Nichols et al. 2017, *Science* | sleep (lethargus) vs. wake; N2 vs. npr-1 | immobilised L4 · ~108 neurons, ~35 identified · 44 larvae | strongest public sleep/wake contrast; directly relevant for IIT | [OSF kbf38](https://osf.io/kbf38/) · [paper](https://doi.org/10.1126/science.aam6851) |
+| Skora et al. 2018, *Cell Rep.* | fasted vs. starved; daf-2 | immobilised · ~129 neurons, ~46 identified · 12 WT | internal-state contrast | [OSF za3gt](https://osf.io/za3gt/) · [paper](https://doi.org/10.1016/j.celrep.2017.12.091) |
+| Pradhan, Madan et al. 2025, *Nat. Commun.* | PA14 infection, sickness quiescence vs. active | freely moving · NeuroPAL, ~102 labelled · 8 animals | pathogen / sickness state | [Zenodo 19511989](https://zenodo.org/records/19511989) · [paper](https://doi.org/10.1038/s41467-025-58478-y) |
+| Dunn et al. 2025, *Curr. Biol.* | short-term memory paradigm (protocol not yet checked) | NeuroPAL whole brain · 95 subjects · 774 GB | large NeuroPAL N | [DANDI 001623](https://dandiarchive.org/dandiset/001623) |
+| WormID harmonised NeuroPAL corpus | 7 datasets, 118 worms, 5 labs (incl. spontaneous activity in DANDI 000565, 000692) | mixed · NeuroPAL | common neuron naming across labs; spontaneous baselines | [wormid.org](https://www.wormid.org/) · [DANDI 000565](https://dandiarchive.org/dandiset/000565) · [DANDI 000692](https://dandiarchive.org/dandiset/000692) |
+| Homogenised C. elegans neural activity (Simeon et al. 2024) | 12 source datasets resampled to a common rate | ~900 worms · ~250 neuron classes | quick access for pilots. It is resampled, so re-derive TPMs from the source data for final analyses | [Hugging Face](https://huggingface.co/datasets/qsimeon/celegans_neural_data) · [arXiv 2411.12091](https://doi.org/10.48550/arXiv.2411.12091) |
+| Gauthey et al. 2024, *Curr. Biol.* — light-evoked global dynamics | imaging-light wavelength, gur-3 mutants | immobilised · whole head | **control:** blue imaging light itself drives global dynamics; check this confound in every stimulus contrast | [OSF yt8aj](https://osf.io/yt8aj/) · [paper](https://doi.org/10.1016/j.cub.2023.10.043) |
+
+### C. Interventional data (closest to IIT's causal TPMs)
+
+| Dataset | Intervention | Preparation · neurons · N | Why useful | Data |
+|---|---|---|---|---|
+| Randi et al. 2023, *Nature* — signal propagation atlas | two-photon optogenetic activation of **single identified neurons** during whole-brain imaging; WT and unc-31 | immobilised · NeuroPAL whole head · 113 animals, 23,433 neuron pairs | the only public dataset in which individual neuron states are set experimentally (do() on one node). This repo already uses its scalar functional-connectivity amplitudes; the stimulation recordings themselves are not yet used | [DANDI 001075](https://dandiarchive.org/dandiset/001075) · [OSF e2syt](https://osf.io/e2syt/) · [paper](https://doi.org/10.1038/s41586-023-06683-4) |
+| Uzel, Kato & Zimmer 2022, *Curr. Biol.* | HisCl silencing of AVA, AVB, AVE, AIB, RIB, RIM, PVC and combinations (10 conditions) | immobilised · ~138 neurons, ~50 identified | lesion-style perturbations of hub neurons | [OSF 3vkxn](https://osf.io/3vkxn/) · [paper](https://doi.org/10.1016/j.cub.2022.06.039) |
+| Kaplan et al. 2020, *Neuron* | HisCl silencing of SMD or ventral-cord cholinergic neurons | immobilised and moving · ~114 neurons · 19 animals | further perturbation conditions in the same format | [OSF 9nfhz](https://osf.io/9nfhz/) · [paper](https://doi.org/10.1016/j.neuron.2019.10.037) |
+| Ji et al. 2021, *eLife* (Flavell lab) | optogenetic NSM activation during imaging of 10 defined neurons | freely moving · 10 identified neurons · 2 Hz | sub-network size matches 3–6 neuron TPMs directly | [Dryad 3bk3j9kh3](https://doi.org/10.5061/dryad.3bk3j9kh3) · [paper](https://doi.org/10.7554/eLife.62889) |
+
+### Checked but not recommended or not available
+
+- **ASCENT OP50 recording** ([Zenodo 17561700](https://zenodo.org/records/17561700)): a single animal with raw volumes and tracking files only. It has no neuron identities and no extracted traces.
+- **Isoflurane anaesthesia whole-brain imaging** (Chang et al. 2026) and the **Gordus et al. 2015** AIB/RIM/AVA odour circuit with silencing: very relevant for IIT, but the data are available only on request from the authors.
