@@ -6,3 +6,5 @@ __pycache__/
 .jup/
 __pyphi_cache__/
 pyphi.log
+
+data_nichols/*.mat

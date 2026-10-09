@@ -237,6 +237,7 @@ then `Runtime > Run all`.
 | **13 — Robustness checks** | Median vs mean Φ(t), the explicit stimulus-vs-no-stimulus contrast across all 10 stimuli, raw-fluorescence mean/median, and TPM drop-k stability plus the fragility of the φ-per-state map | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/13_robustness.ipynb) |
 | **14 — State identification** | Which state is "stimulus" and which "no stimulus": paired occupancy distributions, rank–frequency by condition, enrichment ladder with Holm correction; names 1000 (AWCL alone) as baseline and 0111 (its complement) as stimulus | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/14_state_identification.ipynb) |
 | **17 — Static vs dynamic TPMs** | Regimes differ at the TPM level (z = 35) and, under full-volume bootstrap, at specific Φ states (0000↓, 1000↑, 1111↑ under stim-on); static ≈ stim-off; the stim-on TPM is itself a stable (~2-dp) estimate | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/17_static_vs_dynamic_tpm.ipynb) |
+| **18 — Sleep vs wake (stage 1)** | On independent data (Nichols 2017, 39 larvae): the pipeline transfers (TPM z = +5.8/+4.4 under animal permutation) and time-averaged φ_s drops in sleep in both strains (shared-map test, p ≤ 0.0003) — pending the bootstrap and binarization-sensitivity checks | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/18_sleep_wake_nichols.ipynb) |
 | **16 — Connectivity vs literature** | Diagonal-matched comparison against the anatomical connectome (Cook 2019) and the effective/signal-propagation atlas (Randi 2023): ours agrees with the atlas on which pairs communicate (3 of 4, both naming ASEL↔AWAL strongest); anatomy is the outlier | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/16_connectivity_vs_literature.ipynb) |
 | **15 — Structure comparison** | The first condition-assigned structure comparison (1000 vs 0111) with the split-half noise floor defined and explained; fails at ratio 0.91 because half-data structures are unstable | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/15_structure_comparison.ipynb) |
 
@@ -1582,7 +1583,21 @@ project proceeds in three stages, ordered so that each stage tests the
 machinery the next one depends on — and keeping room, as throughout, to step
 back and re-evaluate when a stage says no:
 
-1. **Sleep/wake first (Nichols 2017, 44 larvae).** The strongest public brain-state
+1. **Sleep/wake first (Nichols 2017, 44 larvae) — begun; first pass PASSES
+   both gates** ([`notebooks/18`](notebooks/18_sleep_wake_nichols.ipynb),
+   [`results/nichols_tpm_contrast.csv`](results/nichols_tpm_contrast.csv),
+   [`results/nichols_phi_per_animal.csv`](results/nichols_phi_per_animal.csv)):
+   coverage is a GO (39/44 animals carry the core quartet; 151.6k transitions,
+   3.8× our dataset); the conditioned TPMs separate sleep from wake under
+   animal-label permutation (z = +5.8 N2, +4.4 *npr-1*); and per-animal
+   time-averaged φ_s is **lower in sleep** in both strains under the
+   shared-map test (p = 0.0002 / 0.0003, one-sided MW, animal as unit) — 3 of
+   4 tests overall (the own-map N2 test does not reach significance). Two
+   checks before this counts as the Φ-level positive control: the full-volume
+   bootstrap of the φ-maps, and a binarization-sensitivity sweep in lethargus
+   (the joint state flips *faster* during sleep — 0.88 vs 0.72 per sample —
+   so quiescent-trace bits may be noise-dominated; the φ-scale here is also
+   ~100× smaller than our chemosensory TPMs). Original stage description: the strongest public brain-state
    contrast, and the one where IIT stakes a clear directional prediction:
    Φ should *drop* in lethargus. This stage tests what we have learned about
    building a plausible TPM on an independent dataset — binarization,

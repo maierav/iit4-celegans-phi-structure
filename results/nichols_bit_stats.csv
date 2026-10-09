@@ -1,0 +1,5 @@
+condition,n,state_change_frac,states_visited
+n2_prelet,10,0.718,16.0
+n2_let,10,0.877,16.0
+npr1_prelet,9,0.682,16.0
+npr1_let,10,0.821,16.0
