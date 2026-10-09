@@ -62,6 +62,11 @@ results are encouraging.
 Work on the actual Φ-structures is in flux. We will need to decide on how
 to pick a candidate state and then take things from there.
 
+Next up, in order: a **sleep/wake contrast** on independent data to test the
+TPM pipeline and IIT's clearest prediction, then back to **stimulus vs blank**,
+then the **valence question** on balanced designs — see
+[Where to go next](#where-to-go-next).
+
 ---
 
 ## SUMMARY (so far)
@@ -1570,6 +1575,45 @@ Updated after the precision-convention and amplification analyses; earlier
 versions of this list are superseded as their items were carried out (the
 binarization attack became notebooks 11–12 and the offset dip; "run the
 condition-assigned structure comparison" became notebook 15).
+
+**The staged plan (2026-10-09).** With the
+[external datasets](#additional-datasets-worth-exploring) now mapped, the
+project proceeds in three stages, ordered so that each stage tests the
+machinery the next one depends on — and keeping room, as throughout, to step
+back and re-evaluate when a stage says no:
+
+1. **Sleep/wake first (Nichols 2017, 44 larvae).** The strongest public brain-state
+   contrast, and the one where IIT stakes a clear directional prediction:
+   Φ should *drop* in lethargus. This stage tests what we have learned about
+   building a plausible TPM on an independent dataset — binarization,
+   certification at the precision convention, conditioned (sleep/wake) TPMs —
+   and then tests the rest of the IIT pipeline against a contrast far stronger
+   than chemical identity. If Φ-level quantities cannot separate sleep from
+   wake, they will not separate attractants from repellents; if they can, we
+   have the positive control the structure-level analyses have lacked. Caveats
+   to resolve on the data itself: not NeuroPAL (~35 identified per animal —
+   quartet coverage must be checked file by file), and the lethargus state
+   change may also change binarization behaviour (the tonic-drift lesson from
+   notebook 11 applies).
+2. **Then back to STIMULUS vs BLANK.** With a TPM pipeline validated on an
+   independent dataset and a Φ-level quantity that demonstrably detects a state
+   contrast, re-pose our chemical-present-vs-absent positive control at the
+   structure level — thresholded relations if stage 1 licenses them, the
+   certified distinction level otherwise. This is where the perturbation-
+   calibrated φ-threshold (item 1 of the technical list below) gets its
+   decisive run.
+3. **Then the valence question, on better designs.** Only after 1–2 pass:
+   attractant-vs-repellent on the balanced 3-vs-3 panel (Bokman 2024), the
+   near-replication set (Yemini 2021), and pooled with our own recordings for
+   volume. The original question, asked last, when the instrument has earned
+   it.
+
+The interventional sets (Uzel 2022 — do(neuron = off) on our own core quartet;
+Randi DANDI 001075 stimulation recordings) run parallel to all three stages:
+they validate the *TPM estimate itself* causally, independent of any Φ-level
+question.
+
+The standing technical items, now subordinate to the stages above:
 
 1. **Stabilise relation membership with a perturbation-calibrated φ-threshold.**
    The amplification analysis locates the fragility precisely: distinctions are
