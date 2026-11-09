@@ -240,6 +240,7 @@ then `Runtime > Run all`.
 | **18 — Sleep vs wake (stage 1)** | On independent data (Nichols 2017, 39 larvae): the pipeline transfers (TPM z = +5.8/+4.4 under animal permutation) and time-averaged φ_s drops in sleep in both strains (shared-map test, p ≤ 0.0003) — pending the bootstrap and binarization-sensitivity checks | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/18_sleep_wake_nichols.ipynb) |
 | **19 — Higher-order connectivity** | The TPM's interaction terms, with the additive null they must clear: raw \|D2\| is mostly estimation bias (0/24 per-term survivors); the LRT finds one genuine interaction — the salt sensors jointly gate AWAL (G² = 18.8, p = 0.0045) — and no 3-/4-way terms at current volume | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/19_higher_order_connectivity.ipynb) |
 | **20 — Scale-up (107 neurons)** | Atlas correspondence at 636 pairs is weak but real (ρ = +0.18, detection not amplitude); the interaction screen finds 57 triple-gated three-way interactions (additive null: 0) organized into motifs — bilateral-pair synergy (23× enriched), command-circuit antagonism (33/33 negative) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/20_scale_up.ipynb) |
+| **21 — Markov-order test** | First-order is violated substantially (memory = 69–77% of first-order information, z = +32/+46) but the memory is indicator-fast, collapsing by τ = 1.5 s; all 57 interactions survive history-augmented models; the TPM is a one-lag conditional, not the generative kernel | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/21_markov_order.ipynb) |
 | **16 — Connectivity vs literature** | Diagonal-matched comparison against the anatomical connectome (Cook 2019) and the effective/signal-propagation atlas (Randi 2023): ours agrees with the atlas on which pairs communicate (3 of 4, both naming ASEL↔AWAL strongest); anatomy is the outlier | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/16_connectivity_vs_literature.ipynb) |
 | **15 — Structure comparison** | The first condition-assigned structure comparison (1000 vs 0111) with the split-half noise floor defined and explained; fails at ratio 0.91 because half-data structures are unstable | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/15_structure_comparison.ipynb) |
 
@@ -970,6 +971,41 @@ Three results, in order of importance
   negative for the rest. The scale-up beyond one quartet (all identified
   triples across the recordings) is where the distribution of genuine
   interactions gets measured.
+
+### The Markov-order test: first-order is an approximation, and now a measured one
+
+Every TPM here is first-order: P(state at t+τ | state at t). Tested directly
+([`notebooks/21`](notebooks/21_markov_order.ipynb)):
+
+![Markov order](figures/fig51_markov_order.png)
+
+* **The violation is substantial.** On the saturated 16-state kernel — the
+  clean test, no model approximation — memory beyond the current state
+  carries **69% (sensory) / 77% (core) as much predictive information as the
+  entire first-order structure** (z = +32/+46 vs simulated first-order
+  chains; [`results/markov_state_level.csv`](results/markov_state_level.csv)).
+  The per-target version (104/107 targets significant) agrees directionally
+  but conflates memory with main-effects misspecification, so the
+  state-level numbers are the citable ones.
+* **The memory is fast — indicator-timescale, not deep history.** It
+  collapses with lag: 69→34→19% (sensory) and 77→49→28% (core) at
+  τ = 0.38/0.75/1.5 s, z falling from ~40–55 to 1.7–3.7 by 1.5 s
+  ([`results/markov_tau_sweep.csv`](results/markov_tau_sweep.csv); τ = 6 s
+  estimates are n = 2.5k and unreliable). That is the GCaMP-decay /
+  moving-median window — smearing, not cognition.
+* **The 57 interactions are not memory artifacts:** all 57 survive the
+  conditional LRT with t−1 main effects added to the model (57/57,
+  λ-calibrated).
+* **The consequence, stated once:** the τ = 375 ms TPM is the **one-lag
+  conditional of a non-Markov process** — a well-defined descriptive object
+  (sensitivity, interactions, and the simulator are all one-lag quantities),
+  not the generative kernel. And there is a genuine tension: the lag where
+  first-order roughly holds (≥1.5 s) is the lag where the atlas agreement
+  fails (the notebook-16 sweep), so the externally-validated TPM and the
+  Markov-clean TPM are not available at the same τ with this indicator.
+  Analyses that treat the TPM as the generative mechanism — Φ-structure
+  unfolding above all — inherit this approximation, which now has a number
+  attached.
 
 ### The scale-up: 107 neurons, 606,797 interaction candidates
 
