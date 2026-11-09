@@ -239,6 +239,7 @@ then `Runtime > Run all`.
 | **17 — Static vs dynamic TPMs** | Regimes differ at the TPM level (z = 35) and, under full-volume bootstrap, at specific Φ states (0000↓, 1000↑, 1111↑ under stim-on); static ≈ stim-off; the stim-on TPM is itself a stable (~2-dp) estimate | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/17_static_vs_dynamic_tpm.ipynb) |
 | **18 — Sleep vs wake (stage 1)** | On independent data (Nichols 2017, 39 larvae): the pipeline transfers (TPM z = +5.8/+4.4 under animal permutation) and time-averaged φ_s drops in sleep in both strains (shared-map test, p ≤ 0.0003) — pending the bootstrap and binarization-sensitivity checks | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/18_sleep_wake_nichols.ipynb) |
 | **19 — Higher-order connectivity** | The TPM's interaction terms, with the additive null they must clear: raw \|D2\| is mostly estimation bias (0/24 per-term survivors); the LRT finds one genuine interaction — the salt sensors jointly gate AWAL (G² = 18.8, p = 0.0045) — and no 3-/4-way terms at current volume | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/19_higher_order_connectivity.ipynb) |
+| **20 — Scale-up (107 neurons)** | Atlas correspondence at 636 pairs is weak but real (ρ = +0.18, detection not amplitude); the interaction screen finds 57 triple-gated three-way interactions (additive null: 0) organized into motifs — bilateral-pair synergy (23× enriched), command-circuit antagonism (33/33 negative) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/20_scale_up.ipynb) |
 | **16 — Connectivity vs literature** | Diagonal-matched comparison against the anatomical connectome (Cook 2019) and the effective/signal-propagation atlas (Randi 2023): ours agrees with the atlas on which pairs communicate (3 of 4, both naming ASEL↔AWAL strongest); anatomy is the outlier | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/16_connectivity_vs_literature.ipynb) |
 | **15 — Structure comparison** | The first condition-assigned structure comparison (1000 vs 0111) with the split-half noise floor defined and explained; fails at ratio 0.91 because half-data structures are unstable | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/15_structure_comparison.ipynb) |
 
@@ -969,6 +970,56 @@ Three results, in order of importance
   negative for the rest. The scale-up beyond one quartet (all identified
   triples across the recordings) is where the distribution of genuine
   interactions gets measured.
+
+### The scale-up: 107 neurons, 606,797 interaction candidates
+
+Both interim-paper analyses at full scale
+([`notebooks/20`](notebooks/20_scale_up.ipynb)): every neuron identified at
+confidence 1.0 with <5% NaN in all 8 recordings (107 of them, 39,824
+transitions).
+
+![Scale-up](figures/fig50_interaction_atlas.png)
+
+**Part 1 tempered.** Against the signal-propagation atlas's 636 measured
+pairs among these neurons, the correspondence is **weak but real**: ρ = +0.18
+(p = 4×10⁻⁶) on amplitudes, AUC 0.58 for detecting the atlas's strong pairs —
+and it vanishes *within* the strong pairs, so the agreement is
+detection-level, not amplitude-tracking. Signs carry nothing beyond base rate
+(both measures are overwhelmingly positive; κ ≈ 0.02), and atlas-inhibitory
+pairs are essentially invisible to a calcium-ON statistic. Anatomy
+correspondence sits at the same weak level (AUC 0.58–0.59 edge-vs-no-edge,
+969 synaptic edges), so the quartet's clean function-over-anatomy
+dissociation reads, at scale, as "weakly matches both." The pharynx negative
+control passes: somatic→pharyngeal coupling is systematically lower
+(p = 7×10⁻¹⁸), as a nearly isolated circuit demands
+([`results/ho_scale_atlas_pairs.csv`](results/ho_scale_atlas_pairs.csv)).
+
+**Part 2 is the result.** The Woolf screen over all 606,797
+(source-pair → target) triples, with the χ² inflation measured from the
+additive-simulation null (λ = 1.53 — autocorrelated transitions plus
+omitted-variable distortion) and three gates: λ-calibrated BH-FDR 0.05 →
+same-sign and nominally significant in both disjoint animal halves →
+conditional LRT with all 107 main effects in the model. **57 interactions
+survive; the additive null yields zero through the same pipeline**
+([`results/ho_scale_interactions_final.csv`](results/ho_scale_interactions_final.csv)).
+And they are structured, not scattered:
+
+* **Bilateral homolog source pairs are enriched 23×** (10/57 vs a 0.76% base
+  rate, hypergeometric p = 7×10⁻¹²) and supply **6 of the 7 positive
+  (synergistic) interactions** — left-right pairs like SMDV, RIV, BAG, AWB
+  acting as single functional units.
+* **Every command-circuit interaction is negative** (33/33): sub-additivity
+  in log-odds across AVA/AVB/AVE/AVD — the mutual-exclusion signature of the
+  forward/backward locomotor system, visible directly in the mechanisms.
+  (Log-odds units mean probability-ceiling saturation is already accounted
+  for by the additive-logistic null.)
+
+Caveats carried with the result: λ corrects the mean inflation, not its tail
+(the reproducibility and conditional gates carry the rest); marginal screen
+hits can reflect omitted common drive, which is why only the
+conditional-LRT survivors earn the word "interaction"; and these are
+ecological-TPM quantities — context mixtures, not frozen-background
+mechanisms.
 
 ### Our connectivity vs the literature
 
