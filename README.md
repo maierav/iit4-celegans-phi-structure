@@ -238,6 +238,7 @@ then `Runtime > Run all`.
 | **14 — State identification** | Which state is "stimulus" and which "no stimulus": paired occupancy distributions, rank–frequency by condition, enrichment ladder with Holm correction; names 1000 (AWCL alone) as baseline and 0111 (its complement) as stimulus | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/14_state_identification.ipynb) |
 | **17 — Static vs dynamic TPMs** | Regimes differ at the TPM level (z = 35) and, under full-volume bootstrap, at specific Φ states (0000↓, 1000↑, 1111↑ under stim-on); static ≈ stim-off; the stim-on TPM is itself a stable (~2-dp) estimate | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/17_static_vs_dynamic_tpm.ipynb) |
 | **18 — Sleep vs wake (stage 1)** | On independent data (Nichols 2017, 39 larvae): the pipeline transfers (TPM z = +5.8/+4.4 under animal permutation) and time-averaged φ_s drops in sleep in both strains (shared-map test, p ≤ 0.0003) — pending the bootstrap and binarization-sensitivity checks | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/18_sleep_wake_nichols.ipynb) |
+| **19 — Higher-order connectivity** | The TPM's interaction terms, with the additive null they must clear: raw \|D2\| is mostly estimation bias (0/24 per-term survivors); the LRT finds one genuine interaction — the salt sensors jointly gate AWAL (G² = 18.8, p = 0.0045) — and no 3-/4-way terms at current volume | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/19_higher_order_connectivity.ipynb) |
 | **16 — Connectivity vs literature** | Diagonal-matched comparison against the anatomical connectome (Cook 2019) and the effective/signal-propagation atlas (Randi 2023): ours agrees with the atlas on which pairs communicate (3 of 4, both naming ASEL↔AWAL strongest); anatomy is the outlier | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/16_connectivity_vs_literature.ipynb) |
 | **15 — Structure comparison** | The first condition-assigned structure comparison (1000 vs 0111) with the split-half noise floor defined and explained; fails at ratio 0.91 because half-data structures are unstable | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maierav/iit4-celegans-phi-structure/blob/main/notebooks/15_structure_comparison.ipynb) |
 
@@ -927,6 +928,47 @@ identity the TPM cannot carry. [`simbrain/`](simbrain/) has the weight
 matrices, conditioned TPMs, and a Simbrain 3.x build-script template
 (untested; the HTML simulator is the faithful one — it runs the TPMs
 directly). [Vector PDF](figures/fig47_simulator_validation.pdf)
+
+### Beyond pairwise: higher-order terms of the same TPM (interim-paper seed)
+
+The TPM natively defines what no pairwise effective-connectivity measure can
+express: **interaction terms** —
+D2[j,k→i] = P(i|j,k) − P(i|j) − P(i|k) + P(i|base), the mixed discrete
+partial of each neuron's mechanism
+([`notebooks/19`](notebooks/19_higher_order_connectivity.ipynb)).
+
+![Higher-order connectivity](figures/fig49_higher_order.png)
+
+Three results, in order of importance
+([`results/ho_additive_null.csv`](results/ho_additive_null.csv),
+[`results/ho_lrt.csv`](results/ho_lrt.csv),
+[`results/ho_order2.csv`](results/ho_order2.csv)):
+
+* **Raw higher-order magnitude is mostly estimation bias.** Measured |D2|
+  (median 0.018, comparable to the 1st-order cross terms) sits barely above
+  what a strictly additive mechanism produces at matched volume, occupancy,
+  and smoothing (null median ≈ 0.017): |mixed partial| of a noisy estimate is
+  positively biased. Per-term, 0/24 survive multiple comparisons against the
+  additive null. This is the guide star's exception made quantitative at the
+  connectivity level — absolute-value statistics *manufacture* apparent
+  higher-order structure from noise, a warning directly relevant to the
+  higher-order-interactions literature, which rarely runs matched additive
+  nulls.
+* **One interaction is genuine.** The proper test (likelihood ratio on the
+  39,824 real transitions, per-target logistic mechanisms, additive vs
+  +interactions): AWAL's mechanism is non-additive — G² = 18.8, df 6,
+  p = 0.0045, the only target surviving Bonferroni — and interpretable:
+  **ASEL's influence on AWAL halves when ASER is ON** (+0.039 → +0.019 Δ
+  probability; 8.0k–12.6k transitions per cell). The two salt sensors jointly
+  gate the odor sensor. No 3-way or 4-way term is detectable at current
+  volume (G² ≤ 11.3, n.s.).
+* **The interim-paper shape this fixes.** Part 1: the pairwise face of the
+  TPM matches the interventional atlas (previous section). Part 2: the same
+  object extends to interaction terms *with a bias-correction discipline the
+  field lacks* — demonstrated by one validated interaction and an honest
+  negative for the rest. The scale-up beyond one quartet (all identified
+  triples across the recordings) is where the distribution of genuine
+  interactions gets measured.
 
 ### Our connectivity vs the literature
 
